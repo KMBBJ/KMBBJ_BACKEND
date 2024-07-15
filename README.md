@@ -1,2 +1,2 @@
-# KMBBJ_DOCKS
-KMBBJ팀 문서 모음 리파지토리입니다.
+# KMBBJ_BACKEND
+KMBBJ팀 백엔드 리파지토리입니다.
