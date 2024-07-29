@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+
+  jwt:
+    accessSecret: ${LOC_JWT_ACCESS_SECRET}
+    refreshSecret: ${LOC_JWT_REFRESH_SECRET}
+    accessTokenExpire: ${LOC_JWT_ACCESS_EXPIRE}
+    refreshTokenExpire: ${LOC_JWT_REFRESH_EXPIRE}
