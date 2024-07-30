@@ -1,0 +1,65 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.3.2'
+	id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.kmbbj'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	/* jpa */
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	/* spring web */
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	/*postgresql*/
+	runtimeOnly 'org.postgresql:postgresql'
+
+	/* redis */
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+	/*lombok*/
+	annotationProcessor 'org.projectlombok:lombok'
+	compileOnly 'org.projectlombok:lombok'
+
+	/* 스프링 시큐리티 */
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	/* validation */
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation', version: '2.5.2'
+
+	/* jwt */
+	implementation group: 'io.jsonwebtoken', name: 'jjwt-api', version: '0.11.5'
+	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-impl', version: '0.11.5'
+	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
+
+	/* json */
+	implementation 'com.google.code.gson:gson'
+
+	/* 스프링 테스트*/
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
