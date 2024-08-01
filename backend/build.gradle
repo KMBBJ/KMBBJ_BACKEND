@@ -31,7 +31,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
 	/*postgresql*/
-	runtimeOnly 'org.postgresql:postgresql'
+	implementation group: 'org.postgresql', name: 'postgresql', version: '42.7.2'
 
 	/* redis */
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
