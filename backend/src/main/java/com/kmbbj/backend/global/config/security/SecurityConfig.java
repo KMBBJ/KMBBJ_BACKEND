@@ -1,5 +1,8 @@
 package com.kmbbj.backend.global.config.security;
 
+import com.kmbbj.backend.global.config.jwt.filter.TokenAuthenticationFilter;
+import com.kmbbj.backend.global.config.jwt.service.TokenService;
+import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Spring Security 설정 클래스
@@ -17,6 +21,9 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    // JWT util
+    private final JwtTokenizer jwtTokenizer;
+    private final TokenService tokenService;
 
     // 모든 유저 허용 페이지
     String[] allAllowPage = new String[]{
@@ -69,6 +76,9 @@ public class SecurityConfig {
 
         // http 기본 인증(헤더) 비활성화
         http.httpBasic(auth -> auth.disable());
+
+        //jwt 필터를 한 번 타서 검사하도록 그리고 인증하도록 설정
+        http.addFilterBefore(new TokenAuthenticationFilter(jwtTokenizer, tokenService), UsernamePasswordAuthenticationFilter.class);
 
         // SecurityFilterChain을 빌드 후 반환
         return http.build();
