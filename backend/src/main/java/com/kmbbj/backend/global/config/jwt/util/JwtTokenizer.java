@@ -119,4 +119,8 @@ public class JwtTokenizer {
     public static Key getSigningKey(byte[] secretKey) {
         return Keys.hmacShaKeyFor(secretKey);
     }
+
+    public long getAccessTokenExpire() {
+        return accessTokenExpire;
+    }
 }
