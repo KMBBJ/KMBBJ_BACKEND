@@ -26,10 +26,8 @@ public class ApiResponse<T> {
     }
 
     // 실패
-
-    public ApiResponse(boolean success, String message, ApiExceptionEntity exception) {
+    public ApiResponse(boolean success, ApiExceptionEntity exception) {
         this.success = success;
-        this.message = message;
         this.exception = exception;
     }
 }
