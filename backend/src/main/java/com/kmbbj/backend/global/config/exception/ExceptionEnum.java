@@ -15,8 +15,8 @@ public enum ExceptionEnum {
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),
 
     // Custom Exception
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"USER_NOT_FOUND","유저를 찾지 못했습니다.");
-
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"USER_NOT_FOUND","유저를 찾지 못했습니다."),
+    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND,"ROOM_NOT_FOUND"," 방을 찾지 못했습니다.");
 
 
     private final HttpStatus status;

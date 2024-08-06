@@ -13,41 +13,9 @@ import java.nio.file.AccessDeniedException;
 public class ApiExceptionAdvice {
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse> exceptionHandler(HttpServletRequest request, ApiException e) {
-
         ApiExceptionEntity apiExceptionEntity = new ApiExceptionEntity(e.getException().getCode(), e.getException().getMessage());
-        ApiResponse apiResponse = new ApiResponse(false, apiExceptionEntity);
+        ApiResponse apiResponse = new ApiResponse(e.getException().getStatus(), apiExceptionEntity);
         return ResponseEntity.status(e.getException().getStatus())
                 .body(apiResponse);
-    }
-
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse> exceptionHandler(HttpServletRequest request, RuntimeException e) {
-        return handleExceptionInternal(ExceptionEnum.ACCESS_DENIED_EXCEPTION);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse> exceptionHandler(HttpServletRequest request, Exception e) {
-        return handleExceptionInternal(ExceptionEnum.ACCESS_DENIED_EXCEPTION);
-    }
-
-
-    /**
-     *
-     * 에러 코드 받아서 에러메세지 반환
-     */
-
-    private ResponseEntity<ApiResponse> handleExceptionInternal(ExceptionEnum exceptionEnum) {
-        return ResponseEntity.status(exceptionEnum.getStatus())
-                .body(makeErrorResponse(exceptionEnum));
-    }
-
-    /**
-     *
-     * ApiResponse 를 만드는 함수
-     */
-    private ApiResponse makeErrorResponse(ExceptionEnum exceptionEnum) {
-        ApiExceptionEntity apiExceptionEntity = new ApiExceptionEntity(exceptionEnum.getCode(), exceptionEnum.getMessage());
-        return new ApiResponse(false, apiExceptionEntity);
     }
 }
