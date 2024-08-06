@@ -24,6 +24,8 @@ public class EmailRedisConfig {
 
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
+        System.out.println("Connecting to Redis at " + host + ":" + port);  // 로그 추가
+        System.out.println("Using password: " + password);
         RedisStandaloneConfiguration configuration = new RedisStandaloneConfiguration();
         configuration.setHostName(host);
         configuration.setPort(port);

@@ -6,8 +6,10 @@ services:
     container_name: redis
     ports:
       - "${REDIS_PORT}:${REDIS_PORT_OUTPORT}"
-    environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+    volumes:
+      - redis_data:/data
+    restart: always
 
   postgresql:
     image: postgres:latest
@@ -20,6 +22,7 @@ services:
       - "${POSTGRES_PORT}:${POSTGRES_PORT_OUTPORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: always
 
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -31,6 +34,9 @@ services:
       - KAFKA_ZOOKEEPER_CONNECT=${KAFKA_ZOOKEEPER_CONNECT}
       - KAFKA_ADVERTISED_LISTENERS=${KAFKA_ADVERTISED_LISTENERS}
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    restart: always
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -40,6 +46,12 @@ services:
     environment:
       - ZOOKEEPER_CLIENT_PORT=${ZOOKEEPER_PORT}
       - ZOOKEEPER_TICK_TIME=${ZOOKEEPER_TICK_TIME}
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+    restart: always
 
 volumes:
   postgres_data:
+  redis_data:
+  kafka_data:
+  zookeeper_data:
