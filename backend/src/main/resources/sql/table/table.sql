@@ -1,8 +1,8 @@
 --users table
 CREATE TABLE users (
-                       user_id BIGINT PRIMARY KEY,
+                       user_id SERIAL PRIMARY KEY,
                        email VARCHAR(50) NOT NULL,
-                       nickname VARCHAR(15) NOT NULL,
+                       nickname VARCHAR(15) ,
                        password VARCHAR(255) NULL,
                        create_date TIMESTAMP NULL,
                        modify_date TIMESTAMP NULL,
