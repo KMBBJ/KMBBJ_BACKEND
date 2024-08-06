@@ -11,7 +11,7 @@ import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 
 @Configuration
-public class RedisConfig {
+public class EmailRedisConfig {
 
     @Value("${REDIS_HOST}")
     private String host;
