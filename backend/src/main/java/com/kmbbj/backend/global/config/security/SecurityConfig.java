@@ -6,6 +6,7 @@ import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -32,13 +33,7 @@ public class SecurityConfig {
             "/test/**", // 테스트 페이지
             "/auth/refreshToken", // 토큰 재발급 페이지
             "/auth/login", // 로그인 페이지
-            "/auth/join", // 회원가입 페이지
-            "/swagger-ui/**", // Swagger UI
-            "/v3/api-docs/**", // Swagger API docs
-            "/swagger-resources/**", // Swagger resources
-            "/swagger-ui.html", // Swagger HTML
-            "/webjars/**",// Webjars for Swagger
-            "/swagger/**"// Swagger try it out
+            "/auth/join" // 회원가입 페이지
     };
 
     // 관리자 유저 허용 페이지
@@ -55,6 +50,37 @@ public class SecurityConfig {
             "/auth/join" // 회원가입 페이지
     };
 
+    //swagger
+    String[] swaggeerAllowPage = new String[]{
+            "/swagger-ui/**", // Swagger UI
+            "/v3/api-docs/**", // Swagger API docs
+            "/swagger-resources/**", // Swagger resources
+            "/swagger-ui.html", // Swagger HTML
+            "/webjars/**",// Webjars for Swagger
+            "/swagger/**"// Swagger try it out
+    };
+
+
+    /**
+     * 스웨거 필터 체인
+     *
+     * @param http 수정할 HttpSecurity 객체
+     * @return 체인 빌드
+     * @throws Exception HttpSecurity 구성 시 발생한 예외
+     */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher(swaggeerAllowPage)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(swaggeerAllowPage).permitAll()
+                )
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+
+        return http.build();
+    }
 
     /**
      * 보안 필터 체인
@@ -64,10 +90,12 @@ public class SecurityConfig {
      * @throws Exception HttpSecurity 구성 시 발생한 예외
      */
     @Bean
+    @Order(2)
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // 유저별 페이지 접근 허용
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(allAllowPage).permitAll() // 모든 유저
+                .requestMatchers(swaggeerAllowPage).permitAll()
                 .requestMatchers(adminAllowPage).hasRole("ADMIN") //관리자
                 .requestMatchers(notLoggedAllowPage).not().authenticated() // 비로그인 유저
                 .anyRequest().authenticated()
