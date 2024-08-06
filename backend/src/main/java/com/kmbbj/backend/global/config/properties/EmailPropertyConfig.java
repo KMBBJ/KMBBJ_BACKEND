@@ -8,5 +8,5 @@ import org.springframework.context.annotation.PropertySources;
 @PropertySources({
         @PropertySource("classpath:properties/.env")
 })
-public class PropertyConfig {
+public class EmailPropertyConfig {
 }
