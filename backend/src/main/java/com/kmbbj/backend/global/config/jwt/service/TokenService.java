@@ -38,4 +38,15 @@ public class TokenService {
         Duration duration = Duration.ofMillis(refreshTokenExpire);
         return LocalDateTime.now().plus(duration);
     }
+
+    /**
+     * 리프레시 토큰을 무효화합니다.
+     *
+     * @param refreshToken 무효화할 리프레시 토큰
+     */
+    @Transactional
+    public void invalidateRefreshToken(String refreshToken) {
+        Optional<redisToken> tokenOptional = tokenRepository.findByRefreshToken(refreshToken);
+        tokenOptional.ifPresent(tokenRepository::delete);
+    }
 }

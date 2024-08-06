@@ -59,24 +59,14 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 // access 토큰 사용시마다 access, refresh재발급
                 makeNewResponseTokens(response, token);
             } catch (ExpiredJwtException e) { // 토큰 만료 시
-                request.setAttribute("exception", "EXPIRED_TOKEN");
-                log.error("Expired Token : {}", token, e);
                 throw new BadCredentialsException("Expired token exception", e);
             } catch (UnsupportedJwtException e) { // 지원하지 않는 토큰 사용 시
-                request.setAttribute("exception", "UNSUPPORTED_TOKEN");
-                log.error("Unsupported Token: {}", token, e);
                 throw new BadCredentialsException("Unsupported token exception", e);
             } catch (MalformedJwtException e) { // 유효하지 않은 토큰 사용 시
-                request.setAttribute("exception", "INVALID_TOKEN");
-                log.error("Invalid Token: {}", token, e);
                 throw new BadCredentialsException("Invalid token exception", e);
             } catch (IllegalArgumentException e) { // 올바르지 않은 파라미터 전달 시
-                request.setAttribute("exception", "NOT_FOUND_TOKEN");
-                log.error("Token not found: {}", token, e);
                 throw new BadCredentialsException("Token not found exception", e);
             } catch (Exception e) { // 알 수 없는 예외 발생 시
-                request.setAttribute("exception", "NOT_FOUND_TOKEN");
-                log.error("JWT Filter - Internal Error: {}", token, e);
                 throw new BadCredentialsException("JWT filter internal exception", e);
             }
         }
