@@ -1,4 +1,4 @@
-package com.kmbbj.backend.auth.Controller.request;
+package com.kmbbj.backend.auth.controller.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

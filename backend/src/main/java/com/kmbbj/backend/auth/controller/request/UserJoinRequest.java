@@ -1,4 +1,4 @@
-package com.kmbbj.backend.auth.Controller.request;
+package com.kmbbj.backend.auth.controller.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
