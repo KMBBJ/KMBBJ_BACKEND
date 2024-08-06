@@ -13,13 +13,18 @@ public class ApiResponse<T> {
     private ApiExceptionEntity exception;
     private T data;
 
-    // 성공메시지만 전달할 경우
-    public ApiResponse(HttpStatus status, String message) {
-        this.status = status;
+    // 헤더 포함해서 성공메시지만 전달할 경우
+    public ApiResponse(String message) {
         this.message = message;
     }
 
-    // 성공메시지 및 필요한 Data 같이 전달할 경우
+    // 헤더 포함해서 성공메시지 및 필요한 Data 같이 전달할 경우
+    public ApiResponse(String message, T data) {
+        this.message = message;
+        this.data = data;
+    }
+
+    // 헤더 미포함 ApiResponse 만 응답할때
     public ApiResponse(HttpStatus status, String message, T data) {
         this.status = status;
         this.message = message;
