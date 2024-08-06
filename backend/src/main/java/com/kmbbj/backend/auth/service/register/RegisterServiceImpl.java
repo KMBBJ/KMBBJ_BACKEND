@@ -36,6 +36,7 @@ public class RegisterServiceImpl implements RegisterService {
                 .email(userJoinRequest.getEmail())
                 .password(encodedPassword)
                 .authority(Authority.USER)
+                .isDeleted(false)
                 .build();
 
         userRepostiory.save(user);
