@@ -30,7 +30,15 @@ public class SecurityConfig {
             "/", // 메인페이지
             "/error", // 에러페이지
             "/test/**", // 테스트 페이지
-            "/auth/refreshToken" // 토큰 재발급 페이지
+            "/auth/refreshToken", // 토큰 재발급 페이지
+            "/auth/login", // 로그인 페이지
+            "/auth/join", // 회원가입 페이지
+            "/swagger-ui/**", // Swagger UI
+            "/v3/api-docs/**", // Swagger API docs
+            "/swagger-resources/**", // Swagger resources
+            "/swagger-ui.html", // Swagger HTML
+            "/webjars/**",// Webjars for Swagger
+            "/swagger/**"// Swagger try it out
     };
 
     // 관리자 유저 허용 페이지
