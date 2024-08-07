@@ -42,8 +42,8 @@ public class Room {
     @Column(name = "delay")
     private Integer delay;
 
-    @Column(name = "count")
-    private Integer count;
+    @Column(name = "user_count")
+    private Integer userCount;
 
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
     private List<UserRoom> userRooms;

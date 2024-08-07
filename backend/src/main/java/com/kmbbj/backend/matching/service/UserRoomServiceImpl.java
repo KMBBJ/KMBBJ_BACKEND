@@ -42,9 +42,10 @@ public class UserRoomServiceImpl implements UserRoomService{
 
         // 유저가 들어가 있는 방
         UserRoom userRoom = findCurrentRoom(authentication);
-
+        Room room = userRoom.getRoom();
         // 방에서 플레이 여부 false
         userRoom.setIsPlayed(false);
+        room.setUserCount(room.getUserCount() - 1);
         save(userRoom);
     }
 

@@ -159,7 +159,8 @@ public class RoomServiceImpl implements RoomService{
                     .isPlayed(true)
                     .isManager(false)
                     .build();
-
+            room.setUserCount(room.getUserCount() + 1);
+            roomRepository.save(room);
             userRoomService.save(userRoom);
         }
 
