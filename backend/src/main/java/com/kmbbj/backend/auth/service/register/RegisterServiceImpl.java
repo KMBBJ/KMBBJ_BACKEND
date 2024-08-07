@@ -5,6 +5,8 @@ import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.auth.util.RandomNickname;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,7 +29,7 @@ public class RegisterServiceImpl implements RegisterService {
     public void registerUser(UserJoinRequest userJoinRequest) {
         // 이메일 중복 확인
         if (userRepostiory.findByEmail(userJoinRequest.getEmail()).isPresent()) {
-            throw new RuntimeException("이미 존재하는 이메일입니다.");
+            throw new ApiException(ExceptionEnum.EXIST_EMAIL);
         }
 
         // 비밀번호 인코딩

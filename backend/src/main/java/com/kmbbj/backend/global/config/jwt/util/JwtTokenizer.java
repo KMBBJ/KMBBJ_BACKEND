@@ -1,22 +1,25 @@
 package com.kmbbj.backend.global.config.jwt.util;
 
 import com.kmbbj.backend.auth.entity.Authority;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.security.SignatureException;
 
 import java.security.Key;
 import java.nio.charset.StandardCharsets;
-
 import java.util.Date;
 
+/**
+ * JWT 토큰을 생성하고 검증하는 유틸리티 클래스
+ */
 @Component
 public class JwtTokenizer {
+
     @Value("${JWT_ACCESSSECRET}")
     private String accessTokenSecretBase64;
 
@@ -32,43 +35,53 @@ public class JwtTokenizer {
     private byte[] accessSecret;
     private byte[] refreshSecret;
 
+    /**
+     * 초기화 메서드. Base64로 인코딩된 비밀키를 바이트 배열로 변환
+     */
     @PostConstruct
     public void init() {
         accessSecret = accessTokenSecretBase64.getBytes(StandardCharsets.UTF_8);
         refreshSecret = refreshTokenSecretBase64.getBytes(StandardCharsets.UTF_8);
     }
 
-
+    /**
+     * 액세스 토큰을 생성
+     *
+     * @param id 사용자 ID
+     * @param email 사용자 이메일
+     * @param nickname 사용자 닉네임
+     * @param authority 사용자 권한
+     * @return 생성된 액세스 토큰
+     */
     public String createAccessToken(Long id, String email, String nickname, Authority authority) {
         return createToken(id, email, nickname, authority, accessTokenExpire, accessSecret);
     }
 
     /**
-     * RefreshToken 생성
+     * 리프레시 토큰을 생성
      *
-     * @param id
-     * @param email
-     * @param nickname
-     * @param authority
-     * @return RefreshToken
+     * @param id 사용자 ID
+     * @param email 사용자 이메일
+     * @param nickname 사용자 닉네임
+     * @param authority 사용자 권한
+     * @return 생성된 리프레시 토큰
      */
     public String createRefreshToken(Long id, String email, String nickname, Authority authority) {
         return createToken(id, email, nickname, authority, refreshTokenExpire, refreshSecret);
     }
 
     /**
-     * Jwts 빌더를 사용하여 token 생성
+     * JWT 토큰을 생성
      *
-     * @param id
-     * @param email
-     * @param nickname
-     * @param authority
-     * @param expire
-     * @param secretKey
-     * @return
+     * @param id 사용자 ID
+     * @param email 사용자 이메일
+     * @param nickname 사용자 닉네임
+     * @param authority 사용자 권한
+     * @param expire 토큰 만료 시간
+     * @param secretKey 비밀키
+     * @return 생성된 JWT 토큰
      */
     private String createToken(Long id, String email, String nickname, Authority authority, Long expire, byte[] secretKey) {
-        // 기본으로 가지고 있는 claim : subject
         Claims claims = Jwts.claims().setSubject(email);
         claims.put("authority", authority);
         claims.put("userId", id);
@@ -81,45 +94,68 @@ public class JwtTokenizer {
                 .compact();
     }
 
+    /**
+     * 액세스 토큰을 파싱하여 클레임을 반환
+     *
+     * @param accessToken 액세스 토큰
+     * @return 토큰에서 추출된 클레임
+     */
     public Claims parseAccessToken(String accessToken) {
         return parseToken(accessToken, accessSecret);
     }
 
+    /**
+     * 리프레시 토큰을 파싱하여 클레임을 반환
+     *
+     * @param refreshToken 리프레시 토큰
+     * @return 토큰에서 추출된 클레임
+     */
     public Claims parseRefreshToken(String refreshToken) {
         return parseToken(refreshToken, refreshSecret);
     }
 
     /**
-     * token을 secretkey에 따라서 parse함
-     * 클레임을 추출하며 서명 검증, 만료시간을 체크한다.
+     * JWT 토큰을 파싱하여 클레임을 반환
      *
-     * @param token 검사할 jwt토큰
-     * @param secretKey 검사할때 사용되는 secretkey
-     * @return
+     * @param token JWT 토큰
+     * @param secretKey 비밀키
+     * @return 토큰에서 추출된 클레임
      */
     public Claims parseToken(String token, byte[] secretKey) {
-        Claims claims = null;
         try {
-            claims = Jwts.parserBuilder()
+            return Jwts.parserBuilder()
                     .setSigningKey(getSigningKey(secretKey))
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-        } catch (SignatureException e) { // 토큰 유효성 체크 실패 시
-            throw new RuntimeException(String.valueOf(HttpStatus.UNAUTHORIZED));
+        } catch (ExpiredJwtException e) {
+            throw new ApiException(ExceptionEnum.EXPIRED_TOKEN);
+        } catch (UnsupportedJwtException e) {
+            throw new ApiException(ExceptionEnum.UNSUPPORTED_TOKEN);
+        } catch (MalformedJwtException e) {
+            throw new ApiException(ExceptionEnum.INVALID_TOKEN);
+        } catch (SignatureException e) {
+            throw new ApiException(ExceptionEnum.INVALID_SIGNATURE);
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(ExceptionEnum.ILLEGAL_ARGUMENT);
         }
-
-        return claims;
     }
 
     /**
-     * @param secretKey - byte형식
-     * @return Key 형식 시크릿 키
+     * 비밀키를 HMAC SHA로 변환하여 반환
+     *
+     * @param secretKey 비밀키
+     * @return 변환된 시크릿 키
      */
     public static Key getSigningKey(byte[] secretKey) {
         return Keys.hmacShaKeyFor(secretKey);
     }
 
+    /**
+     * 액세스 토큰 만료 시간을 반환
+     *
+     * @return 액세스 토큰 만료 시간
+     */
     public long getAccessTokenExpire() {
         return accessTokenExpire;
     }

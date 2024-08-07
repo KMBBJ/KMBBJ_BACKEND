@@ -1,6 +1,8 @@
 package com.kmbbj.backend.global.config.jwt.filter;
 
 import com.kmbbj.backend.auth.entity.Authority;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.entity.redisToken;
 import com.kmbbj.backend.global.config.jwt.infrastructure.CustomUserDetails;
 import com.kmbbj.backend.global.config.jwt.infrastructure.JwtAuthenticationToken;
@@ -17,7 +19,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,6 +32,7 @@ import java.util.List;
 
 /**
  * JWT 토큰 인증 필터 클래스
+ * 각 요청마다 JWT 토큰을 검증하고 인증을 설정
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -38,16 +40,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenizer jwtTokenizer;
     private final TokenService tokenService;
 
-    /**
-     * 필터 메서드
-     * 각 요청마다 JWT 토큰을 검증하고 인증을 설정
-     *
-     * @param request     요청 객체
-     * @param response    응답 객체
-     * @param filterChain 필터 체인
-     * @throws ServletException 서블릿 예외
-     * @throws IOException      입출력 예외
-     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = getToken(request); // 요청에서 토큰을 추출
@@ -56,18 +48,16 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                 // 토큰을 사용하여 인증 설정
                 getAuthentication(token);
 
-                // access 토큰 사용시마다 access, refresh재발급
+                // access 토큰 사용시마다 access, refresh 재발급
                 makeNewResponseTokens(response, token);
             } catch (ExpiredJwtException e) { // 토큰 만료 시
-                throw new BadCredentialsException("Expired token exception", e);
+                throw new ApiException(ExceptionEnum.EXPIRED_TOKEN);
             } catch (UnsupportedJwtException e) { // 지원하지 않는 토큰 사용 시
-                throw new BadCredentialsException("Unsupported token exception", e);
+                throw new ApiException(ExceptionEnum.UNSUPPORTED_TOKEN);
             } catch (MalformedJwtException e) { // 유효하지 않은 토큰 사용 시
-                throw new BadCredentialsException("Invalid token exception", e);
+                throw new ApiException(ExceptionEnum.INVALID_TOKEN);
             } catch (IllegalArgumentException e) { // 올바르지 않은 파라미터 전달 시
-                throw new BadCredentialsException("Token not found exception", e);
-            } catch (Exception e) { // 알 수 없는 예외 발생 시
-                throw new BadCredentialsException("JWT filter internal exception", e);
+                throw new ApiException(ExceptionEnum.TOKEN_NOT_FOUND);
             }
         }
         filterChain.doFilter(request, response); // 다음 필터로 요청을 전달
@@ -92,12 +82,12 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 요청의 header의 Authriztion에서 토큰을 추출
+     * 요청의 쿠키에서 토큰을 추출
      *
      * @param request 요청 객체
      * @return JWT 토큰
      */
-    private String getToken(HttpServletRequest request){
+    private String getToken(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
@@ -110,11 +100,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * access토큰을 사용할때마다 새로운 refresh랑 access를 만들어주는 코드
-     * redisdp 새로운 refesh를 넣어준다.
+     * access 토큰을 사용할 때마다 새로운 refresh 및 access 토큰을 만들어주는 메서드
+     * redis에 새로운 refresh 토큰을 넣음
      *
      * @param response 응답
-     * @param token 사용할 과거 refresh토큰
+     * @param token 사용할 과거 access 토큰
      */
     private void makeNewResponseTokens(HttpServletResponse response, String token) {
         Claims claims = jwtTokenizer.parseAccessToken(token);
