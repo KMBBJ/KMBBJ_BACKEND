@@ -3,9 +3,12 @@ package com.kmbbj.backend.auth.controller;
 import com.kmbbj.backend.auth.controller.request.UserLoginRequest;
 import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.entity.redisToken;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
+import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -61,7 +64,7 @@ class UserControllerLoginTest {
                 .password("Password123!")
                 .build();
 
-        User user = new User().builder()
+        User user = User.builder()
                 .id(1L)
                 .email("test@example.com")
                 .password("Password123!")
@@ -74,17 +77,17 @@ class UserControllerLoginTest {
         when(jwtTokenizer.createRefreshToken(user.getId(), user.getEmail(), user.getNickname(), user.getAuthority())).thenReturn("refreshToken");
         when(tokenService.calculateTimeout()).thenReturn(LocalDateTime.now().plusHours(1));
 
-        ResponseEntity<String> responseEntity = userController.login(userLoginRequest, bindingResult, response);
+        ResponseEntity<CustomResponse<String>> responseEntity = userController.login(userLoginRequest, bindingResult, response);
 
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("로그인 되었습니다.", responseEntity.getBody());
+        assertEquals("로그인 되었습니다.", responseEntity.getBody().getData());
         verify(response).addCookie(any(Cookie.class));
         verify(response).setHeader("Refresh-Token", "refreshToken");
         verify(tokenService).saveOrRefresh(any(redisToken.class));
     }
 
     @Test
-    void loginFailureTest() {
+    void loginFieldErrorsTest() {
         UserLoginRequest userLoginRequest = UserLoginRequest.builder()
                 .email("test@example.com")
                 .password("Password123!")
@@ -92,7 +95,42 @@ class UserControllerLoginTest {
 
         when(bindingResult.hasErrors()).thenReturn(true);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> userController.login(userLoginRequest, bindingResult, response));
-        assertEquals(HttpStatus.BAD_REQUEST.getReasonPhrase(), exception.getMessage());
+        ApiException exception = assertThrows(ApiException.class, () -> userController.login(userLoginRequest, bindingResult, response));
+        assertEquals(ExceptionEnum.NOT_ALLOW_FILED, exception.getException());
+    }
+
+    @Test
+    void loginUserNotFoundTest() {
+        UserLoginRequest userLoginRequest = UserLoginRequest.builder()
+                .email("test@example.com")
+                .password("Password123!")
+                .build();
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userService.UserfindByEmail(userLoginRequest.getEmail())).thenReturn(Optional.empty());
+
+        ApiException exception = assertThrows(ApiException.class, () -> userController.login(userLoginRequest, bindingResult, response));
+        assertEquals(ExceptionEnum.USER_NOT_FOUND, exception.getException());
+    }
+
+    @Test
+    void loginPasswordMismatchTest() {
+        UserLoginRequest userLoginRequest = UserLoginRequest.builder()
+                .email("test@example.com")
+                .password("Password123!")
+                .build();
+
+        User user = User.builder()
+                .id(1L)
+                .email("test@example.com")
+                .password("Password123!")
+                .build();
+
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(userService.UserfindByEmail(userLoginRequest.getEmail())).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(userLoginRequest.getPassword(), user.getPassword())).thenReturn(false);
+
+        ApiException exception = assertThrows(ApiException.class, () -> userController.login(userLoginRequest, bindingResult, response));
+        assertEquals(ExceptionEnum.DIFFERENT_PASSWORD, exception.getException());
     }
 }

@@ -1,6 +1,7 @@
 package com.kmbbj.backend.auth.controller;
 
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
+import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -44,11 +45,12 @@ class UserControllerLogoutTest {
         when(request.getHeader("Refresh-Token")).thenReturn("refreshToken");
 
         // logout 메서드 호출
-        ResponseEntity<String> responseEntity = userController.logout(request, response);
+        ResponseEntity<CustomResponse<String>> responseEntity = userController.logout(request, response);
 
         // 검증
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("로그아웃 되었습니다.", responseEntity.getBody());
+        assertEquals("로그아웃 되었습니다.", responseEntity.getBody().getData());
+        assertEquals("로그아웃 성공", responseEntity.getBody().getMessage());
 
         // 상호작용 검증
         verify(response).addCookie(any(Cookie.class));
@@ -64,11 +66,12 @@ class UserControllerLogoutTest {
         when(request.getHeader("Refresh-Token")).thenReturn(null);
 
         // logout 메서드 호출
-        ResponseEntity<String> responseEntity = userController.logout(request, response);
+        ResponseEntity<CustomResponse<String>> responseEntity = userController.logout(request, response);
 
         // 검증
         assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("로그아웃 되었습니다.", responseEntity.getBody());
+        assertEquals("로그아웃 되었습니다.", responseEntity.getBody().getData());
+        assertEquals("로그아웃 성공", responseEntity.getBody().getMessage());
 
         // 상호작용 검증
         verify(response).addCookie(any(Cookie.class));

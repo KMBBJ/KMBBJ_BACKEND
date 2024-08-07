@@ -1,14 +1,13 @@
 package com.kmbbj.backend.jwt.filter;
 
 import com.kmbbj.backend.auth.entity.Authority;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.entity.redisToken;
 import com.kmbbj.backend.global.config.jwt.filter.TokenAuthenticationFilter;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.security.authentication.BadCredentialsException;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -28,9 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-/**
- * TokenAuthenticationFilter의 단위 테스트를 위한 클래스
- */
 class TokenAuthenticationFilterTest {
 
     @Mock
@@ -54,17 +49,11 @@ class TokenAuthenticationFilterTest {
     @Mock
     private Claims claims;
 
-    /**
-     * 각 테스트 전에 Mockito 모의 객체 초기화
-     */
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
 
-    /**
-     * 유효한 토큰을 사용하여 필터를 테스트
-     */
     @Test
     void doFilterValidToken() throws ServletException, IOException {
         Cookie cookie = new Cookie("Access-Token", "validToken");
@@ -87,57 +76,45 @@ class TokenAuthenticationFilterTest {
         verify(filterChain).doFilter(request, response);
     }
 
-    /**
-     * 만료된 토큰을 사용하여 필터를 테스트
-     */
     @Test
     void doFilterExpiredToken() {
         Cookie cookie = new Cookie("Access-Token", "expiredToken");
         when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-        doThrow(new ExpiredJwtException(null, null, "Expired token")).when(jwtTokenizer).parseAccessToken("expiredToken");
+        doThrow(new ApiException(ExceptionEnum.EXPIRED_TOKEN)).when(jwtTokenizer).parseAccessToken("expiredToken");
 
-        BadCredentialsException exception = assertThrows(BadCredentialsException.class, () -> {
+        ApiException exception = assertThrows(ApiException.class, () -> {
             tokenAuthenticationFilter.doFilter(request, response, filterChain);
         });
 
-        assertEquals("Expired token exception", exception.getMessage());
+        assertEquals(ExceptionEnum.EXPIRED_TOKEN, exception.getException());
     }
 
-    /**
-     * 지원되지 않는 토큰을 사용하여 필터를 테스트
-     */
     @Test
     void doFilterUnsupportedToken() {
         Cookie cookie = new Cookie("Access-Token", "unsupportedToken");
         when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-        doThrow(new UnsupportedJwtException("Unsupported token")).when(jwtTokenizer).parseAccessToken("unsupportedToken");
+        doThrow(new ApiException(ExceptionEnum.UNSUPPORTED_TOKEN)).when(jwtTokenizer).parseAccessToken("unsupportedToken");
 
-        BadCredentialsException exception = assertThrows(BadCredentialsException.class, () -> {
+        ApiException exception = assertThrows(ApiException.class, () -> {
             tokenAuthenticationFilter.doFilter(request, response, filterChain);
         });
 
-        assertEquals("Unsupported token exception", exception.getMessage());
+        assertEquals(ExceptionEnum.UNSUPPORTED_TOKEN, exception.getException());
     }
 
-    /**
-     * 유효하지 않은 토큰을 사용하여 필터를 테스트
-     */
     @Test
     void doFilterInvalidToken() {
         Cookie cookie = new Cookie("Access-Token", "invalidToken");
         when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-        doThrow(new MalformedJwtException("Invalid token")).when(jwtTokenizer).parseAccessToken("invalidToken");
+        doThrow(new ApiException(ExceptionEnum.INVALID_TOKEN)).when(jwtTokenizer).parseAccessToken("invalidToken");
 
-        BadCredentialsException exception = assertThrows(BadCredentialsException.class, () -> {
+        ApiException exception = assertThrows(ApiException.class, () -> {
             tokenAuthenticationFilter.doFilter(request, response, filterChain);
         });
 
-        assertEquals("Invalid token exception", exception.getMessage());
+        assertEquals(ExceptionEnum.INVALID_TOKEN, exception.getException());
     }
 
-    /**
-     * 토큰이 없는 경우 필터를 테스트
-     */
     @Test
     void doFilterNoToken() throws ServletException, IOException {
         when(request.getCookies()).thenReturn(null);
