@@ -4,6 +4,7 @@ import com.kmbbj.backend.auth.controller.request.UserJoinRequest;
 import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.auth.util.RandomNickname;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class RegisterServiceImpl implements RegisterService {
     private final UserRepository userRepostiory;
     private final PasswordEncoder passwordEncoder;
+    private final RandomNickname randomNickname;
 
     /**
      * 사용자 등록 처리
@@ -34,11 +36,22 @@ public class RegisterServiceImpl implements RegisterService {
         // User 엔티티로 변환 및 저장
         User user = User.builder()
                 .email(userJoinRequest.getEmail())
+                .nickname(getNickname())
                 .password(encodedPassword)
                 .authority(Authority.USER)
                 .isDeleted(false)
                 .build();
 
         userRepostiory.save(user);
+    }
+
+    /**
+     * 중복되지 않은 랜덤 닉네임 생성
+     *
+     * @return unique random nickname
+     */
+    public String getNickname() {
+        String nickname = randomNickname.generate();
+        return nickname;
     }
 }

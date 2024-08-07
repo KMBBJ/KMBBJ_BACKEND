@@ -22,7 +22,7 @@ public class User extends AuditingFields {
     private String email;
 
     @Setter
-    @Column(nullable = false, unique = true, name = "nickname")
+    @Column(nullable = false, name = "nickname")
     private String nickname;
 
     @Setter
