@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus;
 public class CustomResponse<T> {
     private HttpStatus status;
     private String message;
-    private ApiExceptionEntity exception;
     private T data;
 
     // 헤더 포함해서 성공메시지만 전달할 경우
@@ -31,11 +30,5 @@ public class CustomResponse<T> {
         this.status = status;
         this.message = message;
         this.data = data;
-    }
-
-    // 실패
-    public CustomResponse(HttpStatus status, ApiExceptionEntity exception) {
-        this.status = status;
-        this.exception = exception;
     }
 }
