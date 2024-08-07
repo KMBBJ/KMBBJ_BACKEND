@@ -28,12 +28,10 @@ public class UserRoom {
     @Column(name = "is_played", nullable = false)
     private Boolean isPlayed;
 
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
     private Room room;

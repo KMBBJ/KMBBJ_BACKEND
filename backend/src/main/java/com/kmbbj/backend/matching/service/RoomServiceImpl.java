@@ -7,12 +7,12 @@ import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.infrastructure.CustomUserDetails;
 import com.kmbbj.backend.matching.dto.CreateRoomDTO;
 import com.kmbbj.backend.matching.dto.SearchingRoomDTO;
-import com.kmbbj.backend.matching.dto.SortedRoomDTO;
+import com.kmbbj.backend.matching.dto.SortConditionDTO;
+import com.kmbbj.backend.matching.dto.RoomListDTO;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,8 +20,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +49,7 @@ public class RoomServiceImpl implements RoomService{
         room.setIsDeleted(false);
         room.setIsStarted(false);
         room.setDelay(createRoomDTO.getDelay());
+        room.setUserCount(1);
 
         // 방 정보를 데이터베이스에 저장
         room = roomRepository.save(room);
@@ -93,28 +92,50 @@ public class RoomServiceImpl implements RoomService{
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<Room> searchRoomsByTitle(SearchingRoomDTO searchingRoomDTO) {
+    public Page<RoomListDTO> searchRoomsByTitle(SearchingRoomDTO searchingRoomDTO) {
         Pageable pageable = PageRequest.of(searchingRoomDTO.getPage(), 10);
         // 키워드 포함 목록 찾기
         Page<Room> rooms = roomRepository.findByTitleContainingIgnoreCase(searchingRoomDTO.getTitle(), pageable);
-        return rooms;
+        Page<RoomListDTO> roomList = rooms.map(room ->
+                RoomListDTO.builder()
+                        .roomId(room.getRoomId())
+                        .title(room.getTitle())
+                        .startSeedMoney(room.getStartSeedMoney())
+                        .end(room.getEnd())
+                        .createDate(room.getCreateDate())
+                        .delay(room.getDelay())
+                        .userCount(room.getUserCount())
+                        .build()
+        );
+        return roomList;
     }
 
     /**
      *
-     * @param sortedRoomDTO     정렬 기능 필요한 정보 (삭제 여부, 시작 여부, 페이지, 정렬 필드명, 정렬 기준)
+     * @param sortConditionDTO     정렬 기능 필요한 정보 (삭제 여부, 시작 여부, 페이지, 정렬 필드명, 정렬 기준)
      * @return rooms    정렬된 방 목록
      */
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Room> findAll(SortedRoomDTO sortedRoomDTO) {
+    public Page<RoomListDTO> findAll(SortConditionDTO sortConditionDTO) {
         // 정렬 정보
-        Sort sort = Sort.by(Sort.Direction.fromString(sortedRoomDTO.getSortDirection()), sortedRoomDTO.getSortField());
+        Sort sort = Sort.by(Sort.Direction.fromString(sortConditionDTO.getSortDirection()), sortConditionDTO.getSortField());
         // 페이지 마다 정렬기준이 풀리지 않도록
-        Pageable pageable = PageRequest.of(sortedRoomDTO.getPage(), 10, sort);
-        Page<Room> rooms = roomRepository.findAllByIsDeletedAndIsStarted(sortedRoomDTO.isDeleted(), sortedRoomDTO.isStarted(), pageable);
-        return rooms;
+        Pageable pageable = PageRequest.of(sortConditionDTO.getPage(), 10, sort);
+        Page<Room> rooms = roomRepository.findAllByIsDeletedAndIsStarted(sortConditionDTO.isDeleted(), sortConditionDTO.isStarted(), pageable);
+        Page<RoomListDTO> sortedRooms = rooms.map(room ->
+                RoomListDTO.builder()
+                        .roomId(room.getRoomId())
+                        .title(room.getTitle())
+                        .startSeedMoney(room.getStartSeedMoney())
+                        .end(room.getEnd())
+                        .createDate(room.getCreateDate())
+                        .delay(room.getDelay())
+                        .userCount(room.getUserCount())
+                        .build()
+        );
+        return sortedRooms;
     }
 
     /**
@@ -142,7 +163,7 @@ public class RoomServiceImpl implements RoomService{
         }
     }
 
-    /**
+    /** TODO
      *
      * @param roomId    선택한 방 번호
      * @param authentication    현재 유저 정보
@@ -151,15 +172,24 @@ public class RoomServiceImpl implements RoomService{
     @Transactional
     public void enterRoom(Long roomId,Authentication authentication) {
         Room room = findById(roomId);
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        User user = userService.UserfindById(userDetails.getUserId()).orElseThrow(() -> new RuntimeException("유저를 찾지 못했습니다"));
         if (room.getUserRooms().size() < 10) {
-            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            User user = userService.UserfindById(userDetails.getUserId()).orElseThrow(() -> new RuntimeException("유저를 찾지 못했습니다"));
-            UserRoom userRoom = UserRoom.builder().user(user)
-                    .room(room)
-                    .isPlayed(true)
-                    .isManager(false)
-                    .build();
-            room.setUserCount(room.getUserCount() + 1);
+            // 자산에 따라 들어갈수 있는 방 다르게 해야됨 쟤가 안만들어줌 (박석원 ㅋㅋ)
+            UserRoom userRoom = null;
+            try {
+                userRoom = userRoomService.findByUserAndRoom(user, findById(roomId));
+                userRoom.setIsPlayed(true);
+
+            } catch (Exception e) {
+                userRoom = UserRoom.builder().user(user)
+                        .room(room)
+                        .isPlayed(true)
+                        .isManager(false)
+                        .build();
+                room.setUserCount(room.getUserCount() + 1);
+            }
+
             roomRepository.save(room);
             userRoomService.save(userRoom);
         }

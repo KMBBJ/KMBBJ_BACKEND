@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SortedRoomDTO {
+public class SortConditionDTO {
     // 초깃값 false
     private boolean isDeleted = false;
 
