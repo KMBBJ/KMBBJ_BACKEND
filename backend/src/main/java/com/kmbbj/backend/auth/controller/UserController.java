@@ -4,9 +4,16 @@ import com.kmbbj.backend.auth.controller.request.UserJoinRequest;
 import com.kmbbj.backend.auth.controller.request.UserLoginRequest;
 import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.entity.redisToken;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
+import com.kmbbj.backend.global.config.reponse.CustomResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/auth")
 @Slf4j
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "사용자 인증 API")
 public class UserController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
@@ -30,24 +38,31 @@ public class UserController {
     private final TokenService tokenService;
 
     /**
-     * 사용자를 로그인하고 JWT 토큰을 생성하여 반환합니다.
+     * 사용자를 로그인하고 JWT 토큰을 생성하여 반환
      *
      * @param userLoginRequest 로그인 요청 데이터
      * @param bindingResult    요청 데이터 검증 결과
      * @param response         HTTP 응답 객체
-     * @return 로그인 결과를 나타내는 ResponseEntity
+     * @return 로그인 결과
      */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody @Valid UserLoginRequest userLoginRequest, BindingResult bindingResult, HttpServletResponse response) {
+    @Operation(summary = "사용자 로그인", description = "사용자를 인증하고 JWT 토큰을 반환")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "404", description = "사용자 찾을 수 없음"),
+            @ApiResponse(responseCode = "401", description = "비밀번호 불일치")
+    })
+    public ResponseEntity<CustomResponse<String>> login(@RequestBody @Valid UserLoginRequest userLoginRequest, BindingResult bindingResult, HttpServletResponse response) {
         // 필드 에러 확인
         if (bindingResult.hasErrors()) {
-            throw new RuntimeException(HttpStatus.BAD_REQUEST.getReasonPhrase());
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_FILED);
         }
-        User user = userService.UserfindByEmail(userLoginRequest.getEmail()).orElseThrow(() -> new RuntimeException("사용자 이메일이 없습니다.: " + userLoginRequest.getEmail()));
+        User user = userService.UserfindByEmail(userLoginRequest.getEmail()).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
 
         // 비밀번호 일치여부 체크
         if (!passwordEncoder.matches(userLoginRequest.getPassword(), user.getPassword())) {
-            throw new RuntimeException(HttpStatus.BAD_REQUEST.getReasonPhrase());
+            throw new ApiException(ExceptionEnum.DIFFERENT_PASSWORD);
         }
 
         // 액세스 토큰 및 리프레시 토큰 생성
@@ -66,7 +81,10 @@ public class UserController {
         // 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", refreshToken);
 
-        return ResponseEntity.ok("로그인 되었습니다.");
+        CustomResponse<String> customResponse = new CustomResponse<>(HttpStatus.OK, "로그인 성공", "로그인 되었습니다.");
+        return ResponseEntity.ok()
+                .header("Custom-Header", "value")  // 예시로 커스텀 헤더 추가
+                .body(customResponse);
     }
 
     /**
@@ -74,10 +92,16 @@ public class UserController {
      *
      * @param request  HTTP 요청 객체
      * @param response HTTP 응답 객체
-     * @return 로그아웃 결과 메시지를 포함한 ResponseEntity
+     * @return 로그아웃 결과
      */
     @DeleteMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
+    @Operation(summary = "사용자 로그아웃", description = "사용자를 로그아웃하고 토큰을 무효화")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    public ResponseEntity<CustomResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
         // 클라이언트 쿠키에서 "Access-Token" 쿠키 제거
         Cookie accessTokenCookie = new Cookie("Access-Token", null);
         accessTokenCookie.setHttpOnly(true);
@@ -93,7 +117,10 @@ public class UserController {
             tokenService.invalidateRefreshToken(refreshToken);
         }
 
-        return ResponseEntity.ok("로그아웃 되었습니다.");
+        CustomResponse<String> customResponse = new CustomResponse<>(HttpStatus.OK, "로그아웃 성공", "로그아웃 되었습니다.");
+        return ResponseEntity.ok()
+                .header("Custom-Header", "value")  // 예시로 커스텀 헤더 추가
+                .body(customResponse);
     }
 
     /**
@@ -101,22 +128,24 @@ public class UserController {
      *
      * @param userJoinRequest 회원가입 요청 데이터
      * @param bindingResult   요청 데이터 검증 결과
-     * @return 회원가입 결과를 나타내는 ResponseEntity
+     * @return 회원가입 결과
      */
     @PostMapping("/join")
-    public ResponseEntity<?> join(@RequestBody @Valid UserJoinRequest userJoinRequest, BindingResult bindingResult) {
+    @Operation(summary = "사용자 회원가입", description = "새로운 사용자를 등록")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "회원가입 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "409", description = "이미 존재하는 사용자")
+    })
+    public CustomResponse<String> join(@RequestBody @Valid UserJoinRequest userJoinRequest, BindingResult bindingResult) {
         // 필드 에러 확인
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(bindingResult.getAllErrors());
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_FILED);
         }
 
         // 회원가입 서비스 호출
-        try {
-            userService.registerUser(userJoinRequest);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+        userService.registerUser(userJoinRequest);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다.");
+        return new CustomResponse<>(HttpStatus.CREATED, "회원가입 성공", "회원가입이 완료되었습니다.");
     }
 }

@@ -13,6 +13,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 /**
  * Spring Security 설정 클래스
@@ -104,7 +107,10 @@ public class SecurityConfig {
         // 세션 관리 Stateless 설정(서버가 클라이언트 상태 저장x)
         http.sessionManagement(auth -> auth.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // cors 허용
+        // CORS 허용
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+
+        // CSRF 비활성화
         http.csrf(csrf -> csrf.disable());
 
         // 로그인 폼 비활성화
@@ -124,5 +130,38 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * CORS 설정을 위한 Bean
+     *
+     * @return CORS 필터
+     */
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+//        config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
+        config.addAllowedHeader("*"); // 모든 헤더 허용
+        config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
+    }
+
+    /**
+     * CORS 설정을 위한 메서드
+     *
+     * @return CORS 설정 소스
+     */
+    private UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowCredentials(true);
+//        configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
+        configuration.addAllowedHeader("*"); // 모든 헤더 허용
+        configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

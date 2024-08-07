@@ -1,6 +1,5 @@
 package com.kmbbj.backend.global.config.exception;
 
-import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import com.kmbbj.backend.global.config.reponse.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;

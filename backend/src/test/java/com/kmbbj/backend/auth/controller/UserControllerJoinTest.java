@@ -2,19 +2,19 @@ package com.kmbbj.backend.auth.controller;
 
 import com.kmbbj.backend.auth.controller.request.UserJoinRequest;
 import com.kmbbj.backend.auth.service.UserService;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
+import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.ObjectError;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 class UserControllerJoinTest {
@@ -43,10 +43,11 @@ class UserControllerJoinTest {
 
         when(bindingResult.hasErrors()).thenReturn(false);
 
-        ResponseEntity<?> responseEntity = userController.join(userJoinRequest, bindingResult);
+        CustomResponse<String> customResponse = userController.join(userJoinRequest, bindingResult);
 
-        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
-        assertEquals("회원가입이 완료되었습니다.", responseEntity.getBody());
+        assertEquals(HttpStatus.CREATED, customResponse.getStatus());
+        assertEquals("회원가입 성공", customResponse.getMessage());
+        assertEquals("회원가입이 완료되었습니다.", customResponse.getData());
         verify(userService).registerUser(userJoinRequest);
     }
 
@@ -59,10 +60,8 @@ class UserControllerJoinTest {
                 .build();
 
         when(bindingResult.hasErrors()).thenReturn(true);
-        when(bindingResult.getAllErrors()).thenReturn(List.of(new ObjectError("error", "error")));
 
-        ResponseEntity<?> responseEntity = userController.join(userJoinRequest, bindingResult);
-
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        ApiException exception = assertThrows(ApiException.class, () -> userController.join(userJoinRequest, bindingResult));
+        assertEquals(ExceptionEnum.NOT_ALLOW_FILED, exception.getException());
     }
 }
