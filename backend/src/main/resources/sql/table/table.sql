@@ -20,3 +20,33 @@ CREATE TABLE user_sns (
                           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                           FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+-- Room 테이블 생성
+CREATE TABLE rooms (
+                       room_id BIGSERIAL PRIMARY KEY,
+                       title VARCHAR(50) NOT NULL,
+                       start_seed_money INTEGER NOT NULL,
+                       end_round INTEGER NOT NULL,
+                       create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                       is_deleted BOOLEAN NOT NULL,
+                       is_started BOOLEAN NOT NULL,
+                       delay INTEGER,
+                       user_count INTEGER DEFAULT 1
+);
+
+-- UserRoom 테이블 생성
+CREATE TABLE user_rooms (
+                            user_room_id BIGSERIAL PRIMARY KEY,
+                            is_manager BOOLEAN NOT NULL,
+                            is_played BOOLEAN NOT NULL,
+                            user_id BIGINT NOT NULL,
+                            room_id BIGINT NOT NULL,
+                            CONSTRAINT fk_user
+                                FOREIGN KEY(user_id)
+                                    REFERENCES users(user_id)
+                                    ON DELETE CASCADE,
+                            CONSTRAINT fk_room
+                                FOREIGN KEY(room_id)
+                                    REFERENCES rooms(room_id)
+                                    ON DELETE CASCADE
+);
