@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 
@@ -77,10 +76,10 @@ class UserControllerLoginTest {
         when(jwtTokenizer.createRefreshToken(user.getId(), user.getEmail(), user.getNickname(), user.getAuthority())).thenReturn("refreshToken");
         when(tokenService.calculateTimeout()).thenReturn(LocalDateTime.now().plusHours(1));
 
-        ResponseEntity<CustomResponse<String>> responseEntity = userController.login(userLoginRequest, bindingResult, response);
+        CustomResponse<String> customResponse = userController.login(userLoginRequest, bindingResult, response);
 
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("로그인 되었습니다.", responseEntity.getBody().getData());
+        assertEquals(HttpStatus.OK, customResponse.getStatus());
+        assertEquals("로그인 성공", customResponse.getMessage());
         verify(response).addCookie(any(Cookie.class));
         verify(response).setHeader("Refresh-Token", "refreshToken");
         verify(tokenService).saveOrRefresh(any(redisToken.class));

@@ -10,6 +10,7 @@ import com.kmbbj.backend.global.config.jwt.entity.redisToken;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
+import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,7 +22,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -36,6 +36,7 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenizer jwtTokenizer;
     private final TokenService tokenService;
+    private final FindUserBySecurity findUserBySecurity;
 
     /**
      * 사용자를 로그인하고 JWT 토큰을 생성하여 반환
@@ -53,7 +54,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "사용자 찾을 수 없음"),
             @ApiResponse(responseCode = "401", description = "비밀번호 불일치")
     })
-    public ResponseEntity<CustomResponse<String>> login(@RequestBody @Valid UserLoginRequest userLoginRequest, BindingResult bindingResult, HttpServletResponse response) {
+    public CustomResponse<String> login(@RequestBody @Valid UserLoginRequest userLoginRequest, BindingResult bindingResult, HttpServletResponse response) {
         // 필드 에러 확인
         if (bindingResult.hasErrors()) {
             throw new ApiException(ExceptionEnum.NOT_ALLOW_FILED);
@@ -81,10 +82,7 @@ public class UserController {
         // 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", refreshToken);
 
-        CustomResponse<String> customResponse = new CustomResponse<>(HttpStatus.OK, "로그인 성공", "로그인 되었습니다.");
-        return ResponseEntity.ok()
-                .header("Custom-Header", "value")  // 예시로 커스텀 헤더 추가
-                .body(customResponse);
+        return new CustomResponse<>(HttpStatus.OK, "로그인 성공", "로그인 되었습니다.");
     }
 
     /**
@@ -101,7 +99,9 @@ public class UserController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "401", description = "인증 실패")
     })
-    public ResponseEntity<CustomResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+    public CustomResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        Long userId = findUserBySecurity.getCurrentUser().getId();
+
         // 클라이언트 쿠키에서 "Access-Token" 쿠키 제거
         Cookie accessTokenCookie = new Cookie("Access-Token", null);
         accessTokenCookie.setHttpOnly(true);
@@ -110,17 +110,9 @@ public class UserController {
         accessTokenCookie.setMaxAge(0); // 쿠키 만료
         response.addCookie(accessTokenCookie);
 
-        // 요청 헤더에서 "Refresh-Token" 제거
-        String refreshToken = request.getHeader("Refresh-Token");
-        if (refreshToken != null) {
-            // 리프레시 토큰 무효화 로직을 추가합니다.
-            tokenService.invalidateRefreshToken(refreshToken);
-        }
+        tokenService.invalidateRefreshToken(userId);
 
-        CustomResponse<String> customResponse = new CustomResponse<>(HttpStatus.OK, "로그아웃 성공", "로그아웃 되었습니다.");
-        return ResponseEntity.ok()
-                .header("Custom-Header", "value")  // 예시로 커스텀 헤더 추가
-                .body(customResponse);
+        return new CustomResponse<>(HttpStatus.OK, "로그아웃 성공", "로그아웃 되었습니다.");
     }
 
     /**

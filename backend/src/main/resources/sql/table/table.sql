@@ -1,6 +1,6 @@
---users table
+--사용자 users
 CREATE TABLE users (
-                       user_id SERIAL PRIMARY KEY,
+                       user_id BIGSERIAL PRIMARY KEY,
                        email VARCHAR(50) NOT NULL,
                        nickname VARCHAR(15) ,
                        password VARCHAR(255) NULL,
@@ -11,14 +11,50 @@ CREATE TABLE users (
                        suspension_end_date TIMESTAMP NULL DEFAULT NULL
 );
 
---user_snstable
+--유저sns user_sns
 CREATE TABLE user_sns (
-                          user_sns_id SERIAL PRIMARY KEY,
+                          user_sns_id BIGSERIAL PRIMARY KEY,
                           user_id BIGINT NOT NULL,
                           sns_id BIGINT NOT NULL,
                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                          FOREIGN KEY (user_id) REFERENCES users(user_id)
+                          CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+--자산 total_balances
+CREATE TABLE total_balances (
+                          total_balance_id BIGSERIAL PRIMARY KEY,
+                          assets BIGINT NOT NULL DEFAULT 0,
+                          user_id BIGINT NOT NULL,
+                          CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+--자산 변동 내역 asset_transactions
+CREATE TABLE asset_transactions (
+                                transaction_id BIGSERIAL PRIMARY KEY,
+                                change_type VARCHAR(10) NOT NULL,
+                                change_amount BIGINT NOT NULL,
+                                create_time TIMESTAMP,
+                                total_balance_id BIGINT NOT NULL,
+                                CONSTRAINT fk_total_balances FOREIGN KEY (total_balance_id) REFERENCES total_balances(total_balance_id ) ON DELETE CASCADE
+);
+
+--친구 friends
+CREATE TABLE friends (
+                        friends_id BIGSERIAL PRIMARY KEY,
+                        user_id BIGINT NOT NULL,
+                        send_user_id BIGINT NOT NULL,
+                        CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+--친구 요청 friends_requests
+CREATE TABLE friends_requests (
+                                request_id BIGSERIAL PRIMARY KEY,
+                                user_id BIGINT NOT NULL,
+                                send_user_id BIGINT NOT NULL,
+                                Field VARCHAR(10) NOT NULL DEFAULT 'HOLD',
+                                CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                                CONSTRAINT fk_send_user FOREIGN KEY (send_user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Room 테이블 생성

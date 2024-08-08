@@ -100,7 +100,6 @@ public class SecurityConfig {
                 .requestMatchers(allAllowPage).permitAll() // 모든 유저
                 .requestMatchers(swaggeerAllowPage).permitAll()
                 .requestMatchers(adminAllowPage).hasRole("ADMIN") //관리자
-                .requestMatchers(notLoggedAllowPage).not().authenticated() // 비로그인 유저
                 .anyRequest().authenticated()
         );
 
@@ -142,9 +141,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-//        config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
+        config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
         config.addAllowedHeader("*"); // 모든 헤더 허용
         config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
+        config.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
@@ -158,9 +158,10 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-//        configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
+        configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
+        configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
