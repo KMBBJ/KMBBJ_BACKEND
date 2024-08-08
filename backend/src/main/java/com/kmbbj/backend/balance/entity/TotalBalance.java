@@ -9,7 +9,6 @@ import lombok.*;
 @Getter
 @Builder
 @RequiredArgsConstructor
-@NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "total_balances")
