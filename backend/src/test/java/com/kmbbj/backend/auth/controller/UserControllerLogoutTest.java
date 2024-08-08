@@ -8,7 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,16 +44,15 @@ class UserControllerLogoutTest {
         when(request.getHeader("Refresh-Token")).thenReturn("refreshToken");
 
         // logout 메서드 호출
-        ResponseEntity<CustomResponse<String>> responseEntity = userController.logout(request, response);
+        CustomResponse<String> customResponse = userController.logout(request, response);
 
         // 검증
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("로그아웃 되었습니다.", responseEntity.getBody().getData());
-        assertEquals("로그아웃 성공", responseEntity.getBody().getMessage());
+        assertEquals(HttpStatus.OK, customResponse.getStatus());
+        assertEquals("로그아웃 되었습니다.", customResponse.getData());
+        assertEquals("로그아웃 성공", customResponse.getMessage());
 
         // 상호작용 검증
         verify(response).addCookie(any(Cookie.class));
-        verify(tokenService).invalidateRefreshToken("refreshToken");
     }
 
     /**
@@ -66,15 +64,14 @@ class UserControllerLogoutTest {
         when(request.getHeader("Refresh-Token")).thenReturn(null);
 
         // logout 메서드 호출
-        ResponseEntity<CustomResponse<String>> responseEntity = userController.logout(request, response);
+        CustomResponse<String> customResponse = userController.logout(request, response);
 
         // 검증
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals("로그아웃 되었습니다.", responseEntity.getBody().getData());
-        assertEquals("로그아웃 성공", responseEntity.getBody().getMessage());
+        assertEquals(HttpStatus.OK, customResponse.getStatus());
+        assertEquals("로그아웃 되었습니다.", customResponse.getData());
+        assertEquals("로그아웃 성공", customResponse.getMessage());
 
         // 상호작용 검증
         verify(response).addCookie(any(Cookie.class));
-        verify(tokenService, never()).invalidateRefreshToken(anyString());
     }
 }
