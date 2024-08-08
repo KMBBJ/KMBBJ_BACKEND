@@ -5,6 +5,7 @@ import com.kmbbj.backend.global.config.jwt.repository.RedisTokenRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -15,6 +16,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TokenService {
     private final RedisTokenRepository tokenRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     @Value("${JWT_REFRESHTOKENEXPIRE}")
     private long refreshTokenExpire;
@@ -27,8 +29,7 @@ public class TokenService {
     public void saveOrRefresh(redisToken token) {
         Optional<redisToken> oldToken = tokenRepository.findByUserId(token.getUserId());
         if (oldToken.isPresent()) {
-            oldToken.get().refresh(token.getRefreshToken(), calculateTimeout());
-            tokenRepository.save(oldToken.get());
+            tokenRepository.save(oldToken.get().refresh(token.getRefreshToken(), calculateTimeout()));
         } else {
             tokenRepository.save(token);
         }
@@ -42,11 +43,15 @@ public class TokenService {
     /**
      * 리프레시 토큰을 무효화합니다.
      *
-     * @param refreshToken 무효화할 리프레시 토큰
+     * @param userId 사용자 Id
      */
     @Transactional
-    public void invalidateRefreshToken(String refreshToken) {
-        Optional<redisToken> tokenOptional = tokenRepository.findByRefreshToken(refreshToken);
-        tokenOptional.ifPresent(tokenRepository::delete);
+    public void invalidateRefreshToken(Long userId) {
+        Optional<redisToken> tokenOptional = tokenRepository.findByUserId(userId);
+        tokenOptional.ifPresent(token -> {
+            tokenRepository.delete(token);
+            // Redis에서 키 삭제
+            redisTemplate.delete("userId:" + token.getUserId());
+        });
     }
 }
