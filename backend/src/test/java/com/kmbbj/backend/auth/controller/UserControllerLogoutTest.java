@@ -1,7 +1,10 @@
 package com.kmbbj.backend.auth.controller;
 
+import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
+import com.kmbbj.backend.global.config.security.FindUserBySecurity;
+import com.kmbbj.backend.auth.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -20,6 +23,9 @@ class UserControllerLogoutTest {
 
     @Mock
     private TokenService tokenService;
+
+    @Mock
+    private FindUserBySecurity findUserBySecurity;
 
     @InjectMocks
     private UserController userController;
@@ -40,8 +46,15 @@ class UserControllerLogoutTest {
      */
     @Test
     void logoutSuccessTest() {
-        // 요청에서 리프레시 토큰을 반환하도록 Mock 설정
-        when(request.getHeader("Refresh-Token")).thenReturn("refreshToken");
+        User mockUser = User.builder()
+                .id(1L)
+                .email("user@example.com")
+                .nickname("nickname")
+                .password("password")
+                .authority(Authority.USER)
+                .build();
+        // 필요한 필드 설정
+        when(findUserBySecurity.getCurrentUser()).thenReturn(mockUser);
 
         // logout 메서드 호출
         CustomResponse<String> customResponse = userController.logout(request, response);
@@ -53,6 +66,7 @@ class UserControllerLogoutTest {
 
         // 상호작용 검증
         verify(response).addCookie(any(Cookie.class));
+        verify(tokenService).invalidateRefreshToken(mockUser.getId());
     }
 
     /**
@@ -60,8 +74,15 @@ class UserControllerLogoutTest {
      */
     @Test
     void logoutNoRefreshTokenTest() {
-        // 요청에서 리프레시 토큰이 null을 반환하도록 Mock 설정
-        when(request.getHeader("Refresh-Token")).thenReturn(null);
+        User mockUser = User.builder()
+                .id(1L)
+                .email("user@example.com")
+                .nickname("nickname")
+                .password("password")
+                .authority(Authority.USER)
+                .build();
+
+        when(findUserBySecurity.getCurrentUser()).thenReturn(mockUser);
 
         // logout 메서드 호출
         CustomResponse<String> customResponse = userController.logout(request, response);
@@ -73,5 +94,6 @@ class UserControllerLogoutTest {
 
         // 상호작용 검증
         verify(response).addCookie(any(Cookie.class));
+        verify(tokenService).invalidateRefreshToken(mockUser.getId());
     }
 }
