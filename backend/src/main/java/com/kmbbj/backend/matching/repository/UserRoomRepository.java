@@ -6,9 +6,11 @@ import com.kmbbj.backend.matching.entity.UserRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface UserRoomRepository extends JpaRepository<UserRoom, Long> {
-    UserRoom findByUserAndRoom(User user, Room room);
+    Optional<UserRoom> findByUserAndRoom(User user, Room room);
 
-    UserRoom findByUserAndIsPlayed(User user, boolean isPlayed);
+    Optional<UserRoom> findByUserAndIsPlayed(User user, boolean isPlayed);
 }

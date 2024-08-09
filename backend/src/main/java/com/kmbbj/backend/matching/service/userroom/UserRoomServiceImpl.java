@@ -1,20 +1,20 @@
-package com.kmbbj.backend.matching.service;
+package com.kmbbj.backend.matching.service.userroom;
 
 import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.auth.service.UserService;
-import com.kmbbj.backend.global.config.jwt.infrastructure.CustomUserDetails;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
+import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.UserRoomRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class UserRoomServiceImpl implements UserRoomService{
     private final UserRoomRepository userRoomRepository;
-    private final UserService userService;
+    private final FindUserBySecurity findUserBySecurity;
 
     @Override
     public void save(UserRoom userRoom) {
@@ -29,31 +29,28 @@ public class UserRoomServiceImpl implements UserRoomService{
      */
     @Override
     public UserRoom findByUserAndRoom(User user, Room room) {
-        return userRoomRepository.findByUserAndRoom(user, room);
+        return userRoomRepository.findByUserAndRoom(user, room).orElseThrow(()-> new ApiException(ExceptionEnum.NOT_ENTRY_ROOM));
     }
 
-    /**
+    /** TODO
      *
      * @param roomId    현재 방 위치
-     * @param authentication    인증정보
      */
     @Override
-    public void deleteUserFromRoom(Long roomId,Authentication authentication) {
+    public UserRoom deleteUserFromRoom(Long roomId) {
+        // 해당 방에 들어가 있지 않을때 예외처리
 
         // 유저가 들어가 있는 방
-        UserRoom userRoom = findCurrentRoom(authentication);
-        Room room = userRoom.getRoom();
+        UserRoom userRoom = findCurrentRoom();
         // 방에서 플레이 여부 false
         userRoom.setIsPlayed(false);
-        room.setUserCount(room.getUserCount() - 1);
         save(userRoom);
+        return userRoom;
     }
 
-    public UserRoom findCurrentRoom(Authentication authentication) {
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        Long userId = userDetails.getUserId();
-        User user = userService.UserfindById(userId).orElseThrow();
-        UserRoom userRoom = userRoomRepository.findByUserAndIsPlayed(user, true);
+    public UserRoom findCurrentRoom() {
+        User user = findUserBySecurity.getCurrentUser();
+        UserRoom userRoom = userRoomRepository.findByUserAndIsPlayed(user, true).orElseThrow(()->new ApiException(ExceptionEnum.NOT_CURRENT_ROOM));
         return userRoom;
     }
 }

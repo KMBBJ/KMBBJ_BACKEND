@@ -1,5 +1,6 @@
 package com.kmbbj.backend.matching.dto;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@Builder
 public class CreateRoomDTO {
     // 방 제목
     private String title;
