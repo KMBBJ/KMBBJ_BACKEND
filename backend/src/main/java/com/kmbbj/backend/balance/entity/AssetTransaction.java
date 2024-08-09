@@ -12,7 +12,6 @@ import java.security.Timestamp;
 @Getter
 @Builder
 @RequiredArgsConstructor
-@NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "asset_transactions")
