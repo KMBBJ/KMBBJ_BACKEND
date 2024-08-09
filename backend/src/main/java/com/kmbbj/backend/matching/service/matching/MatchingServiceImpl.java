@@ -293,6 +293,8 @@ public class MatchingServiceImpl implements MatchingService {
         System.out.println("방 생성 .........");
         cancelCurrentUserScheduledTasks();
         roomService.createRoom(createRoomDTO, richestUser);
+
+        users.forEach(user -> roomService.enterRoom( latestRoomId + 1));
     }
 
     /**
