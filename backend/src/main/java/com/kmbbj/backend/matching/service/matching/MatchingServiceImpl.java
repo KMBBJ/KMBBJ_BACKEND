@@ -11,6 +11,7 @@ import com.kmbbj.backend.matching.dto.CreateRoomDTO;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.service.queue.MatchingQueueService;
 import com.kmbbj.backend.matching.service.room.RoomService;
+import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.TaskScheduler;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class MatchingServiceImpl implements MatchingService {
+public class MatchingServiceImpl implements MatchingService{
 
     private final TaskScheduler taskScheduler;
     private final Map<Long, ScheduledFuture<?>> assetRangeTasks = new ConcurrentHashMap<>();
@@ -39,15 +40,26 @@ public class MatchingServiceImpl implements MatchingService {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RoomService roomService;
     private final UserService userService;
+    private final UserRoomService userRoomService;
     private final MatchingQueueService matchingQueueService;
     private final FindUserBySecurity findUserBySecurity;
     private final BalanceService balanceService;
+    volatile boolean isShutdownRequested = false;
 
 
     @Override
     @Transactional
     public void startQuickMatching() {
+        if (userRoomService.findCurrentRoom().orElse(null) != null) {
+            throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
         User user = findUserBySecurity.getCurrentUser();
+        TotalBalance totalBalance = balanceService.totalBalanceFindByUserId(user.getId()).orElse(null);
+        if (totalBalance == null) {
+            cancelCurrentUserScheduledTasks();
+            throw new ApiException(ExceptionEnum.BALANCE_NOT_FOUND);
+        }
+        isShutdownRequested = false;
         matchingQueueService.addUserToQueue(user, true);
         scheduleMatchingTasks(user, 10, true);
     }
@@ -56,7 +68,17 @@ public class MatchingServiceImpl implements MatchingService {
     @Override
     @Transactional
     public void startRandomMatching() {
+        if (userRoomService.findCurrentRoom().orElse(null) != null) {
+            throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
+
         User user = findUserBySecurity.getCurrentUser();
+        TotalBalance totalBalance = balanceService.totalBalanceFindByUserId(user.getId()).orElse(null);
+        if (totalBalance == null) {
+            cancelCurrentUserScheduledTasks();
+            throw new ApiException(ExceptionEnum.BALANCE_NOT_FOUND);
+        }
+        isShutdownRequested = false;
         matchingQueueService.addUserToQueue(user, false);
         scheduleMatchingTasks(user, 1, false);
     }
@@ -82,6 +104,7 @@ public class MatchingServiceImpl implements MatchingService {
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                if (isShutdownRequested || Thread.interrupted()) return;
                 updateAssetRange(user, increment);
             } finally {
                 // SecurityContext 정리
@@ -96,6 +119,7 @@ public class MatchingServiceImpl implements MatchingService {
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                if (isShutdownRequested || Thread.interrupted()) return;
                 if (isQuickMatch) {
                     handleQuickMatch(user,isQuickMatch,minUser);
                 } else {
@@ -115,12 +139,13 @@ public class MatchingServiceImpl implements MatchingService {
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                if (isShutdownRequested || Thread.interrupted()) return;
                 isFiveMinutesPassed.set(true);
             } finally {
                 // SecurityContext 정리
                 SecurityContextHolder.clearContext();
             }
-        }, new Date(System.currentTimeMillis() + Duration.ofMinutes(1).toMillis()));
+        }, new Date(System.currentTimeMillis() + Duration.ofSeconds(5).toMillis())); // 분으로 바꿔야댐
         scheduledTasks.put(user.getId(), fiveMinuteTask);
 
         // 시간 조건 설정 (10분)
@@ -128,13 +153,14 @@ public class MatchingServiceImpl implements MatchingService {
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                if (isShutdownRequested || Thread.interrupted()) return;
                 isTenMinutesPassed.set(true);
                 if (!isQuickMatch) switchToQuickMatch(user);
             } finally {
                 // SecurityContext 정리
                 SecurityContextHolder.clearContext();
             }
-        }, new Date(System.currentTimeMillis() + Duration.ofMinutes(1).toMillis()));
+        }, new Date(System.currentTimeMillis() + Duration.ofSeconds(10).toMillis())); // 분으로 바꿔야댐
         scheduledTasks.put(user.getId(), tenMinuteTask);
 
         if (isQuickMatch) {
@@ -142,12 +168,13 @@ public class MatchingServiceImpl implements MatchingService {
             ScheduledFuture<?> minUserTask = taskScheduler.scheduleAtFixedRate(() -> {
                 SecurityContextHolder.setContext(context);
                 try {
+                    if (isShutdownRequested || Thread.interrupted()) return;
                     minUser.updateAndGet(v -> Math.max(1, v - 1));
 
                 } finally {
                     SecurityContextHolder.clearContext();
                 }
-            }, Duration.ofMinutes(1));
+            }, Duration.ofSeconds(10)); // 분으로 바꾸셈
             scheduledTasks.put(user.getId(), minUserTask);
         }
     }
@@ -167,7 +194,7 @@ public class MatchingServiceImpl implements MatchingService {
         if (isTenMinutesPassed.get()) return;
 
         Long currentRange = (Long) redisTemplate.opsForHash().get("userAssetRanges", user.getId().toString());
-        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
         List<User> potentialMatches = findPotentialMatches(asset, currentRange);
         int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
 
@@ -230,7 +257,7 @@ public class MatchingServiceImpl implements MatchingService {
     public List<Room> findAvailableRooms(Long range, AtomicReference<Long> minUser) {
         System.out.println("findAvailableRooms");
         User user = findUserBySecurity.getCurrentUser();
-        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
         return roomService.findRoomsWithinAssetRange(asset, range).stream()
                 .filter(room -> room.getUserCount() >= minUser.get())
                 .sorted(Comparator.comparing(Room::getUserCount))
@@ -249,7 +276,7 @@ public class MatchingServiceImpl implements MatchingService {
     public List<User> findPotentialMatches(Long currentUserAsset, Long range) {
         System.out.println("findPotentialMatches");
         User currentUser = findUserBySecurity.getCurrentUser();
-        Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).get().getAsset();
         return matchingQueueService.getUsersInQueue(false).stream()
                 .filter(user -> asset >= (currentUserAsset - (currentUserAsset * range / 100)) && asset <= (currentUserAsset + (currentUserAsset * range / 100)))
                 .collect(Collectors.toList());
@@ -271,7 +298,7 @@ public class MatchingServiceImpl implements MatchingService {
 
         // 해당 유저들의 자산 정보만 조회
         List<TotalBalance> balances = userIds.stream()
-                .map(userId -> balanceService.totalBalanceFindByUserId(userId).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)))
+                .map(userId -> balanceService.totalBalanceFindByUserId(userId).get())
                 .toList();
 
         // 자산이 가장 많은 사용자 찾기
@@ -293,8 +320,12 @@ public class MatchingServiceImpl implements MatchingService {
         System.out.println("방 생성 .........");
         cancelCurrentUserScheduledTasks();
         roomService.createRoom(createRoomDTO, richestUser);
+        users.remove(richestUser);
+        while (users.isEmpty()) {
+            roomService.enterRoom(users.getFirst().getId());
+            users.remove(users.getFirst());
+        }
 
-        users.forEach(user -> roomService.enterRoom( latestRoomId + 1));
     }
 
     /**
@@ -322,7 +353,7 @@ public class MatchingServiceImpl implements MatchingService {
     public void updateAssetRange(User user, int increment) {
         System.out.println("updateAssetRange");
 
-        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
         // Redis 에서 사용자의 현재 자산 범위를 가져옴
         Long currentRange = (Long) redisTemplate.opsForHash().get("userAssetRanges", user.getId().toString());
         if (currentRange == null) {
@@ -361,14 +392,18 @@ public class MatchingServiceImpl implements MatchingService {
     @Override
     @Transactional
     public void cancelCurrentUserScheduledTasks() {
+        isShutdownRequested = true;  // 모든 작업에 대해 종료 요청을 먼저 보냅니다.
         scheduledTasks.forEach((key, future) -> {
-            if (!future.isCancelled()) {
-                // 모든 작업 강제 종료
-                future.cancel(true);
+            if (!future.isDone()) {
+                boolean wasCancelled = future.cancel(true);
+                if (wasCancelled) {
+                    System.out.println("종료 성공" + key);
+                } else {
+                    System.out.println("종료 실패 " + key);
+                }
             }
         });
-        // 모든 참조 제거
-        scheduledTasks.clear();
+        scheduledTasks.clear();  // 참조 제거 전 모든 상태 로깅
         System.out.println("cancelCurrentUserScheduledTasks");
     }
 }
