@@ -66,6 +66,7 @@ CREATE TABLE rooms (
                        create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                        is_deleted BOOLEAN NOT NULL,
                        is_started BOOLEAN NOT NULL,
+                       average_asset BIGINT NOT NULL,
                        delay INTEGER,
                        user_count INTEGER DEFAULT 1
 );
