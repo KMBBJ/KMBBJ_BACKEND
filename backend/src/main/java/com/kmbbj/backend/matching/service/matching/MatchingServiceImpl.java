@@ -50,15 +50,7 @@ public class MatchingServiceImpl implements MatchingService{
     @Override
     @Transactional
     public void startQuickMatching() {
-        if (userRoomService.findCurrentRoom().orElse(null) != null) {
-            throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
-        }
         User user = findUserBySecurity.getCurrentUser();
-        TotalBalance totalBalance = balanceService.totalBalanceFindByUserId(user.getId()).orElse(null);
-        if (totalBalance == null) {
-            cancelCurrentUserScheduledTasks();
-            throw new ApiException(ExceptionEnum.BALANCE_NOT_FOUND);
-        }
         isShutdownRequested = false;
         matchingQueueService.addUserToQueue(user, true);
         scheduleMatchingTasks(user, 10, true);
@@ -68,7 +60,7 @@ public class MatchingServiceImpl implements MatchingService{
     @Override
     @Transactional
     public void startRandomMatching() {
-        if (userRoomService.findCurrentRoom().orElse(null) != null) {
+        if (userRoomService.findCurrentRoom() != null) {
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
         }
 
