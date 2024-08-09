@@ -200,7 +200,7 @@ public class MatchingServiceImpl implements MatchingService {
             matchingQueueService.removeUserFromQueue(user,isQuickMatch);
             cancelCurrentUserScheduledTasks();
         }
-        if (minUser.get() == 1){
+        if (minUser.get() == 0){
             // 방 생성
             Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
             CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
