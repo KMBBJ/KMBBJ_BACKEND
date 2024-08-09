@@ -2,6 +2,7 @@ package com.kmbbj.backend.matching.service.room;
 
 import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.balance.repository.totalbalances.TotalBalancesRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
@@ -28,6 +29,8 @@ public class RoomServiceImpl implements RoomService{
     private final RoomRepository roomRepository;
     private final UserRoomService userRoomService;
     private final FindUserBySecurity findUserBySecurity;
+    // 수정 필요
+    private final TotalBalancesRepository totalBalancesRepository;
 
 
     /**
@@ -49,6 +52,14 @@ public class RoomServiceImpl implements RoomService{
         room.setIsStarted(false);
         room.setDelay(createRoomDTO.getDelay());
         room.setUserCount(1);
+        Long currentUserAsset = totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
+        if (room.getUserCount() == 1) {
+            room.setAverageAsset(currentUserAsset);
+        } else {
+            long roomAverageAsset = (room.getAverageAsset() * (room.getUserCount() - 1) + currentUserAsset) / room.getUserCount();
+            room.setAverageAsset(roomAverageAsset);
+        }
+
 
         // 방 정보를 데이터베이스에 저장
         room = roomRepository.save(room);
@@ -229,11 +240,11 @@ public class RoomServiceImpl implements RoomService{
         roomRepository.save(room);
     }
 
-//    @Override
-//    public List<Room> findRoomsWithinAssetRange(Long asset, int range) {
-//        roomRepository.findRoomsWithinAssetRange(asset, range);
-//        return List.of();
-//    }
+    @Override
+    public List<Room> findRoomsWithinAssetRange(Long asset, Long range) {
+        List<Room> roomsWithinAssetRange = roomRepository.findRoomsWithinAssetRange(asset, range);
+        return roomsWithinAssetRange;
+    }
 
     @Override
     public Room findRoomByLatestCreateDate() {

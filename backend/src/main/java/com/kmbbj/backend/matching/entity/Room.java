@@ -45,8 +45,8 @@ public class Room {
     @Column(name = "user_count")
     private Integer userCount;
 
-//    @Column(name = "average_asset")
-//    private Long averageAsset;
+    @Column(name = "average_asset", nullable = false)
+    private Long averageAsset;
 
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
     private List<UserRoom> userRooms;
