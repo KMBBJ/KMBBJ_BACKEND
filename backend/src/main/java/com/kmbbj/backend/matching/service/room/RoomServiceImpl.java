@@ -217,6 +217,13 @@ public class RoomServiceImpl implements RoomService{
         Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
 
         // 인원수가 10명 미만이고 자산의 10분의 1이 시작 시드머니보다 같거나 커야됨
+        if (room.getUserRooms().size() == 10) {
+            throw new ApiException(ExceptionEnum.ROOM_FULL);
+        }
+
+        if (asset / 10 < room.getStartSeedMoney()) {
+            throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
+        }
         if (room.getUserRooms().size() < 10 && asset / 10 >= room.getStartSeedMoney()) {
             UserRoom userRoom = null;
             try {
