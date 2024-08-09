@@ -41,6 +41,10 @@ public class RoomServiceImpl implements RoomService{
     @Override
     @Transactional
     public Room createRoom(CreateRoomDTO createRoomDTO,User user) {
+        // 이미 다른 방에 들어가 있는경우
+        if (userRoomService.findCurrentRoom() != null) {
+            throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
         // 방 생성
         Room room = new Room();
         room.setTitle(createRoomDTO.getTitle());
@@ -192,7 +196,7 @@ public class RoomServiceImpl implements RoomService{
         }
     }
 
-    /** TODO
+    /**
      *
      * @param roomId    선택한 방 번호
      */
@@ -200,19 +204,35 @@ public class RoomServiceImpl implements RoomService{
     @Transactional
     public void enterRoom(Long roomId) {
         Room room = findById(roomId);
-        User user = findUserBySecurity.getCurrentUser();
+        User currentUser = findUserBySecurity.getCurrentUser();
 
-        if (room.getUserRooms().size() < 10) {
-            // 자산에 따라 들어갈수 있는 방 다르게 해야됨 쟤가 안만들어줌 (박석원 ㅋㅋ)
+        // 이미 방에 들어와 있는 경우
+        if (room.getUserRooms().stream().anyMatch(user -> user.equals(currentUser))) return;
+
+        //
+        if (userRoomService.findCurrentRoom() != null) {
+            throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
+
+        Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+
+        // 인원수가 10명 미만이고 자산의 10분의 1이 시작 시드머니보다 같거나 커야됨
+        if (room.getUserRooms().size() == 10) {
+            throw new ApiException(ExceptionEnum.ROOM_FULL);
+        }
+
+        if (asset / 10 < room.getStartSeedMoney()) {
+            throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
+        }
+        if (room.getUserRooms().size() < 10 && asset / 10 >= room.getStartSeedMoney()) {
             UserRoom userRoom = null;
             try {
-                // 이미 방에 들어와 있을때 예외 처리 해주기
-                // 다른 방에 들어가 있는 상태일 경우 예외 처리 해주기
-                userRoom = userRoomService.findByUserAndRoom(user, findById(roomId));
+
+                userRoom = userRoomService.findByUserAndRoom(currentUser, findById(roomId));
                 userRoom.setIsPlayed(true);
 
             } catch (Exception e) {
-                userRoom = UserRoom.builder().user(user)
+                userRoom = UserRoom.builder().user(currentUser)
                         .room(room)
                         .isPlayed(true)
                         .isManager(false)

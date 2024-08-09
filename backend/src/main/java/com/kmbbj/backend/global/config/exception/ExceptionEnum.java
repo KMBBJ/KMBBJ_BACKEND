@@ -10,13 +10,13 @@ public enum ExceptionEnum {
 
     // System Exception
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "BAD_REQUEST"),
-    ACCESS_DENIED_EXCEPTION(HttpStatus.UNAUTHORIZED,"UNAUTHORIZED","인증이 필요합니다."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR","서버 오류 발생"),
+    ACCESS_DENIED_EXCEPTION(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증이 필요합니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 오류 발생"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),
 
     // Custom Exception
-    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"USER_NOT_FOUND","유저를 찾지 못했습니다."),
-    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND,"ROOM_NOT_FOUND"," 방을 찾지 못했습니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "유저를 찾지 못했습니다."),
+    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", " 방을 찾지 못했습니다."),
 
     // Token Exception
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_TOKEN", "토큰이 만료되었습니다."),
@@ -34,12 +34,17 @@ public enum ExceptionEnum {
     DIFFERENT_PASSWORD(HttpStatus.BAD_REQUEST, "DIFFERENT_PASSWORD", "비밀번호가 둘이 다릅니다."),
 
     // Room
-    NOT_ENTRY_ROOM(HttpStatus.NOT_FOUND,"NOT_ENTRY_ROOM","해당 방 입장기록이 없습니다."),
+    NOT_ENTRY_ROOM(HttpStatus.NOT_FOUND, "NOT_ENTRY_ROOM", "해당 방 입장기록이 없습니다."),
     NOT_CURRENT_ROOM(HttpStatus.NOT_FOUND, "NOT_CURRENT_ROOM", "해당 방에 참가해있지 않습니다."),
+    NOT_IN_ROOM(HttpStatus.NOT_FOUND, "NOT_IN_ROOM", "방에 참가해있지 않습니다."),
+    IN_OTHER_ROOM(HttpStatus.CONFLICT, "IN_OTHER_ROOM", "이미 다른 방에 입장해 있습니다."),
+    ROOM_FULL(HttpStatus.CONFLICT,"ROOM_FULL","방이 가득 찼습니다."),
+    INSUFFICIENT_ASSET(HttpStatus.FORBIDDEN,"INSUFFICIENT_ASSET","방 조건에 알맞는 자산이 부족합니다."),
+
+//    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 
     // Balance
-    BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND,"BALANCE_NOT_FOUND","자산을 찾지 못했습니다.");
-
+    BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "자산을 찾지 못했습니다.");
 
 
     private final HttpStatus status;

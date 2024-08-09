@@ -32,13 +32,17 @@ public class UserRoomServiceImpl implements UserRoomService{
         return userRoomRepository.findByUserAndRoom(user, room).orElseThrow(()-> new ApiException(ExceptionEnum.NOT_ENTRY_ROOM));
     }
 
-    /** TODO
+    /**
      *
      * @param roomId    현재 방 위치
      */
     @Override
     public UserRoom deleteUserFromRoom(Long roomId) {
         // 해당 방에 들어가 있지 않을때 예외처리
+        Long currentRoomId = findCurrentRoom().getRoom().getRoomId();
+        if (currentRoomId == null || !currentRoomId.equals(roomId)) {
+            throw new ApiException(ExceptionEnum.NOT_CURRENT_ROOM);
+        }
 
         // 유저가 들어가 있는 방
         UserRoom userRoom = findCurrentRoom();
@@ -48,9 +52,10 @@ public class UserRoomServiceImpl implements UserRoomService{
         return userRoom;
     }
 
+    @Override
     public UserRoom findCurrentRoom() {
         User user = findUserBySecurity.getCurrentUser();
-        UserRoom userRoom = userRoomRepository.findByUserAndIsPlayed(user, true).orElseThrow(()->new ApiException(ExceptionEnum.NOT_CURRENT_ROOM));
+        UserRoom userRoom = userRoomRepository.findByUserAndIsPlayed(user, true).orElse(null);
         return userRoom;
     }
 }

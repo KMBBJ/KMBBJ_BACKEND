@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 public class RoomController {
 
     private final RoomService roomService;
-    private final UserRoomService userRoomService;
     private final FindUserBySecurity findUserBySecurity;
 
     /**
@@ -49,7 +48,7 @@ public class RoomController {
     }
 
 
-    /** TODO
+    /**
      * 방 삭제
      * @param roomId    삭제할 방 번호
      * @return apiResponse  응답 (HttpStatus.OK, "{roomId}방 삭제 완료")
