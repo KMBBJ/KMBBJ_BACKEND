@@ -10,4 +10,6 @@ public interface UserRoomService {
     UserRoom findByUserAndRoom(User user, Room room);
 
     UserRoom deleteUserFromRoom(Long roomId);
+
+    UserRoom findCurrentRoom();
 }

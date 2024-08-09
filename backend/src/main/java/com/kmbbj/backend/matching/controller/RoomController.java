@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.*;
 public class RoomController {
 
     private final RoomService roomService;
-    private final UserRoomService userRoomService;
     private final FindUserBySecurity findUserBySecurity;
 
     /**

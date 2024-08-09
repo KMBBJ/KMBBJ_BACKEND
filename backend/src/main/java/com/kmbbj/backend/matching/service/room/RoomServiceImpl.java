@@ -41,6 +41,9 @@ public class RoomServiceImpl implements RoomService{
     @Override
     @Transactional
     public Room createRoom(CreateRoomDTO createRoomDTO,User user) {
+        if (userRoomService.findCurrentRoom() == null) {
+            throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
         // 방 생성
         Room room = new Room();
         room.setTitle(createRoomDTO.getTitle());
@@ -200,19 +203,25 @@ public class RoomServiceImpl implements RoomService{
     @Transactional
     public void enterRoom(Long roomId) {
         Room room = findById(roomId);
-        User user = findUserBySecurity.getCurrentUser();
+        User currentUser = findUserBySecurity.getCurrentUser();
+        if (room.getUserRooms().stream().anyMatch(user -> user.equals(currentUser))) return;
+
+        if (userRoomService.findCurrentRoom() == null) {
+            throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
 
         if (room.getUserRooms().size() < 10) {
             // 자산에 따라 들어갈수 있는 방 다르게 해야됨 쟤가 안만들어줌 (박석원 ㅋㅋ)
+
             UserRoom userRoom = null;
             try {
                 // 이미 방에 들어와 있을때 예외 처리 해주기
                 // 다른 방에 들어가 있는 상태일 경우 예외 처리 해주기
-                userRoom = userRoomService.findByUserAndRoom(user, findById(roomId));
+                userRoom = userRoomService.findByUserAndRoom(currentUser, findById(roomId));
                 userRoom.setIsPlayed(true);
 
             } catch (Exception e) {
-                userRoom = UserRoom.builder().user(user)
+                userRoom = UserRoom.builder().user(currentUser)
                         .room(room)
                         .isPlayed(true)
                         .isManager(false)
