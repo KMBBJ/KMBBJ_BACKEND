@@ -3,7 +3,7 @@ package com.kmbbj.backend.matching.service.matching;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.balance.entity.TotalBalance;
-import com.kmbbj.backend.balance.repository.totalbalances.TotalBalancesRepository;
+import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
@@ -41,7 +41,7 @@ public class MatchingServiceImpl implements MatchingService {
     private final UserService userService;
     private final MatchingQueueService matchingQueueService;
     private final FindUserBySecurity findUserBySecurity;
-    private final TotalBalancesRepository totalBalancesRepository;
+    private final BalanceService balanceService;
 
 
     @Override
@@ -167,7 +167,7 @@ public class MatchingServiceImpl implements MatchingService {
         if (isTenMinutesPassed.get()) return;
 
         Long currentRange = (Long) redisTemplate.opsForHash().get("userAssetRanges", user.getId().toString());
-        Long asset =  totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
         List<User> potentialMatches = findPotentialMatches(asset, currentRange);
         int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
 
@@ -230,7 +230,7 @@ public class MatchingServiceImpl implements MatchingService {
     public List<Room> findAvailableRooms(Long range, AtomicReference<Long> minUser) {
         System.out.println("findAvailableRooms");
         User user = findUserBySecurity.getCurrentUser();
-        Long asset = totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
         return roomService.findRoomsWithinAssetRange(asset, range).stream()
                 .filter(room -> room.getUserCount() >= minUser.get())
                 .sorted(Comparator.comparing(Room::getUserCount))
@@ -239,17 +239,19 @@ public class MatchingServiceImpl implements MatchingService {
 
     /**
      *
-     * @param asset     현재 유저 자산
+     * @param currentUserAsset     현재 유저 자산
      * @param range     현재 자산 조건 범위
      * @return 대기열에 있는 사람중 자산 조건에 맞는 사람 list
      */
     @Override
     @Transactional
     // 랜덤 매칭시 유저 찾아주는 메서드
-    public List<User> findPotentialMatches(Long asset, Long range) {
+    public List<User> findPotentialMatches(Long currentUserAsset, Long range) {
         System.out.println("findPotentialMatches");
+        User currentUser = findUserBySecurity.getCurrentUser();
+        Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
         return matchingQueueService.getUsersInQueue(false).stream()
-                .filter(user -> totalBalancesRepository.findByUserId(user.getId()).get().getAsset() >= (asset - (asset * range / 100)) && totalBalancesRepository.findByUserId(user.getId()).get().getAsset() <= (asset + (asset * range / 100)))
+                .filter(user -> asset >= (currentUserAsset - (currentUserAsset * range / 100)) && asset <= (currentUserAsset + (currentUserAsset * range / 100)))
                 .collect(Collectors.toList());
     }
 
@@ -269,7 +271,7 @@ public class MatchingServiceImpl implements MatchingService {
 
         // 해당 유저들의 자산 정보만 조회
         List<TotalBalance> balances = userIds.stream()
-                .map(userId -> totalBalancesRepository.findByUserId(userId).orElseThrow())
+                .map(userId -> balanceService.totalBalanceFindByUserId(userId).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)))
                 .toList();
 
         // 자산이 가장 많은 사용자 찾기
@@ -317,7 +319,8 @@ public class MatchingServiceImpl implements MatchingService {
     // 자산 범위 업데이트
     public void updateAssetRange(User user, int increment) {
         System.out.println("updateAssetRange");
-        Long asset = totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
+
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
         // Redis 에서 사용자의 현재 자산 범위를 가져옴
         Long currentRange = (Long) redisTemplate.opsForHash().get("userAssetRanges", user.getId().toString());
         if (currentRange == null) {

@@ -2,7 +2,7 @@ package com.kmbbj.backend.matching.service.room;
 
 import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.balance.repository.totalbalances.TotalBalancesRepository;
+import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
@@ -29,8 +29,7 @@ public class RoomServiceImpl implements RoomService{
     private final RoomRepository roomRepository;
     private final UserRoomService userRoomService;
     private final FindUserBySecurity findUserBySecurity;
-    // 수정 필요
-    private final TotalBalancesRepository totalBalancesRepository;
+    private final BalanceService balanceService;
 
 
     /**
@@ -52,7 +51,7 @@ public class RoomServiceImpl implements RoomService{
         room.setIsStarted(false);
         room.setDelay(createRoomDTO.getDelay());
         room.setUserCount(1);
-        Long currentUserAsset = totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
+        Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
         if (room.getUserCount() == 1) {
             room.setAverageAsset(currentUserAsset);
         } else {
