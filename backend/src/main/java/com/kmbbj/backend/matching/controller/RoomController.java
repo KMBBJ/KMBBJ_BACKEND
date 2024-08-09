@@ -48,7 +48,7 @@ public class RoomController {
     }
 
 
-    /** TODO
+    /**
      * 방 삭제
      * @param roomId    삭제할 방 번호
      * @return apiResponse  응답 (HttpStatus.OK, "{roomId}방 삭제 완료")
