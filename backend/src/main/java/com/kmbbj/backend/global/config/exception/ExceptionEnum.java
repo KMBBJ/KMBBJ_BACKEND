@@ -35,7 +35,10 @@ public enum ExceptionEnum {
 
     // Room
     NOT_ENTRY_ROOM(HttpStatus.NOT_FOUND,"NOT_ENTRY_ROOM","해당 방 입장기록이 없습니다."),
-    NOT_CURRENT_ROOM(HttpStatus.NOT_FOUND, "NOT_CURRENT_ROOM", "해당 방에 참가해있지 않습니다.");
+    NOT_CURRENT_ROOM(HttpStatus.NOT_FOUND, "NOT_CURRENT_ROOM", "해당 방에 참가해있지 않습니다."),
+
+    // Balance
+    BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND,"BALANCE_NOT_FOUND","자산을 찾지 못했습니다.");
 
 
 
