@@ -55,7 +55,7 @@ public class UserRoomServiceImpl implements UserRoomService{
     @Override
     public UserRoom findCurrentRoom() {
         User user = findUserBySecurity.getCurrentUser();
-        UserRoom userRoom = userRoomRepository.findByUserAndIsPlayed(user, true).orElseThrow(()->new ApiException(ExceptionEnum.NOT_CURRENT_ROOM));
+        UserRoom userRoom = userRoomRepository.findByUserAndIsPlayed(user, true).orElse(null);
         return userRoom;
     }
 }

@@ -36,6 +36,7 @@ public enum ExceptionEnum {
     // Room
     NOT_ENTRY_ROOM(HttpStatus.NOT_FOUND, "NOT_ENTRY_ROOM", "해당 방 입장기록이 없습니다."),
     NOT_CURRENT_ROOM(HttpStatus.NOT_FOUND, "NOT_CURRENT_ROOM", "해당 방에 참가해있지 않습니다."),
+    NOT_IN_ROOM(HttpStatus.NOT_FOUND, "NOT_IN_ROOM", "방에 참가해있지 않습니다."),
     IN_OTHER_ROOM(HttpStatus.CONFLICT, "IN_OTHER_ROOM", "이미 다른 방에 입장해 있습니다."),
     ROOM_FULL(HttpStatus.CONFLICT,"ROOM_FULL","방이 가득 찼습니다."),
     INSUFFICIENT_ASSET(HttpStatus.FORBIDDEN,"INSUFFICIENT_ASSET","방 조건에 알맞는 자산이 부족합니다."),
