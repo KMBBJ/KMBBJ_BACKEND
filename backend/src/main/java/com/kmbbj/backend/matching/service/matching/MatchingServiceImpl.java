@@ -96,6 +96,7 @@ public class MatchingServiceImpl implements MatchingService{
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                System.out.println("assetRangeTask");
                 if (isShutdownRequested || Thread.interrupted()) return;
                 updateAssetRange(user, increment);
             } finally {
@@ -111,6 +112,7 @@ public class MatchingServiceImpl implements MatchingService{
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                System.out.println("matchingTask");
                 if (isShutdownRequested || Thread.interrupted()) return;
                 if (isQuickMatch) {
                     handleQuickMatch(user,isQuickMatch,minUser);
@@ -131,6 +133,7 @@ public class MatchingServiceImpl implements MatchingService{
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                System.out.println("fiveMinuteTask");
                 if (isShutdownRequested || Thread.interrupted()) return;
                 isFiveMinutesPassed.set(true);
             } finally {
@@ -145,6 +148,7 @@ public class MatchingServiceImpl implements MatchingService{
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
+                System.out.println("tenMinuteTask");
                 if (isShutdownRequested || Thread.interrupted()) return;
                 isTenMinutesPassed.set(true);
                 if (!isQuickMatch) switchToQuickMatch(user);
@@ -160,6 +164,7 @@ public class MatchingServiceImpl implements MatchingService{
             ScheduledFuture<?> minUserTask = taskScheduler.scheduleAtFixedRate(() -> {
                 SecurityContextHolder.setContext(context);
                 try {
+                    System.out.println("minUserTask");
                     if (isShutdownRequested || Thread.interrupted()) return;
                     minUser.updateAndGet(v -> Math.max(1, v - 1));
 
@@ -217,6 +222,7 @@ public class MatchingServiceImpl implements MatchingService{
             roomService.enterRoom(room.getRoomId());
             System.out.println("User entered an existing room.");
             matchingQueueService.removeUserFromQueue(user,isQuickMatch);
+            cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
         if (minUser.get() == 0){
@@ -233,6 +239,7 @@ public class MatchingServiceImpl implements MatchingService{
                     .build();
             roomService.createRoom(createRoomDTO, user);
             matchingQueueService.removeUserFromQueue(user,isQuickMatch);
+            cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
     }
@@ -283,6 +290,7 @@ public class MatchingServiceImpl implements MatchingService{
     // 랜덤 매칭시 잡힌 유저들과 방 들어가기
     public void createRoomWithUsers(List<User> users) {
         System.out.println("createRoomWithUsers");
+        User currentUser = findUserBySecurity.getCurrentUser();
         // 모든 유저 ID를 추출
         List<Long> userIds = users.stream()
                 .map(User::getId)
@@ -311,6 +319,7 @@ public class MatchingServiceImpl implements MatchingService{
 
         System.out.println("방 생성 .........");
         cancelCurrentUserScheduledTasks();
+        cancelMatching(currentUser);
         roomService.createRoom(createRoomDTO, richestUser);
         users.remove(richestUser);
         while (users.isEmpty()) {
