@@ -6,9 +6,7 @@ import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import com.kmbbj.backend.matching.dto.*;
 import com.kmbbj.backend.matching.entity.Room;
-import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.service.room.RoomService;
-import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -16,8 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/room")

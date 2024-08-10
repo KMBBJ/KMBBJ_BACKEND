@@ -287,8 +287,7 @@ public class RoomServiceImpl implements RoomService{
 
     @Override
     public List<Room> findRoomsWithinAssetRange(Long asset, Long range) {
-        List<Room> roomsWithinAssetRange = roomRepository.findRoomsWithinAssetRange(asset, range);
-        return roomsWithinAssetRange;
+        return roomRepository.findRoomsWithinAssetRange(asset, range);
     }
 
     @Override
