@@ -12,14 +12,18 @@ import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -207,29 +211,29 @@ public class RoomServiceImpl implements RoomService{
         User currentUser = findUserBySecurity.getCurrentUser();
 
         // 이미 방에 들어와 있는 경우
-        if (room.getUserRooms().stream().anyMatch(user -> user.equals(currentUser))) return;
+        if (room.getUserRooms().stream().anyMatch(userroom -> userroom.getUser().equals(currentUser) && userroom.getIsPlayed()))
+            return;
 
-        //
-        if (userRoomService.findCurrentRoom() != null) {
+        else if (userRoomService.findCurrentRoom() != null) {
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
         }
 
         Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
 
-        // 인원수가 10명 미만이고 자산의 10분의 1이 시작 시드머니보다 같거나 커야됨
+        // 인원수가 10명 미만이고 자산의 3분의 1이 시작 시드머니보다 같거나 커야됨
         if (room.getUserRooms().size() == 10) {
             throw new ApiException(ExceptionEnum.ROOM_FULL);
         }
 
-        if (asset / 10 < room.getStartSeedMoney()) {
+        else if (asset / 3 < room.getStartSeedMoney()*10000) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
-        if (room.getUserRooms().size() < 10 && asset / 10 >= room.getStartSeedMoney()) {
+        else {
             UserRoom userRoom = null;
             try {
-
                 userRoom = userRoomService.findByUserAndRoom(currentUser, findById(roomId));
                 userRoom.setIsPlayed(true);
+                room.setUserCount(room.getUserCount() + 1);
 
             } catch (Exception e) {
                 userRoom = UserRoom.builder().user(currentUser)
@@ -239,11 +243,32 @@ public class RoomServiceImpl implements RoomService{
                         .build();
                 room.setUserCount(room.getUserCount() + 1);
             }
-
             roomRepository.save(room);
             userRoomService.save(userRoom);
-        }
 
+        }
+    }
+
+    @Override
+    public EnterRoomDTO getEnterRoomDto(Room room) {
+        List<UserRoom> userRooms = room.getUserRooms();
+        List<UserRoom> userRoomList = userRooms.stream().filter(UserRoom::getIsPlayed).toList();
+        List<RoomUserListDTO> roomUserList = userRoomList.stream()
+                .map(currentUserRoom -> RoomUserListDTO.builder()
+                        .userName(currentUserRoom.getUser().getNickname())
+                        .userAsset(balanceService.totalBalanceFindByUserId(currentUserRoom.getUser().getId()).get().getAsset())
+                        .isManager(currentUserRoom.getIsManager())
+                        .build())
+                .collect(Collectors.toList());
+
+        EnterRoomDTO roomDto = EnterRoomDTO.builder()
+                .roomTitle(room.getTitle())
+                .averageAsset(room.getAverageAsset())
+                .userCount(room.getUserCount())
+                .roomUser(roomUserList)
+                .build();
+
+        return roomDto;
     }
 
     /**
@@ -252,6 +277,7 @@ public class RoomServiceImpl implements RoomService{
      */
     @Override
     @Transactional
+    // 방장 퇴장할 경우 맨 앞사람이 방장
     public void quitRoom(Long roomId) {
         UserRoom userRoom = userRoomService.deleteUserFromRoom(roomId);
         Room room = userRoom.getRoom();

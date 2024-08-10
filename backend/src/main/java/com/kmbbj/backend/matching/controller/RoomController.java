@@ -4,11 +4,9 @@ package com.kmbbj.backend.matching.controller;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
-import com.kmbbj.backend.matching.dto.CreateRoomDTO;
-import com.kmbbj.backend.matching.dto.RoomListDTO;
-import com.kmbbj.backend.matching.dto.SearchingRoomDTO;
-import com.kmbbj.backend.matching.dto.SortConditionDTO;
+import com.kmbbj.backend.matching.dto.*;
 import com.kmbbj.backend.matching.entity.Room;
+import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.service.room.RoomService;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/room")
@@ -66,11 +66,12 @@ public class RoomController {
         return new CustomResponse<>(HttpStatus.OK,String.format("%d번 방 삭제 완료",roomId),null);
     }
 
-    /**
+    /** TODO
      * 검색
      * @param searchingRoomDTO      검색 기능 필요한 정보 (페이지, 찾는 방 제목)
      * @return apiResponse      응답 (HttpStatus.OK, "{title}로 검색 성공", rooms)
      */
+    // 검색한것중에 정렬 되도록 추가하기
     @PostMapping("/searching")
     @Operation(summary = "방 검색", description = "방 제목으로 검색")
     @ApiResponses(value = {
@@ -137,7 +138,7 @@ public class RoomController {
     /**
      * 선택한 방 입장
      * @param roomId    선택한 방 번호
-     * @return ApiResponse (HttpStatus.OK, String.format("%d번방 입장 성공",roomId), null)
+     * @return ApiResponse (HttpStatus.OK, String.format("%d번방 입장 성공",roomId), userRooms)
      */
     @PostMapping("/enter/{roomId}")
     @Operation(summary = "방 입장", description = "사용자가 선택한 방에 입장")
@@ -146,9 +147,11 @@ public class RoomController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
     })
-    public CustomResponse<?> enterRoom(@PathVariable Long roomId) {
+    public CustomResponse<EnterRoomDTO> enterRoom(@PathVariable Long roomId) {
         roomService.enterRoom(roomId);
-        return new CustomResponse<>(HttpStatus.OK, String.format("%d번 방 입장 성공",roomId), null);
+        Room room = roomService.findById(roomId);
+        EnterRoomDTO enterRoomDto = roomService.getEnterRoomDto(room);
+        return new CustomResponse<>(HttpStatus.OK, String.format("%d번 방 입장 성공",roomId), enterRoomDto);
     }
 
     /** TODO
