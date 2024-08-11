@@ -9,6 +9,8 @@ import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.UserRoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +19,7 @@ public class UserRoomServiceImpl implements UserRoomService{
     private final FindUserBySecurity findUserBySecurity;
 
     @Override
+    @Transactional
     public void save(UserRoom userRoom) {
         userRoomRepository.save(userRoom);
     }
@@ -28,8 +31,8 @@ public class UserRoomServiceImpl implements UserRoomService{
      * @return userRoom
      */
     @Override
-    public UserRoom findByUserAndRoom(User user, Room room) {
-        return userRoomRepository.findByUserAndRoom(user, room).orElseThrow(()-> new ApiException(ExceptionEnum.NOT_ENTRY_ROOM));
+    public Optional<UserRoom> findByUserAndRoom(User user, Room room) {
+        return userRoomRepository.findByUserAndRoom(user, room);
     }
 
     /**
