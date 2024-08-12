@@ -29,4 +29,6 @@ public interface RoomService {
     List<Room> findRoomsWithinAssetRange(Long asset, Long range);
 
     Room findRoomByLatestCreateDate();
+
+    EnterRoomDTO getEnterRoomDto(Room room);
 }

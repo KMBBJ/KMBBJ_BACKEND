@@ -2,6 +2,7 @@ package com.kmbbj.backend.matching.service.room;
 
 import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
@@ -12,14 +13,19 @@ import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -30,6 +36,9 @@ public class RoomServiceImpl implements RoomService{
     private final UserRoomService userRoomService;
     private final FindUserBySecurity findUserBySecurity;
     private final BalanceService balanceService;
+    private final UserService userService;
+
+
 
 
     /**
@@ -85,14 +94,19 @@ public class RoomServiceImpl implements RoomService{
     public void editRoom(Long roomId, EditRoomDTO editRoomDTO) {
         User user = findUserBySecurity.getCurrentUser();
         Room room = findById(roomId);
-        UserRoom userRoom = userRoomService.findByUserAndRoom(user, room);
-        if (userRoom.getIsManager()) {
-            room.setTitle(editRoomDTO.getTitle());
-            room.setEnd(editRoomDTO.getEnd());
-            roomRepository.save(room);
+        Optional<UserRoom> userRoom = userRoomService.findByUserAndRoom(user, room);
+        if (userRoom.isPresent()) {
+            if (userRoom.get().getIsManager()) {
+                room.setTitle(editRoomDTO.getTitle());
+                room.setEnd(editRoomDTO.getEnd());
+                roomRepository.save(room);
+            } else {
+                throw new ApiException(ExceptionEnum.FORBIDDEN);
+            }
         } else {
-            throw new ApiException(ExceptionEnum.FORBIDDEN);
+            throw new ApiException(ExceptionEnum.NOT_ENTRY_ROOM);
         }
+
 
     }
 
@@ -127,7 +141,7 @@ public class RoomServiceImpl implements RoomService{
         Pageable pageable = PageRequest.of(searchingRoomDTO.getPage(), 10);
         // 키워드 포함 목록 찾기
         Page<Room> rooms = roomRepository.findByTitleContainingIgnoreCase(searchingRoomDTO.getTitle(), pageable);
-        Page<RoomListDTO> roomList = rooms.map(room ->
+        return rooms.map(room ->
                 RoomListDTO.builder()
                         .roomId(room.getRoomId())
                         .title(room.getTitle())
@@ -138,7 +152,6 @@ public class RoomServiceImpl implements RoomService{
                         .userCount(room.getUserCount())
                         .build()
         );
-        return roomList;
     }
 
     /** TODO
@@ -156,7 +169,7 @@ public class RoomServiceImpl implements RoomService{
         // 페이지 마다 정렬기준이 풀리지 않도록
         Pageable pageable = PageRequest.of(sortConditionDTO.getPage(), 10, sort);
         Page<Room> rooms = roomRepository.findAllByIsDeletedAndIsStarted(sortConditionDTO.isDeleted(), sortConditionDTO.isStarted(), pageable);
-        Page<RoomListDTO> sortedRooms = rooms.map(room ->
+        return rooms.map(room ->
                 RoomListDTO.builder()
                         .roomId(room.getRoomId())
                         .title(room.getTitle())
@@ -167,7 +180,6 @@ public class RoomServiceImpl implements RoomService{
                         .userCount(room.getUserCount())
                         .build()
         );
-        return sortedRooms;
     }
 
     /**
@@ -201,49 +213,68 @@ public class RoomServiceImpl implements RoomService{
      * @param roomId    선택한 방 번호
      */
     @Override
-    @Transactional
     public void enterRoom(Long roomId) {
-        Room room = findById(roomId);
+        Room room = roomRepository.findById(roomId).orElseThrow(()->new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
         User currentUser = findUserBySecurity.getCurrentUser();
 
-        // 이미 방에 들어와 있는 경우
-        if (room.getUserRooms().stream().anyMatch(user -> user.equals(currentUser))) return;
+        // 방에 들어온 상태 확인
+        if (room.getUserRooms().stream().anyMatch(userRoom -> userRoom.getUser().equals(currentUser) && userRoom.getIsPlayed())) {
+            return; // 이미 입장함
+        }
 
-        //
+        // 다른 방에 있을 때 예외 처리
         if (userRoomService.findCurrentRoom() != null) {
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
         }
 
         Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
-
-        // 인원수가 10명 미만이고 자산의 10분의 1이 시작 시드머니보다 같거나 커야됨
-        if (room.getUserRooms().size() == 10) {
+        if (room.getUserRooms().size() >= 10) {
             throw new ApiException(ExceptionEnum.ROOM_FULL);
         }
-
-        if (asset / 10 < room.getStartSeedMoney()) {
+        if (asset / 3 < room.getStartSeedMoney() * 10000) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
-        if (room.getUserRooms().size() < 10 && asset / 10 >= room.getStartSeedMoney()) {
-            UserRoom userRoom = null;
-            try {
 
-                userRoom = userRoomService.findByUserAndRoom(currentUser, findById(roomId));
-                userRoom.setIsPlayed(true);
+        UserRoom userRoom = userRoomService.findByUserAndRoom(currentUser, room)
+                .orElse(null);
 
-            } catch (Exception e) {
-                userRoom = UserRoom.builder().user(currentUser)
-                        .room(room)
-                        .isPlayed(true)
-                        .isManager(false)
-                        .build();
-                room.setUserCount(room.getUserCount() + 1);
-            }
-
+        if (userRoom == null) {
+            userRoom = UserRoom.builder()
+                    .user(currentUser)
+                    .room(room)
+                    .isPlayed(true)  // 처음 생성 시만 설정
+                    .isManager(false)
+                    .build();
+            userRoomService.save(userRoom);  // 새로 생성된 객체만 저장
+            room.setUserCount(room.getUserCount() + 1);  // 인원 수 업데이트
             roomRepository.save(room);
-            userRoomService.save(userRoom);
+        } else {
+            if (!userRoom.getIsPlayed()) {
+                userRoom.setIsPlayed(true);  // 상태 업데이트
+                userRoomService.save(userRoom);
+                roomRepository.save(room);
+            }
         }
+    }
 
+    @Override
+    public EnterRoomDTO getEnterRoomDto(Room room) {
+        List<UserRoom> userRooms = room.getUserRooms();
+        List<UserRoom> userRoomList = userRooms.stream().filter(UserRoom::getIsPlayed).toList();
+        List<RoomUserListDTO> roomUserList = userRoomList.stream()
+                .map(currentUserRoom -> RoomUserListDTO.builder()
+                        .userName(currentUserRoom.getUser().getNickname())
+                        .userAsset(balanceService.totalBalanceFindByUserId(currentUserRoom.getUser().getId()).get().getAsset())
+                        .isManager(currentUserRoom.getIsManager())
+                        .build())
+                .toList();
+
+        return EnterRoomDTO.builder()
+                .roomTitle(room.getTitle())
+                .averageAsset(room.getAverageAsset())
+                .userCount(room.getUserCount())
+                .roomUser(roomUserList)
+                .build();
     }
 
     /**
@@ -252,6 +283,7 @@ public class RoomServiceImpl implements RoomService{
      */
     @Override
     @Transactional
+    // 방장 퇴장할 경우 맨 앞사람이 방장
     public void quitRoom(Long roomId) {
         UserRoom userRoom = userRoomService.deleteUserFromRoom(roomId);
         Room room = userRoom.getRoom();
@@ -261,8 +293,7 @@ public class RoomServiceImpl implements RoomService{
 
     @Override
     public List<Room> findRoomsWithinAssetRange(Long asset, Long range) {
-        List<Room> roomsWithinAssetRange = roomRepository.findRoomsWithinAssetRange(asset, range);
-        return roomsWithinAssetRange;
+        return roomRepository.findRoomsWithinAssetRange(asset, range);
     }
 
     @Override

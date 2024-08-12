@@ -1,9 +1,5 @@
 package com.kmbbj.backend.matching.entity;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import com.kmbbj.backend.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
