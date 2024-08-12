@@ -19,4 +19,9 @@ public class BalanceServiceImpl implements BalanceService {
     public Optional<TotalBalance> totalBalanceFindByUserId(Long userId) {
         return totalBalanceService.totalBalanceFindByUserId(userId);
     }
+
+    @Override
+    public void makeTotalBalance(TotalBalance totalBalance){
+        totalBalanceService.makeTotalBalance(totalBalance);
+    }
 }

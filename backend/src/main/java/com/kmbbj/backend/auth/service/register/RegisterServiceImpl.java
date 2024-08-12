@@ -5,6 +5,8 @@ import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.auth.util.RandomNickname;
+import com.kmbbj.backend.balance.entity.TotalBalance;
+import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import jakarta.transaction.Transactional;
@@ -18,6 +20,7 @@ public class RegisterServiceImpl implements RegisterService {
     private final UserRepository userRepostiory;
     private final PasswordEncoder passwordEncoder;
     private final RandomNickname randomNickname;
+    private final BalanceService balanceService;
 
     /**
      * 사용자 등록 처리
@@ -44,7 +47,13 @@ public class RegisterServiceImpl implements RegisterService {
                 .isDeleted(false)
                 .build();
 
+        TotalBalance totalBalance = TotalBalance.builder()
+                .asset(0L)
+                .user(user)
+                .build();
+
         userRepostiory.save(user);
+        balanceService.makeTotalBalance(totalBalance);
     }
 
     /**

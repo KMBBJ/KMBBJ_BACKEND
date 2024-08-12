@@ -9,5 +9,4 @@ import java.util.Optional;
 @Repository
 public interface TotalBalancesRepository extends JpaRepository<TotalBalance, Long>, CustomTotalBalancesRepository {
     Optional<TotalBalance> findByUserId(Long userid);
-    Optional<TotalBalance> findById(Long totalBalanceId);
 }
