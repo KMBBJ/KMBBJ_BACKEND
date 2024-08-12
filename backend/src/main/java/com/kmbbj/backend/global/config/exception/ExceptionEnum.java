@@ -45,8 +45,12 @@ public enum ExceptionEnum {
 //    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 
     // Balance
-    BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "자산을 찾지 못했습니다.");
+    BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "자산을 찾지 못했습니다."),
 
+    // Coin
+    EXIST_COIN(HttpStatus.BAD_REQUEST, "EXIST_COIN", "이미 있는 코인 입니다."),
+    NOT_FOUND_SYMBOL(HttpStatus.BAD_REQUEST, "NOT_FOUND_SYMBOL", "존재하지 않는 코인 코드입니다."),
+    UNSUPPORTED_INTERVAL(HttpStatus.BAD_REQUEST, "UNSUPPORTED_INTERVAL", "지원하지 않는 Interval 형식 입니다.");
 
     private final HttpStatus status;
     private final String code;
