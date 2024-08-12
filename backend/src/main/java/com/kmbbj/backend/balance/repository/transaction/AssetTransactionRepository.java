@@ -10,5 +10,5 @@ import java.util.Optional;
 @Repository
 public interface AssetTransactionRepository extends JpaRepository<AssetTransaction, Long>, CustomAssetTransactionRepository {
     Optional<AssetTransaction> findByAssetTransactionId(Long assetTransactionId);
-    Optional<List<AssetTransaction>> findByTotalBalance_TotalBalanceId(Long totalBalanceId);
+    List<AssetTransaction> findAllByTotalBalance_TotalBalanceId(Long totalBalanceId);
 }

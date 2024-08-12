@@ -15,4 +15,8 @@ public class TotalBalanceServiceImpl implements TotalBalanceService {
     public Optional<TotalBalance> totalBalanceFindByUserId(Long userId){
         return totalBalancesRepository.findByUserId(userId);
     }
+
+    public void makeTotalBalance(TotalBalance totalBalance){
+        totalBalancesRepository.save(totalBalance);
+    }
 }

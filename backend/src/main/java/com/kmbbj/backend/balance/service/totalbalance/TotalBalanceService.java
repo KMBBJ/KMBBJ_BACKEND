@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface TotalBalanceService {
     Optional<TotalBalance> totalBalanceFindByUserId(Long userId);
+    void makeTotalBalance(TotalBalance totalBalance);
 }
