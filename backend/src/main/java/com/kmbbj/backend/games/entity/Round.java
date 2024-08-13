@@ -22,7 +22,7 @@ public class Round {
     private Integer roundNumber;
 
     @Column(name = "duration_minutes")
-    private Integer durationMinutes = 1440;
+    private Integer durationMinutes;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "game_id")
