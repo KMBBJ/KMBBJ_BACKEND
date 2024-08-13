@@ -21,6 +21,10 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          batch_size: 300
+        order_updates: true
+        order_inserts: true
     hibernate:
       ddl-auto: none
 
