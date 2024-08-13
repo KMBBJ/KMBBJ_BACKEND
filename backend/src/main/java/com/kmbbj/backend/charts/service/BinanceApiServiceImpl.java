@@ -52,18 +52,23 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     public Mono<String> getKlines(String symbol, String interval, Long startTime, Long endTime, Integer limit) {
         String endpoint = "/api/v3/klines";
         StringBuilder queryString = new StringBuilder();
+        // 심볼과 간격을 쿼리 문자열에 추가
         queryString.append("symbol=").append(symbol)
                 .append("&interval=").append(interval);
+        // 시작 시간 설정이 있을 경우 쿼리 문자열에 추가
         if (startTime != null) {
             queryString.append("&startTime=").append(startTime);
         }
+        // 종료 시간 설정이 있을 경우 쿼리 문자열에 추가
         if (endTime != null) {
             queryString.append("&endTime=").append(endTime);
         }
+        // 데이터 갯수 제한 설정이 있을 경우 쿼리 문자열에 추가
         if (limit != null) {
             queryString.append("&limit=").append(limit);
         }
 
+        // WebClient를 통해 JSON 데이터를 받아와서 String 형태로 변환하여 반환
         return getJsonToWebClientForSingleSymbol(endpoint, queryString).map(JsonArray::toString);
     }
 
@@ -72,6 +77,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      */
     @Override
     public void updateCoinData() {
+        // 모든 코인 심볼을 가져와 USDT를 붙인 심볼 리스트를 생성
         List<String> symbols = coinRepository.findAll()
                 .stream()
                 .map(coin -> coin.getSymbol() + "USDT")
@@ -79,12 +85,12 @@ public class BinanceApiServiceImpl implements BinanceApiService {
 
         // 최근 거래 내역을 저장할 List 생성
         List<Mono<TradeSymbolPairDto>> recentlyTradeMonos = new ArrayList<>();
-        // 매개변수 symbols의 각 요소로 getRecentlyTrade를 호출해 각 심볼의 최근 거래 내역을 가져오고 symbol 명과 함께 TradeSymbolPairDto 반환
+        //  각 심볼에 대해 최근 거래 데이터를 가져와 TradeSymbolPairDto로 변환 후 리스트에 추가
         for (String symbol : symbols) {
             recentlyTradeMonos.add(getRecentlyTrade(symbol).map(trades -> new TradeSymbolPairDto(symbol, trades)));
         }
 
-
+        // 모든 비동기 작업을 묶어서 처리
         Mono.zip(recentlyTradeMonos, trades -> {
             List<TradeSymbolPairDto> recentlyTradeResponses = new ArrayList<>();
             for (Object trade : trades) {
@@ -112,9 +118,9 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     public Mono<JsonArray> getRecentlyTrade(String symbol) {
         String endpoint = "/api/v3/trades";
         StringBuilder queryString = new StringBuilder();
-        // 가장 최근의 거래내역 중 1개만 가져오려 함.
+        // 가장 최근의 거래내역 중 1개만 가져오기 위한 쿼리 문자열 생성
         queryString.append("symbol=").append(symbol).append("&limit=1");
-
+        // WebClient를 통해 JSON 데이터를 받아옴
         return getJsonToWebClientForSingleSymbol(endpoint, queryString);
     }
 
@@ -140,6 +146,8 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     public List<CoinDetail> parseCoinData(List<TradeSymbolPairDto> recentlyTradeResponses, List<Map<String, Object>> bookTickerResponse) {
         List<CoinDetail> coinDetails = new ArrayList<>();
         Map<String, JsonObject> tradeMap = new HashMap<>();
+
+        // 최근 거래 데이터를 심볼별로 매핑하여 tradeMap에 저장
         for (TradeSymbolPairDto pair : recentlyTradeResponses) {
             JsonArray trades = pair.getTrades();
             String symbol = pair.getSymbol();
@@ -149,11 +157,11 @@ public class BinanceApiServiceImpl implements BinanceApiService {
             }
         }
 
-        // bookTicker 데이터에서 현재의 매수 및 매도 호가를 확인할 수 있는 주문장부상의 최적 가격과 수량을 coins에 set
+        // bookTicker 데이터를 이용하여 각 코인의 매수/매도 호가 및 거래 내역을 CoinDetail 객체에 설정
         for (Map<String, Object> bookTicker : bookTickerResponse) {
             String symbol = (String) bookTicker.get("symbol");
             String symbolWithoutUSDT = symbol.replace("USDT", "");
-
+            // CoinDetail 객체 생성 및 설정
             CoinDetail coinDetail = new CoinDetail();
             Coin coin = coinRepository.findBySymbol(symbolWithoutUSDT).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
             coinDetail.setCoin(coin);
@@ -162,6 +170,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
             coinDetail.setAskPrice(Double.parseDouble((String) bookTicker.get("askPrice")));
             coinDetail.setAskQty(Double.parseDouble((String) bookTicker.get("askQty")));
 
+            // 최근 거래 데이터에서 가격 및 거래량을 설정
             JsonObject trade = tradeMap.get(symbol);
             if (trade != null) {
                 double currentPrice = trade.get("price").getAsDouble();
@@ -182,10 +191,11 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      */
     private StringBuilder buildSymbolsQuery(List<String> symbols) {
         StringBuilder queryString = new StringBuilder();
+        // 심볼이 하나일 경우 단일 심볼 쿼리 생성
         if (symbols.size() == 1) {
             queryString.append("symbol=").append(symbols.getFirst());
         } else {
-            // symbol이 여러개일 경우 symbol=["BTCUSDT","BNBUSDT"] 형태로 queryString 작성
+            // symbol이 여러개일 경우 symbol=["BTCUSDT","BNBUSDT"] 형태로 쿼리 문자열 생성
             queryString.append("symbols=");
             StringBuilder symbolsArray = new StringBuilder();
             symbolsArray.append("[");
@@ -208,6 +218,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      * @return JSON 데이터를 포함하는 Mono<JsonArray>
      */
     private Mono<JsonArray> getJsonToWebClientForSingleSymbol(String endpoint, StringBuilder queryString) {
+        // WebClient를 통해 GET 요청을 보내고, 응답을 JsonArray로 변환하여 반환
         return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder.path(endpoint)
                         .query(queryString.toString())
@@ -226,6 +237,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      * @return JSON 데이터 리스트를 포함하는 Mono<List<Map<String, Object>>>
      */
     private Mono<List<Map<String, Object>>> getJsonToWebClientForMultipleSymbols(String endpoint, StringBuilder queryString) {
+        // WebClient를 통해 GET 요청을 보내고, 응답을 JsonArray로 변환한 후, Map으로 변환하여 반환
         return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder.path(endpoint)
                         .query(queryString.toString())
@@ -251,19 +263,22 @@ public class BinanceApiServiceImpl implements BinanceApiService {
         Map<String, Object> map = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
             JsonElement value = entry.getValue();
+            //value.isJsonPrimitive 메서드를 통해 JsonElement가 원시 타입자열(String), 숫자(Number), 논리 값(Boolean)인지 체크하고,
+            // 맞다면 각 타입에 맞게 변환하여 맵에 넣습니다.
             if (value.isJsonPrimitive()) {
                 if (value.getAsJsonPrimitive().isString()) {
                     map.put(entry.getKey(), value.getAsString());
                 } else if (value.getAsJsonPrimitive().isNumber()) {
                     map.put(entry.getKey(), value.getAsNumber());
-                } else if (value.getAsJsonPrimitive().isBoolean()) {
-                    map.put(entry.getKey(), value.getAsBoolean());
                 }
+            //JsonElement가 JSON 객체(JsonObject)인 경우, convertJsonObjectToMap 메서드를 재귀적으로 호출하여 해당 객체를 다시 Map<String, Object>로 변환합니다.
             } else if (value.isJsonObject()) {
                 map.put(entry.getKey(), convertJsonObjectToMap(value.getAsJsonObject()));
-            } else if (value.isJsonArray()) {
+            } //JsonElement가 JSON 배열(JsonArray)인 경우, 해당 배열을 그대로 Map에 추가합니다.
+            else if (value.isJsonArray()) {
                 map.put(entry.getKey(), value.getAsJsonArray());
-            } else if (value.isJsonNull()) {
+            } //JsonElement가 JSON null 값을 나타내는 경우, Map에 null을 값으로 추가합니다.
+            else if (value.isJsonNull()) {
                 map.put(entry.getKey(), null);
             }
         }

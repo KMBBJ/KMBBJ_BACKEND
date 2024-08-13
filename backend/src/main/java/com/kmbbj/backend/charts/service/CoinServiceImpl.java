@@ -25,6 +25,7 @@ public class CoinServiceImpl implements CoinService {
      * symbol(코인코드)에 맞는 코인 정보를 가져옴
      * @param symbol 코인의 심볼 (예: BTCUSDT, ETHUSDT)
      * @return Coin 매개변수 symbol과 같은 symbol의 코인 데이터
+     * @throws ApiException 매개변수 symbol에 해당하는 코인이 존재하지 않는 경우 예외 발생
      */
     public Coin getCoin(String symbol) {
         return coinRepository.findBySymbol(symbol).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
@@ -33,12 +34,14 @@ public class CoinServiceImpl implements CoinService {
     /**
      * symbol(코인코드)에 맞는 CoinResponse 정보를 가져옴
      * @param symbol 코인의 심볼 (예: BTCUSDT, ETHUSDT)
-     * @return CoinResponse(coin, coinDetail) 매개변수 symbol과 같은 symbol의 코인, 코인 가격 데이터
+     * @return CoinResponse(coin, coinDetail) 매개변수 symbol과 같은 symbol의 코인 및 코인 가격 데이터
      */
     public CoinResponse getCoinResponse(String symbol) {
         Coin coin = getCoin(symbol);
-        CoinDetail coinDetail = coinDetailRepository.findTopByCoinOrderByTimezoneDesc(coin).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
-
+        // 해당 코인의 가장 최신 CoinDetail(가격 정보) 가져오기
+        CoinDetail coinDetail = coinDetailRepository.findTopByCoinOrderByTimezoneDesc(coin).orElseThrow(() ->
+                new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
+        // Coin과 CoinDetail을 포함한 CoinResponse 객체 반환
         return new CoinResponse(coin, coinDetail);
     }
 
@@ -48,9 +51,10 @@ public class CoinServiceImpl implements CoinService {
      * @return 페이지네이션된 코인 목록
      */
     public Page<Coin> getAllCoins(Pageable pageable) {
+        // 코인 이름을 기준으로 내림차순 정렬하여 페이지네이션 설정
         Pageable sortedByCoinName = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "coinName"));
-
+        // 설정된 페이지네이션 정보를 기반으로 코인 목록을 가져옴
         return coinRepository.findAll(sortedByCoinName);
     }
 
@@ -61,12 +65,14 @@ public class CoinServiceImpl implements CoinService {
      * @throws ApiException 매개변수로 전달된 symbol 또는 coinName이 이미 존재하는 경우 예외 발생
      */
     public void addCoin(String symbol, String coinName) {
+        // 동일한 symbol 또는 coinName을 가진 코인이 존재하는지 확인
         if(coinRepository.findBySymbol(symbol).isEmpty() && coinRepository.findByCoinName(coinName).isEmpty()) {
             Coin coin = new Coin();
             coin.setSymbol(symbol);
             coin.setCoinName(coinName);
             coinRepository.save(coin);
-        } else throw new ApiException(ExceptionEnum.EXIST_COIN);
+        } // 이미 존재하는 경우 예외 발생
+        else throw new ApiException(ExceptionEnum.EXIST_COIN);
     }
 
     /**
