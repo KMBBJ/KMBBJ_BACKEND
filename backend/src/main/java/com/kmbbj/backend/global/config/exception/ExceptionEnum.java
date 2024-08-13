@@ -42,6 +42,13 @@ public enum ExceptionEnum {
     ROOM_FULL(HttpStatus.CONFLICT,"ROOM_FULL","방이 가득 찼습니다."),
     INSUFFICIENT_ASSET(HttpStatus.FORBIDDEN,"INSUFFICIENT_ASSET","방 조건에 알맞는 자산이 부족합니다."),
 
+    // Game Exception
+    GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "GAME_NOT_FOUND", "게임을 찾지 못했습니다."),
+    ROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUND_NOT_FOUND", "라운드를 찾지 못했습니다."),
+    GAME_ALREADY_STARTED(HttpStatus.BAD_REQUEST, "GAME_ALREADY_STARTED", "게임이 이미 시작되었습니다."),
+    DUPLICATE_ROUND(HttpStatus.BAD_REQUEST, "DUPLICATE_ROUND", "이미 존재하는 라운드입니다."),
+    ROUND_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUND_RESULT_NOT_FOUND", "라운드 결과를 찾지 못했습니다."),
+
 //    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 
     // Balance
