@@ -39,7 +39,7 @@ public class ChartController {
     @GetMapping("/kline/{symbol}/{interval}")
     @Operation(summary = "차트 데이터 불러오기", description = "매개 변수 symbol에 해당하는 코인의 차트 데이터를 불러옵니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "차트 데이터 업데이트 성공"),
+            @ApiResponse(responseCode = "200", description = "차트 데이터를 불러오기 성공"),
             @ApiResponse(responseCode = "400", description = "존재하지 않는 코인 코드"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })

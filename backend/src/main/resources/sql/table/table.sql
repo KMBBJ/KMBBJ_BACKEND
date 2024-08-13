@@ -160,21 +160,30 @@ CREATE TABLE coins (
                        order_types VARCHAR(25)
 );
 
--- 코인 가격 정보 coin_details
-CREATE TABLE coin_details (
-                              coin_detail_id BIGSERIAL PRIMARY KEY,
-                              price DOUBLE PRECISION NOT NULL,
-                              bid_price DOUBLE PRECISION NOT NULL,
-                              bid_qty DOUBLE PRECISION NOT NULL,
-                              ask_price DOUBLE PRECISION NOT NULL,
-                              ask_qty DOUBLE PRECISION NOT NULL,
-                              voting_amount DOUBLE PRECISION NOT NULL,
-                              timezone TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                              coin_id BIGINT NOT NULL,
-                              CONSTRAINT fk_coin
-                                  FOREIGN KEY(coin_id)
-                                      REFERENCES coins(coin_id)
-                                      ON DELETE CASCADE
+-- 코인 24시간 기준 정보 coin_details
+CREATE TABLE coin24h_details (
+                              coin_detail_id BIGSERIAL PRIMARY KEY,          -- 기본 키로 자동 증가하는 ID
+                              price DOUBLE PRECISION NOT NULL,               -- 최종 거래 가격 (lastPrice)
+                              bid_price DOUBLE PRECISION NOT NULL,           -- 현재 매수 호가 (bidPrice)
+                              bid_qty DOUBLE PRECISION NOT NULL,             -- 현재 매수 잔량 (bidQty)
+                              ask_price DOUBLE PRECISION NOT NULL,           -- 현재 매도 호가 (askPrice)
+                              ask_qty DOUBLE PRECISION NOT NULL,             -- 현재 매도 잔량 (askQty)
+                              price_change DOUBLE PRECISION NOT NULL,        -- 가격 변동 (priceChange)
+                              price_change_percent DOUBLE PRECISION NOT NULL,-- 가격 변동률 (priceChangePercent)
+                              weighted_avg_price DOUBLE PRECISION NOT NULL,  -- 가중 평균 가격 (weightedAvgPrice)
+                              prev_close_price DOUBLE PRECISION NOT NULL,    -- 이전 마감 가격 (prevClosePrice)
+                              open_price DOUBLE PRECISION NOT NULL,          -- 개장 가격 (openPrice)
+                              high_price DOUBLE PRECISION NOT NULL,          -- 최고가 (highPrice)
+                              low_price DOUBLE PRECISION NOT NULL,           -- 최저가 (lowPrice)
+                              volume DOUBLE PRECISION NOT NULL,              -- 거래량 (volume)
+                              quote_volume DOUBLE PRECISION NOT NULL,        -- 견적 거래량 (quoteVolume)
+                              trade_count INT NOT NULL,                      -- 거래 횟수 (count)
+                              open_time TIMESTAMP NOT NULL,                  -- 개장 시간 (openTime)
+                              close_time TIMESTAMP NOT NULL,                 -- 마감 시간 (closeTime)
+                              voting_amount DOUBLE PRECISION,                -- 투표량 (기존 필드)
+                              timezone TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 데이터가 저장된 시간대 (기본값: 현재 시간)
+                              coin_id BIGINT NOT NULL,                       -- 연관된 코인 엔티티 (외래 키)
+                              FOREIGN KEY (coin_id) REFERENCES coins(coin_id) -- 코인 테이블과의 관계 설정
 );
 
 -- kline 그래프 정보 kline

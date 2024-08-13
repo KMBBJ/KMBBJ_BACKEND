@@ -2,7 +2,6 @@ package com.kmbbj.backend.charts.controller;
 
 import com.kmbbj.backend.charts.dto.CoinResponse;
 import com.kmbbj.backend.charts.entity.OrderType;
-import com.kmbbj.backend.charts.entity.coin.Coin;
 import com.kmbbj.backend.charts.service.BinanceApiService;
 import com.kmbbj.backend.charts.service.CoinService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
@@ -63,9 +62,8 @@ public class CoinController {
     @PutMapping("/add")
     @Operation(summary = "코인 추가", description = "새로운 코인을 등록합니다.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "코인 등록 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "409", description = "이미 존재하는 코인")
+            @ApiResponse(responseCode = "200", description = "코인 등록 성공"),
+            @ApiResponse(responseCode = "400", description = "이미 존재하는 코인")
     })
     public CustomResponse<String> addCoin(@RequestParam String symbol, @RequestParam String coinName) {
         coinService.addCoin(symbol, coinName);
@@ -79,14 +77,14 @@ public class CoinController {
      * @return 코인 리스트를 페이지 별로 반환
      */
     @GetMapping("/list")
-    @Operation(summary = "코인 리스트 가져옴", description = "코인 리스트를 페이지 형식으로 가져옴")
+    @Operation(summary = "코인, 코인 정보 리스트 가져옴", description = "코인, 코인 정보 리스트를 페이지 형식으로 가져옴")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "코인 리스트 반환 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    public CustomResponse<Page<Coin>> getCoinList(Pageable pageable) {
-        Page<Coin> coinPage = coinService.getAllCoins(pageable);
+    public CustomResponse<Page<CoinResponse>> getCoinList(Pageable pageable) {
+        Page<CoinResponse> coinPage = coinService.getAllCoins(pageable);
 
         return new CustomResponse<>(HttpStatus.OK, "코인 리스트 반환 성공", coinPage);
     }

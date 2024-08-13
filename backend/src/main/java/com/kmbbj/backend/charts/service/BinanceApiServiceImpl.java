@@ -4,18 +4,20 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.kmbbj.backend.charts.dto.TradeSymbolPairDto;
 import com.kmbbj.backend.charts.entity.coin.Coin;
-import com.kmbbj.backend.charts.entity.coin.CoinDetail;
-import com.kmbbj.backend.charts.repository.coin.CoinDetailRepository;
+import com.kmbbj.backend.charts.entity.coin.Coin24hDetail;
+import com.kmbbj.backend.charts.repository.coin.Coin24hDetailRepository;
 import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +25,7 @@ import java.util.Map;
 
 @Service
 public class BinanceApiServiceImpl implements BinanceApiService {
-    private final CoinDetailRepository coinDetailRepository;
+    private final Coin24hDetailRepository coin24hDetailRepository;
     private final CoinRepository coinRepository;
 
     @Value("${RESTAPI_BINANCE_ACCESSKEY}")
@@ -32,9 +34,9 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     private final WebClient webClient;
 
     /* 기본 Url 설정 */
-    public BinanceApiServiceImpl(CoinDetailRepository coinDetailRepository, CoinRepository coinRepository, WebClient.Builder webClientBuilder) {
+    public BinanceApiServiceImpl(Coin24hDetailRepository coin24hDetailRepository, CoinRepository coinRepository, WebClient.Builder webClientBuilder) {
         this.coinRepository = coinRepository;
-        this.coinDetailRepository = coinDetailRepository;
+        this.coin24hDetailRepository = coin24hDetailRepository;
         // WebClient를 Binance API의 기본 URL로 빌드
         this.webClient = webClientBuilder.baseUrl("https://api.binance.com").build();
     }
@@ -52,18 +54,23 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     public Mono<String> getKlines(String symbol, String interval, Long startTime, Long endTime, Integer limit) {
         String endpoint = "/api/v3/klines";
         StringBuilder queryString = new StringBuilder();
+        // 심볼과 간격을 쿼리 문자열에 추가
         queryString.append("symbol=").append(symbol)
                 .append("&interval=").append(interval);
+        // 시작 시간 설정이 있을 경우 쿼리 문자열에 추가
         if (startTime != null) {
             queryString.append("&startTime=").append(startTime);
         }
+        // 종료 시간 설정이 있을 경우 쿼리 문자열에 추가
         if (endTime != null) {
             queryString.append("&endTime=").append(endTime);
         }
+        // 데이터 갯수 제한 설정이 있을 경우 쿼리 문자열에 추가
         if (limit != null) {
             queryString.append("&limit=").append(limit);
         }
 
+        // WebClient를 통해 JSON 데이터를 받아와서 String 형태로 변환하여 반환
         return getJsonToWebClientForSingleSymbol(endpoint, queryString).map(JsonArray::toString);
     }
 
@@ -72,107 +79,75 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      */
     @Override
     public void updateCoinData() {
+        // 모든 코인 심볼을 가져와 USDT를 붙인 심볼 리스트를 생성
         List<String> symbols = coinRepository.findAll()
                 .stream()
                 .map(coin -> coin.getSymbol() + "USDT")
                 .toList();
 
-        // 최근 거래 내역을 저장할 List 생성
-        List<Mono<TradeSymbolPairDto>> recentlyTradeMonos = new ArrayList<>();
-        // 매개변수 symbols의 각 요소로 getRecentlyTrade를 호출해 각 심볼의 최근 거래 내역을 가져오고 symbol 명과 함께 TradeSymbolPairDto 반환
-        for (String symbol : symbols) {
-            recentlyTradeMonos.add(getRecentlyTrade(symbol).map(trades -> new TradeSymbolPairDto(symbol, trades)));
-        }
-
-
-        Mono.zip(recentlyTradeMonos, trades -> {
-            List<TradeSymbolPairDto> recentlyTradeResponses = new ArrayList<>();
-            for (Object trade : trades) {
-                recentlyTradeResponses.add((TradeSymbolPairDto) trade);
-            }
-            return recentlyTradeResponses;
-        }).flatMap(recentlyTradeResponses -> {
-            // 심볼 배열에 대한 bookTicker 데이터를 가져옴
-            Mono<List<Map<String, Object>>> bookTickerMono = getBookTicker(symbols);
-            return bookTickerMono.flatMap(bookTickerResponse -> {
-                // 최근 거래 데이터와 bookTicker 데이터를 기반으로 코인 가격 데이터를 파싱
-                List<CoinDetail> coinDetails = parseCoinData(recentlyTradeResponses, bookTickerResponse);
-                coinDetailRepository.saveAll(coinDetails);
-                return Mono.empty();
-            });
-        }).subscribe(); // 작업을 비동기적으로 실행
+        // 심볼 리스트를 한번에 처리할 수 있도록 API 요청을 보냄
+        get24hrTickerData(symbols)
+                .flatMap(tickerDataList -> {
+                    List<Coin24hDetail> coinDetails = parse24hrTickerData(tickerDataList);
+                    coin24hDetailRepository.saveAll(coinDetails);
+                    return Mono.empty();
+                })
+                .subscribe(); // 비동기적으로 실행
     }
 
     /**
-     * 주어진 심볼에 대한 최근 거래 데이터를 가져옴
-     * @param symbol 코인의 심볼 (예: BTCUSDT, ETHUSDT)
-     * @return 최근 거래 데이터를 포함하는 Mono<JsonArray>
+     * 24시간 티커 데이터를 가져옴
+     * @param symbols 코인의 심볼 리스트 (예: BTCUSDT, ETHUSDT)
+     * @return 24시간 티커 데이터를 포함하는 Mono<List<Map<String, Object>>>
      */
-    @Override
-    public Mono<JsonArray> getRecentlyTrade(String symbol) {
-        String endpoint = "/api/v3/trades";
-        StringBuilder queryString = new StringBuilder();
-        // 가장 최근의 거래내역 중 1개만 가져오려 함.
-        queryString.append("symbol=").append(symbol).append("&limit=1");
-
-        return getJsonToWebClientForSingleSymbol(endpoint, queryString);
-    }
-
-    /**
-     * 주어진 심볼 배열에 대한 현재의 매수 및 매도 호가를 확인할 수 있는 주문장부상의 최적 가격과 수량 데이터를 가져옴
-     * @param symbols 코인의 심볼 배열 (예: BTCUSDT, ETHUSDT)
-     * @return bookTicker 데이터를 포함하는 Mono<List<Map<String, Object>>>
-     */
-    @Override
-    public Mono<List<Map<String, Object>>> getBookTicker(List<String> symbols) {
-        String endpoint = "/api/v3/ticker/bookTicker";
-        StringBuilder queryString = buildSymbolsQuery(symbols);
+    public Mono<List<Map<String, Object>>> get24hrTickerData(List<String> symbols) {
+        String endpoint = "/api/v3/ticker/24hr";
+        StringBuilder queryString = buildSymbolsQuery(symbols); // 심볼 리스트를 쿼리 문자열로 변환
 
         return getJsonToWebClientForMultipleSymbols(endpoint, queryString);
     }
 
     /**
-     * 최근 거래 응답과 bookTicker 응답을 기반으로 코인 데이터를 파싱
-     * @param recentlyTradeResponses 최근 거래 응답 리스트
-     * @param bookTickerResponse bookTicker 응답 리스트
-     * @return 파싱된 코인 리스트
+     * 24ticker 데이터를 기반으로 코인 24시간 기준 정보 데이터를 파싱
+     * @param tickerDataList 코인 24시간 기준 정보 데이터 리스트
+     * @return 파싱된 코인 정보 리스트
      */
-    public List<CoinDetail> parseCoinData(List<TradeSymbolPairDto> recentlyTradeResponses, List<Map<String, Object>> bookTickerResponse) {
-        List<CoinDetail> coinDetails = new ArrayList<>();
-        Map<String, JsonObject> tradeMap = new HashMap<>();
-        for (TradeSymbolPairDto pair : recentlyTradeResponses) {
-            JsonArray trades = pair.getTrades();
-            String symbol = pair.getSymbol();
-            for (JsonElement tradeElement : trades) {
-                JsonObject trade = tradeElement.getAsJsonObject();
-                tradeMap.put(symbol, trade);
-            }
-        }
+    public List<Coin24hDetail> parse24hrTickerData(List<Map<String, Object>> tickerDataList) {
+        List<Coin24hDetail> coin24hDetails = new ArrayList<>();
 
-        // bookTicker 데이터에서 현재의 매수 및 매도 호가를 확인할 수 있는 주문장부상의 최적 가격과 수량을 coins에 set
-        for (Map<String, Object> bookTicker : bookTickerResponse) {
-            String symbol = (String) bookTicker.get("symbol");
+        for (Map<String, Object> tickerData : tickerDataList) {
+            String symbol = (String) tickerData.get("symbol");
             String symbolWithoutUSDT = symbol.replace("USDT", "");
 
-            CoinDetail coinDetail = new CoinDetail();
-            Coin coin = coinRepository.findBySymbol(symbolWithoutUSDT).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
-            coinDetail.setCoin(coin);
-            coinDetail.setBidPrice(Double.parseDouble((String) bookTicker.get("bidPrice")));
-            coinDetail.setBidQty(Double.parseDouble((String) bookTicker.get("bidQty")));
-            coinDetail.setAskPrice(Double.parseDouble((String) bookTicker.get("askPrice")));
-            coinDetail.setAskQty(Double.parseDouble((String) bookTicker.get("askQty")));
+            // 코인 정보 조회
+            Coin coin = coinRepository.findBySymbol(symbolWithoutUSDT)
+                    .orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
 
-            JsonObject trade = tradeMap.get(symbol);
-            if (trade != null) {
-                double currentPrice = trade.get("price").getAsDouble();
-                coinDetail.setPrice(currentPrice);
-                coinDetail.setVotingAmount(trade.get("qty").getAsDouble());
-            }
+            // Builder 패턴을 사용해 CoinDetail 객체 생성
+            Coin24hDetail coin24hDetail = Coin24hDetail.builder()
+                    .coin(coin)
+                    .price(Double.parseDouble((String) tickerData.get("lastPrice")))
+                    .bidPrice(Double.parseDouble((String) tickerData.get("bidPrice")))
+                    .bidQty(Double.parseDouble((String) tickerData.get("bidQty")))
+                    .askPrice(Double.parseDouble((String) tickerData.get("askPrice")))
+                    .askQty(Double.parseDouble((String) tickerData.get("askQty")))
+                    .priceChange(Double.parseDouble((String) tickerData.get("priceChange")))
+                    .priceChangePercent(Double.parseDouble((String) tickerData.get("priceChangePercent")))
+                    .weightedAvgPrice(Double.parseDouble((String) tickerData.get("weightedAvgPrice")))
+                    .prevClosePrice(Double.parseDouble((String) tickerData.get("prevClosePrice")))
+                    .openPrice(Double.parseDouble((String) tickerData.get("openPrice")))
+                    .highPrice(Double.parseDouble((String) tickerData.get("highPrice")))
+                    .lowPrice(Double.parseDouble((String) tickerData.get("lowPrice")))
+                    .volume(Double.parseDouble((String) tickerData.get("volume")))
+                    .quoteVolume(Double.parseDouble((String) tickerData.get("quoteVolume")))
+                    .tradeCount(((Number) tickerData.get("count")).longValue())
+                    .timezone(Timestamp.valueOf(LocalDateTime.now()))
+                    .build();
 
-            coinDetails.add(coinDetail);
+            coin24hDetails.add(coin24hDetail);
         }
 
-        return coinDetails;
+        return coin24hDetails;
     }
 
     /**
@@ -182,10 +157,11 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      */
     private StringBuilder buildSymbolsQuery(List<String> symbols) {
         StringBuilder queryString = new StringBuilder();
+        // 심볼이 하나일 경우 단일 심볼 쿼리 생성
         if (symbols.size() == 1) {
             queryString.append("symbol=").append(symbols.getFirst());
         } else {
-            // symbol이 여러개일 경우 symbol=["BTCUSDT","BNBUSDT"] 형태로 queryString 작성
+            // symbol이 여러개일 경우 symbol=["BTCUSDT","BNBUSDT"] 형태로 쿼리 문자열 생성
             queryString.append("symbols=");
             StringBuilder symbolsArray = new StringBuilder();
             symbolsArray.append("[");
@@ -208,6 +184,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      * @return JSON 데이터를 포함하는 Mono<JsonArray>
      */
     private Mono<JsonArray> getJsonToWebClientForSingleSymbol(String endpoint, StringBuilder queryString) {
+        // WebClient를 통해 GET 요청을 보내고, 응답을 JsonArray로 변환하여 반환
         return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder.path(endpoint)
                         .query(queryString.toString())
@@ -220,26 +197,22 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     }
 
     /**
-     * 주어진 엔드포인트와 쿼리 문자열에 대한 JSON 데이터를 가져옴(여러 심볼)
-     * @param  endpoint 엔드포인트 URL
-     * @param queryString 쿼리 문자열
-     * @return JSON 데이터 리스트를 포함하는 Mono<List<Map<String, Object>>>
+     * 여러 심볼에 대해 Binance API로부터 데이터를 가져오는 메소드.
+     * @param endpoint     Binance API의 엔드포인트 경로 (예: "/api/v3/ticker/24hr")
+     * @param queryString  심볼들을 포함한 쿼리 문자열을 생성하는 StringBuilder 객체
+     * @return            심볼에 해당하는 데이터 리스트를 포함하는 Mono 객체
      */
-    private Mono<List<Map<String, Object>>> getJsonToWebClientForMultipleSymbols(String endpoint, StringBuilder queryString) {
-        return this.webClient.get()
-                .uri(uriBuilder -> uriBuilder.path(endpoint)
-                        .query(queryString.toString())
-                        .build())
-                .header("Content-Type", "application/json")
-                .header("X-MBX-APIKEY", accessKey)
-                .retrieve()
-                .bodyToMono(String.class)
-                .map(response -> {
-                    JsonArray jsonArray = JsonParser.parseString(response).getAsJsonArray();
-                    List<Map<String, Object>> jsonObjectList = new ArrayList<>();
-                    jsonArray.forEach(jsonElement -> jsonObjectList.add(convertJsonObjectToMap(jsonElement.getAsJsonObject())));
-                    return jsonObjectList;
-                });
+    public Mono<List<Map<String, Object>>> getJsonToWebClientForMultipleSymbols(String endpoint, StringBuilder queryString) {
+        // WebClient 인스턴스 생성
+        WebClient client = WebClient.builder()
+                .baseUrl("https://api.binance.com") // Binance API의 기본 URL 설정
+                .build();
+
+        // WebClient를 통해 GET 요청을 보내고, 응답 본문을 Mono<List<Map<String, Object>>> 타입으로 변환하여 반환
+        return client.get()
+                .uri(uriBuilder -> uriBuilder.path(endpoint).query(queryString.toString()).build()) // URI 빌드
+                .retrieve() // 요청 전송
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {}); // 응답 본문을 비동기적으로 수신
     }
 
     /**
@@ -251,19 +224,22 @@ public class BinanceApiServiceImpl implements BinanceApiService {
         Map<String, Object> map = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
             JsonElement value = entry.getValue();
+            //value.isJsonPrimitive 메서드를 통해 JsonElement가 원시 타입자열(String), 숫자(Number), 논리 값(Boolean)인지 체크하고,
+            // 맞다면 각 타입에 맞게 변환하여 맵에 넣습니다.
             if (value.isJsonPrimitive()) {
                 if (value.getAsJsonPrimitive().isString()) {
                     map.put(entry.getKey(), value.getAsString());
                 } else if (value.getAsJsonPrimitive().isNumber()) {
                     map.put(entry.getKey(), value.getAsNumber());
-                } else if (value.getAsJsonPrimitive().isBoolean()) {
-                    map.put(entry.getKey(), value.getAsBoolean());
                 }
+            //JsonElement가 JSON 객체(JsonObject)인 경우, convertJsonObjectToMap 메서드를 재귀적으로 호출하여 해당 객체를 다시 Map<String, Object>로 변환합니다.
             } else if (value.isJsonObject()) {
                 map.put(entry.getKey(), convertJsonObjectToMap(value.getAsJsonObject()));
-            } else if (value.isJsonArray()) {
+            } //JsonElement가 JSON 배열(JsonArray)인 경우, 해당 배열을 그대로 Map에 추가합니다.
+            else if (value.isJsonArray()) {
                 map.put(entry.getKey(), value.getAsJsonArray());
-            } else if (value.isJsonNull()) {
+            } //JsonElement가 JSON null 값을 나타내는 경우, Map에 null을 값으로 추가합니다.
+            else if (value.isJsonNull()) {
                 map.put(entry.getKey(), null);
             }
         }

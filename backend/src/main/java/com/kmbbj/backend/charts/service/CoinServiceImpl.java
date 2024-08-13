@@ -3,8 +3,8 @@ package com.kmbbj.backend.charts.service;
 import com.kmbbj.backend.charts.dto.CoinResponse;
 import com.kmbbj.backend.charts.entity.coin.Coin;
 import com.kmbbj.backend.charts.entity.OrderType;
-import com.kmbbj.backend.charts.entity.coin.CoinDetail;
-import com.kmbbj.backend.charts.repository.coin.CoinDetailRepository;
+import com.kmbbj.backend.charts.entity.coin.Coin24hDetail;
+import com.kmbbj.backend.charts.repository.coin.Coin24hDetailRepository;
 import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
@@ -19,12 +19,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CoinServiceImpl implements CoinService {
     private final CoinRepository coinRepository;
-    private final CoinDetailRepository coinDetailRepository;
+    private final Coin24hDetailRepository coin24hDetailRepository;
 
     /**
      * symbol(코인코드)에 맞는 코인 정보를 가져옴
      * @param symbol 코인의 심볼 (예: BTCUSDT, ETHUSDT)
      * @return Coin 매개변수 symbol과 같은 symbol의 코인 데이터
+     * @throws ApiException 매개변수 symbol에 해당하는 코인이 존재하지 않는 경우 예외 발생
      */
     public Coin getCoin(String symbol) {
         return coinRepository.findBySymbol(symbol).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
@@ -33,25 +34,35 @@ public class CoinServiceImpl implements CoinService {
     /**
      * symbol(코인코드)에 맞는 CoinResponse 정보를 가져옴
      * @param symbol 코인의 심볼 (예: BTCUSDT, ETHUSDT)
-     * @return CoinResponse(coin, coinDetail) 매개변수 symbol과 같은 symbol의 코인, 코인 가격 데이터
+     * @return CoinResponse(coin, coinDetail) 매개변수 symbol과 같은 symbol의 코인 및 코인 가격 데이터
      */
     public CoinResponse getCoinResponse(String symbol) {
         Coin coin = getCoin(symbol);
-        CoinDetail coinDetail = coinDetailRepository.findTopByCoinOrderByTimezoneDesc(coin).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
-
-        return new CoinResponse(coin, coinDetail);
+        // 해당 코인의 가장 최신 CoinDetail(가격 정보) 가져오기
+        Coin24hDetail coin24hDetail = coin24hDetailRepository.findTopByCoinOrderByTimezoneDesc(coin).orElseThrow(() ->
+                new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
+        // Coin과 CoinDetail을 포함한 CoinResponse 객체 반환
+        return new CoinResponse(coin, coin24hDetail);
     }
 
     /**
      * 모든 코인 정보를 페이지네이션하여 가져옴
      * @param pageable 페이지네이션 정보 (페이지 번호, 페이지 크기, 정렬 정보)
-     * @return 페이지네이션된 코인 목록
+     * @return 페이지네이션된 코인, 코인 상세 정보를 CoinResponse에 담아서 보냄
      */
-    public Page<Coin> getAllCoins(Pageable pageable) {
+    public Page<CoinResponse> getAllCoins(Pageable pageable) {
+        // 코인 이름을 기준으로 내림차순 정렬하여 페이지네이션 설정
         Pageable sortedByCoinName = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Direction.DESC, "coinName"));
-
-        return coinRepository.findAll(sortedByCoinName);
+        // 모든 코인을 페이지네이션으로 가져옴
+        Page<Coin> coins = coinRepository.findAll(sortedByCoinName);
+        // CoinResponse 객체로 변환
+        return coins.map(coin -> {
+            // 각 코인에 대한 최신 CoinDetail 가져오기
+            Coin24hDetail coin24hDetail = coin24hDetailRepository.findTopByCoinOrderByTimezoneDesc(coin)
+                    .orElse(null); // 코인 디테일이 없는 경우 null 반환
+            return new CoinResponse(coin, coin24hDetail);
+        });
     }
 
     /**
@@ -61,12 +72,14 @@ public class CoinServiceImpl implements CoinService {
      * @throws ApiException 매개변수로 전달된 symbol 또는 coinName이 이미 존재하는 경우 예외 발생
      */
     public void addCoin(String symbol, String coinName) {
+        // 동일한 symbol 또는 coinName을 가진 코인이 존재하는지 확인
         if(coinRepository.findBySymbol(symbol).isEmpty() && coinRepository.findByCoinName(coinName).isEmpty()) {
             Coin coin = new Coin();
             coin.setSymbol(symbol);
             coin.setCoinName(coinName);
             coinRepository.save(coin);
-        } else throw new ApiException(ExceptionEnum.EXIST_COIN);
+        } // 이미 존재하는 경우 예외 발생
+        else throw new ApiException(ExceptionEnum.EXIST_COIN);
     }
 
     /**

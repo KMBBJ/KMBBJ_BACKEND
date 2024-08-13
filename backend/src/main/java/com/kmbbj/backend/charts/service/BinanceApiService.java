@@ -1,6 +1,5 @@
 package com.kmbbj.backend.charts.service;
 
-import com.google.gson.JsonArray;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -11,7 +10,5 @@ public interface BinanceApiService {
 
     Mono<String> getKlines(String symbol, String interval, Long startTime, Long endTime, Integer limit);
 
-    Mono<JsonArray> getRecentlyTrade(String symbol);
-
-    Mono<List<Map<String, Object>>> getBookTicker(List<String> symbols);
+    Mono<List<Map<String, Object>>> get24hrTickerData(List<String> symbols);
 }

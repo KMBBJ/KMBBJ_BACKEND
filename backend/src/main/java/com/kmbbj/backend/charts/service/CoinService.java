@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface CoinService {
     CoinResponse getCoinResponse(String symbol);
-    Page<Coin> getAllCoins(Pageable pageable);
+    Page<CoinResponse> getAllCoins(Pageable pageable);
     void addCoin(String symbol, String coin_name);
     void deleteCoin(String symbol);
     void updateCoin(String symbol, String status, OrderType orderType);
