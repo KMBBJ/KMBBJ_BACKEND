@@ -150,3 +150,51 @@ CREATE TABLE game_balances (
                                        REFERENCES users(user_id)
                                        ON DELETE CASCADE
 );
+
+-- 코인 coins
+CREATE TABLE coins (
+                       coin_id BIGSERIAL PRIMARY KEY,
+                       coin_name VARCHAR(50) NOT NULL,
+                       symbol VARCHAR(25) NOT NULL,
+                       status VARCHAR(50),
+                       order_types VARCHAR(25)
+);
+
+-- 코인 가격 정보 coin_details
+CREATE TABLE coin_details (
+                              coin_detail_id BIGSERIAL PRIMARY KEY,
+                              price DOUBLE PRECISION NOT NULL,
+                              bid_price DOUBLE PRECISION NOT NULL,
+                              bid_qty DOUBLE PRECISION NOT NULL,
+                              ask_price DOUBLE PRECISION NOT NULL,
+                              ask_qty DOUBLE PRECISION NOT NULL,
+                              voting_amount DOUBLE PRECISION NOT NULL,
+                              timezone TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                              coin_id BIGINT NOT NULL,
+                              CONSTRAINT fk_coin
+                                  FOREIGN KEY(coin_id)
+                                      REFERENCES coins(coin_id)
+                                      ON DELETE CASCADE
+);
+
+-- kline 그래프 정보 kline
+CREATE TABLE kline (
+                       kline_id BIGSERIAL PRIMARY KEY,
+                       interval VARCHAR(25) NOT NULL,  -- 1m, 3m, 5m, 30m, 1d, 1w 등
+                       open_price DOUBLE PRECISION NOT NULL,
+                       close_price DOUBLE PRECISION NOT NULL,
+                       high_price DOUBLE PRECISION NOT NULL,
+                       low_price DOUBLE PRECISION NOT NULL,
+                       timezone BIGINT NOT NULL,
+                       volume DOUBLE PRECISION NOT NULL,
+                       ma10 DOUBLE PRECISION,
+                       ma20 DOUBLE PRECISION,
+                       ma30 DOUBLE PRECISION,
+                       bbu DOUBLE PRECISION,
+                       bbd DOUBLE PRECISION,
+                       coin_id BIGINT NOT NULL,
+                       CONSTRAINT fk_coin
+                           FOREIGN KEY(coin_id)
+                               REFERENCES coins(coin_id)
+                               ON DELETE CASCADE
+);

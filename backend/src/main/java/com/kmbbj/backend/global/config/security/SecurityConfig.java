@@ -36,7 +36,9 @@ public class SecurityConfig {
             "/test/**", // 테스트 페이지
             "/auth/refreshToken", // 토큰 재발급 페이지
             "/auth/login", // 로그인 페이지
-            "/auth/join" // 회원가입 페이지
+            "/auth/join", // 회원가입 페이지
+            "/coin/**",
+            "/chart/**"
     };
 
     // 관리자 유저 허용 페이지
@@ -44,7 +46,9 @@ public class SecurityConfig {
             "/", // 메인페이지
             "/error", // 에러페이지
             "/test/**", // 테스트 페이지
-            "/auth/refreshToken" // 토큰 재발급 페이지
+            "/auth/refreshToken", // 토큰 재발급 페이지
+            "/coin/**", // 코인 관리 페이지
+            "/chart/**", // 차트
     };
 
     // 비로그인 유저 허용 페이지
