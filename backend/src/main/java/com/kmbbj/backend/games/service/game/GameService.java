@@ -8,6 +8,6 @@ public interface GameService {
     Game startGame(Long roomId);
     void endGame(Long roomId);
     GameStatusDTO getGameStatus(Long gameId);
-
     CurrentRoundDTO getCurrentRound(Long gameId);
+
 }

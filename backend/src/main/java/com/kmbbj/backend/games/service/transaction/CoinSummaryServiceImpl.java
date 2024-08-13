@@ -28,6 +28,7 @@ public class CoinSummaryServiceImpl implements CoinSummaryService {
     @Override
     @Transactional
     public void recordRoundResult(RoundResultDTO result) {
+        // 라운드 조회
         Round round = roundRepository.findById(result.getRoundId())
                 .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
 
@@ -102,13 +103,14 @@ public class CoinSummaryServiceImpl implements CoinSummaryService {
                 // null 아닐 경우 대상 객체 속성 값을 설정함
                 target.getClass().getMethod("set" + capitalize(propertyName), value.getClass()).invoke(target, value);
             }
+            // 리플렉션을 사용하여 속성 값 복사
         } catch (Exception e) {
             throw new RuntimeException("Error copying property: " + propertyName, e);
         }
     }
 
+    // 문자열의 첫 글자를 대문자로 변환
     private String capitalize(String str) {
         return str.substring(0, 1).toUpperCase() + str.substring(1);
-
     }
 }
