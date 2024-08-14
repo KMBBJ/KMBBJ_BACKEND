@@ -113,7 +113,7 @@ public class RoomServiceImpl implements RoomService{
 
 
     /**
-     *
+     * 방 삭제
      * @param roomId    삭제할 방 번호
      */
     @Override

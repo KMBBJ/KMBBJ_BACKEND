@@ -23,7 +23,6 @@ public enum ExceptionEnum {
     INVALID_USER_DETAILS(HttpStatus.NOT_FOUND, "INVALID_USER_DETAILS", " 사용자를 찾지 못했습니다."),
     EMAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "EMAIL_NOT_FOUND", " 이메일을 찾지 못했습니다."),
 
-
     // Token Exception
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_TOKEN", "토큰이 만료되었습니다."),
     EXPIRED_TOKEN2(HttpStatus.UNAUTHORIZED, "EXPIRED_TOKEN", "토큰 유효성 실패"),
