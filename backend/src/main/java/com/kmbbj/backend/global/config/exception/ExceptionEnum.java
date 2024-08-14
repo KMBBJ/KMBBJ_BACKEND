@@ -16,7 +16,12 @@ public enum ExceptionEnum {
 
     // Custom Exception
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "유저를 찾지 못했습니다."),
-    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", "방을 찾지 못했습니다."),
+    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_NOT_FOUND", " 방을 찾지 못했습니다."),
+    ALARM_NOT_FOUND(HttpStatus.NOT_FOUND, "ALARM_NOT_FOUND", " 알람을 찾지 못했습니다."),
+    TOTAL_BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "TOTAL_BALANCE_NOT_FOUND", " 자산을 찾지 못했습니다."),
+    UNAUTHORIZED(HttpStatus.NOT_FOUND, "UNAUTHORIZED", " 인증이 되지 않았습니다."),
+    INVALID_USER_DETAILS(HttpStatus.NOT_FOUND, "INVALID_USER_DETAILS", " 사용자를 찾지 못했습니다."),
+    EMAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "EMAIL_NOT_FOUND", " 이메일을 찾지 못했습니다."),
 
     // Token Exception
     EXPIRED_TOKEN(HttpStatus.UNAUTHORIZED, "EXPIRED_TOKEN", "토큰이 만료되었습니다."),
@@ -41,6 +46,13 @@ public enum ExceptionEnum {
     IN_OTHER_ROOM(HttpStatus.CONFLICT, "IN_OTHER_ROOM", "이미 다른 방에 입장해 있습니다."),
     ROOM_FULL(HttpStatus.CONFLICT,"ROOM_FULL","방이 가득 찼습니다."),
     INSUFFICIENT_ASSET(HttpStatus.FORBIDDEN,"INSUFFICIENT_ASSET","방 조건에 알맞는 자산이 부족합니다."),
+
+    // Game Exception
+    GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "GAME_NOT_FOUND", "게임을 찾지 못했습니다."),
+    ROUND_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUND_NOT_FOUND", "라운드를 찾지 못했습니다."),
+    GAME_ALREADY_STARTED(HttpStatus.BAD_REQUEST, "GAME_ALREADY_STARTED", "게임이 이미 시작되었습니다."),
+    DUPLICATE_ROUND(HttpStatus.BAD_REQUEST, "DUPLICATE_ROUND", "이미 존재하는 라운드입니다."),
+    ROUND_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUND_RESULT_NOT_FOUND", "라운드 결과를 찾지 못했습니다."),
 
 //    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 

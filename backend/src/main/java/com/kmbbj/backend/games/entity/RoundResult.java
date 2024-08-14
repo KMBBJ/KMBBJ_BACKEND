@@ -19,6 +19,7 @@ public class RoundResult {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "round_id", nullable = false)
     private Round round;
+
     @Column(name = "top_buy_coin")
     private String topBuyCoin;
 
