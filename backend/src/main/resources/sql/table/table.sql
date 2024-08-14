@@ -140,7 +140,7 @@ CREATE TABLE game_results (
 CREATE TABLE game_balances (
                                game_balances_id BIGSERIAL PRIMARY KEY,
                                room_id BIGINT NOT NULL,
-                               user_id BIGINT NOT NULL,
+                               user_id BIGINT NOT NULL UNIQUE,
                                CONSTRAINT fk_room
                                    FOREIGN KEY (room_id)
                                        REFERENCES rooms(room_id)
@@ -150,6 +150,7 @@ CREATE TABLE game_balances (
                                        REFERENCES users(user_id)
                                        ON DELETE CASCADE
 );
+
 
 -- 코인 coins
 CREATE TABLE coins (
