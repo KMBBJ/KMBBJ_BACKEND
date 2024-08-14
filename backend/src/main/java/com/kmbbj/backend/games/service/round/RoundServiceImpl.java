@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class RoundServiceImpl implements RoundService {
 
-    @Value("${game.round.duration.minutes:1440}")
-    private int roundDurationMinutes;
 
     private final RoundRepository roundRepository;
     private final GameRepository gameRepository;
@@ -27,17 +25,20 @@ public class RoundServiceImpl implements RoundService {
 
     /** 새로운 라운드 시작
      *
-     * @param game
+     * @param game 현재 진행 중인 게임 객체
+     * @throws ApiException 공통 예외
      */
     @Override
     @Transactional
     public void startNewRound(Game game) {
+        // 현재 라운드 중인 라운드 조회
         Round currentRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
 
-        // 라운드 종료 시 데이터 분석
+        // 현재 라운드의 결과 분석
         coinSummaryService.getRoundResult(currentRound.getRoundId());
 
+        // 다음 라운드 번호가 이미 존재하는지 확인 여부
         if (roundRepository.existsByGameAndRoundNumber(game, currentRound.getRoundNumber() + 1)) {
             throw new ApiException(ExceptionEnum.DUPLICATE_ROUND);
         }
@@ -46,7 +47,7 @@ public class RoundServiceImpl implements RoundService {
         Round newRound = new Round();
         newRound.setGame(game);
         newRound.setRoundNumber(currentRound.getRoundNumber() + 1);
-        newRound.setDurationMinutes(roundDurationMinutes);
+        newRound.setDurationMinutes(Integer.parseInt(System.getenv("GAME_ROUND_DURATION_MINUTES")));
         roundRepository.save(newRound);
 
         // 게임 상태 업데이트
@@ -63,10 +64,11 @@ public class RoundServiceImpl implements RoundService {
      */
     @Override
     public boolean isLastRound(Game game, int endRoundNumber) {
-
+        // 가장 최근의 라운드를 조회함
         Round latestRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
 
+        // 현재 라운드 번호가 종료 라운드 번호 이상인지 확인여부
         return latestRound.getRoundNumber() >= endRoundNumber;
     }
 }

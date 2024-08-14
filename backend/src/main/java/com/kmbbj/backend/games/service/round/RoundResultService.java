@@ -18,7 +18,6 @@ public class RoundResultService {
         return roundResultRepository.findByRoundGameGameIdOrderByRoundRoundIdAsc(gameId);
     }
 
-
 }
 
 
