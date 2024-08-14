@@ -1,8 +1,6 @@
 package com.kmbbj.backend.charts.service;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.kmbbj.backend.charts.entity.coin.Coin;
 import com.kmbbj.backend.charts.entity.coin.Coin24hDetail;
@@ -19,7 +17,6 @@ import reactor.core.publisher.Mono;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -212,37 +209,6 @@ public class BinanceApiServiceImpl implements BinanceApiService {
         return client.get()
                 .uri(uriBuilder -> uriBuilder.path(endpoint).query(queryString.toString()).build()) // URI 빌드
                 .retrieve() // 요청 전송
-                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {}); // 응답 본문을 비동기적으로 수신
-    }
-
-    /**
-     * JsonObject를 Map<String, Object>로 변환
-     * @param jsonObject 변환할 JsonObject
-     * @return 변환된 Map<String, Object>
-     */
-    private Map<String, Object> convertJsonObjectToMap(JsonObject jsonObject) {
-        Map<String, Object> map = new HashMap<>();
-        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-            JsonElement value = entry.getValue();
-            //value.isJsonPrimitive 메서드를 통해 JsonElement가 원시 타입자열(String), 숫자(Number), 논리 값(Boolean)인지 체크하고,
-            // 맞다면 각 타입에 맞게 변환하여 맵에 넣습니다.
-            if (value.isJsonPrimitive()) {
-                if (value.getAsJsonPrimitive().isString()) {
-                    map.put(entry.getKey(), value.getAsString());
-                } else if (value.getAsJsonPrimitive().isNumber()) {
-                    map.put(entry.getKey(), value.getAsNumber());
-                }
-            //JsonElement가 JSON 객체(JsonObject)인 경우, convertJsonObjectToMap 메서드를 재귀적으로 호출하여 해당 객체를 다시 Map<String, Object>로 변환합니다.
-            } else if (value.isJsonObject()) {
-                map.put(entry.getKey(), convertJsonObjectToMap(value.getAsJsonObject()));
-            } //JsonElement가 JSON 배열(JsonArray)인 경우, 해당 배열을 그대로 Map에 추가합니다.
-            else if (value.isJsonArray()) {
-                map.put(entry.getKey(), value.getAsJsonArray());
-            } //JsonElement가 JSON null 값을 나타내는 경우, Map에 null을 값으로 추가합니다.
-            else if (value.isJsonNull()) {
-                map.put(entry.getKey(), null);
-            }
-        }
-        return map;
+                .bodyToMono(new ParameterizedTypeReference<>() {}); // 응답 본문을 비동기적으로 수신
     }
 }

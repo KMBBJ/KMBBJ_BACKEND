@@ -1,7 +1,6 @@
 package com.kmbbj.backend.charts.service;
 
 import com.kmbbj.backend.charts.dto.CoinResponse;
-import com.kmbbj.backend.charts.entity.coin.Coin;
 import com.kmbbj.backend.charts.entity.OrderType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
