@@ -1,6 +1,7 @@
 package com.kmbbj.backend.admin.controller;
 
 
+import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.service.AdminService;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.global.config.exception.ApiException;
@@ -15,14 +16,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -73,4 +72,84 @@ public class AdminController {
                 .header("Custom-Header", "value") // 커스텀 헤더 추가
                 .body(response); //바디에 결과 추가
     }
+
+
+
+
+
+
+
+    /**
+     * 알람 및 로그인된 사용자 정보 조회
+     *
+     * @param page
+     * @param size
+     * @return
+     */
+    @GetMapping
+    public ResponseEntity<CustomResponse<Map<String, Object>>> getAllAlarmsAndAuthenticatedUser(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        PageRequest pageRequest = PageRequest.of(page, size);
+
+        // 공지사항 조회
+        Page<AdminAlarm> adminAlarmsPage = adminService.findAllAdminAlarm(pageRequest);
+
+        // 공지사항의 제목, 내용 추출
+        List<Map<String, String>> alarms = adminAlarmsPage.getContent().stream()
+                .map(alarm -> {
+                    Map<String, String> alarmData = new HashMap<>();
+                    alarmData.put("title", alarm.getTitle());
+                    alarmData.put("content", alarm.getContent());
+                    return alarmData;
+                })
+                .collect(Collectors.toList());
+
+        // 로그인된 사용자 정보 조회
+        User authenticatedUser = adminService.getAuthenticatedUser();
+        Map<String, String> userInfo = new HashMap<>();
+        userInfo.put("name", authenticatedUser.getNickname());
+        userInfo.put("email", authenticatedUser.getEmail());
+        userInfo.put("type", String.valueOf(authenticatedUser.getAuthority()));
+
+        // 알람과 회원 정보를 하나의 Map으로 통합
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("alarms", alarms);
+        responseData.put("userInfo", userInfo);
+
+        CustomResponse<Map<String, Object>> response = new CustomResponse<>(HttpStatus.OK, "알림 및 로그인된 사용자 정보 조회 성공", responseData);
+
+        return ResponseEntity.ok()
+                .header("Custom-Header", "value")
+                .body(response);
+    }
+
+
+    /**
+     *알림 추가 메서드
+     *
+     * @param adminAlarm
+     * @return
+     */
+    @PostMapping("/add")
+    public ResponseEntity<CustomResponse<AdminAlarm>> addAlarm(
+            @RequestBody AdminAlarm adminAlarm) {
+
+        // 로그인된 사용자 정보 가져오기
+        Long id = adminService.getAuthenticatedUser().getId();
+
+
+        // 알람 저장
+        AdminAlarm savedAlarm = adminService.saveAlarm(id, adminAlarm);
+
+        // 응답 데이터 생성
+        CustomResponse<AdminAlarm> response = new CustomResponse<>(HttpStatus.CREATED, "알림 추가 성공", savedAlarm);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Custom-Header", "value")
+                .body(response);
+    }
+
+
 }

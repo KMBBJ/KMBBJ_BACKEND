@@ -24,9 +24,10 @@ public class AdminAlarm {
     private String content;
 
     @Column(name = "create_date_posted")
-    private Timestamp createDatePosted;
+    private Timestamp createDatePosted = new Timestamp(System.currentTimeMillis());
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
 }
