@@ -34,6 +34,14 @@ spring:
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
 
+  cassandra:
+    contact-points: ${CASSANDRA_SEEDS}
+    port: ${CASSANDRA_PORT}
+    keyspace-name: ${CASSANDRA_KEYSPACE}
+    username: ${CASSANDRA_USER}
+    password: ${CASSANDRA_PASSWORD}
+    schema-action: none
+
   jwt:
     accessSecret: ${LOC_JWT_ACCESS_SECRET}
     refreshSecret: ${LOC_JWT_REFRESH_SECRET}

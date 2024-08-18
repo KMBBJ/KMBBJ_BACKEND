@@ -1,11 +1,11 @@
-version: '3.8'
+version: '3.8' # Docker Compose 파일 버전
 
 services:
   redis:
-    image: redis:latest
-    container_name: redis
+    image: redis:latest # Redis의 최신 버전 이미지
+    container_name: redis # 컨테이너의 이름을 redis로 지정
     ports:
-      - "${REDIS_PORT}:${REDIS_PORT_OUTPORT}"
+      - "${REDIS_PORT}:${REDIS_PORT_OUTPORT}" #호스트와 컨테이너 간의 포트
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
     volumes:
       - redis_data:/data
@@ -50,8 +50,29 @@ services:
       - zookeeper_data:/var/lib/zookeeper/data
     restart: always
 
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    ports:
+      - "${CASSANDRA_PORT}:${CASSANDRA_PORT_OUTPORT}"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "${CASSANDRA_CLUSTER_NAME}"
+      CASSANDRA_DC: "${CASSANDRA_DC}"
+      CASSANDRA_RACK: "${CASSANDRA_RACK}"
+      CASSANDRA_SEEDS: "${CASSANDRA_SEEDS}"
+      CASSANDRA_START_RPC: "${CASSANDRA_START_RPC}"
+      CASSANDRA_ENDPOINT_SNITCH: "${CASSANDRA_ENDPOINT_SNITCH}"
+      CASSANDRA_PASSWORD_SEEDER: "${CASSANDRA_PASSWORD_SEEDER}"
+      CASSANDRA_USER: "${CASSANDRA_USER}"
+      CASSANDRA_PASSWORD: "${CASSANDRA_PASSWORD}"
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+      - ../cql/create_keyspace.cql:/docker-entrypoint-initdb.d/create_keyspace.cql
+    restart: always
+
 volumes:
   postgres_data:
   redis_data:
   kafka_data:
   zookeeper_data:
+  cassandra_data:
