@@ -1,0 +1,7 @@
+docker exec -it cassandra cqlsh
+
+CREATE KEYSPACE IF NOT EXISTS coin_transaction
+    WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
+     AND durable_writes = true;
+
+DESCRIBE KEYSPACES;
