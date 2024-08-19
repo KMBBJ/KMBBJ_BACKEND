@@ -67,7 +67,6 @@ services:
       CASSANDRA_PASSWORD: "${CASSANDRA_PASSWORD}"
     volumes:
       - cassandra_data:/var/lib/cassandra
-      - ../cql/create_keyspace.cql:/docker-entrypoint-initdb.d/create_keyspace.cql
     restart: always
 
 volumes:
