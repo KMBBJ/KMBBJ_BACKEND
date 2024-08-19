@@ -36,6 +36,9 @@ dependencies {
 	/* redis */
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+	/* Cassandra */
+	implementation 'org.springframework.boot:spring-boot-starter-data-cassandra'
+
 	/*lombok*/
 	annotationProcessor 'org.projectlombok:lombok'
 	compileOnly 'org.projectlombok:lombok'
