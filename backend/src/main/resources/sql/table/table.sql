@@ -208,3 +208,14 @@ CREATE TABLE kline (
                                REFERENCES coins(coin_id)
                                ON DELETE CASCADE
 );
+
+
+-- 공지 테이블
+CREATE TABLE admin_alarms (
+                              admin_alarms_id SERIAL PRIMARY KEY,
+                              title VARCHAR(255) NOT NULL,
+                              content TEXT NOT NULL,
+                              create_date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              user_id BIGINT NOT NULL,
+                              CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);

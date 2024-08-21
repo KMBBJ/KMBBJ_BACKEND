@@ -17,11 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
+
 
 @Service
 @RequiredArgsConstructor
@@ -70,15 +67,16 @@ public class AdminService {
      * 관리자 알림 페이지
      *
      * @param pageable 페이지 넘버, 페이지 사이즈, 정렬 정보를 포함하는 Pageable 객체
-     * @return
+     * @return 페이징 처리된 알람들 리턴
      */
     @Transactional
     public Page<AdminAlarm> findAllAdminAlarm(Pageable pageable) {
         Pageable sortedByDescId = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
-                Sort.by(Sort.Direction.DESC, "id"));
-        Page<AdminAlarm> adminAlarms = adminAlarmRepository.findAll(sortedByDescId);
+                Sort.by(Sort.Direction.DESC, "id")); // id를 따라 내림차순 정렬
+        Page<AdminAlarm> adminAlarms = adminAlarmRepository.findAll(sortedByDescId); // 모든 알람 정보 내림차순으로 가져오기
+
         if (adminAlarms.isEmpty()) {
-            throw new ApiException(ExceptionEnum.ALARM_NOT_FOUND);
+            throw new ApiException(ExceptionEnum.ALARM_NOT_FOUND); // 알람이 없는 경우 예외 발생
         }
         return adminAlarms;
     }
@@ -88,58 +86,54 @@ public class AdminService {
     /**
      * 알림 저장 서비스
      *
-     * @param id
-     * @param adminAlarm
-     * @return
+     * @param id 알람 발행 유저 아이디
+     * @param adminAlarm 알람 title / content
+     * @return 저장된 알람 정보 리턴
      */
     @Transactional
     public AdminAlarm saveAlarm(Long id, AdminAlarm adminAlarm) {
         if (id == null) {
-            System.out.println("아이디 없음 --------------------------------------------");
             throw new ApiException(ExceptionEnum.USER_NOT_FOUND); // 유저가 null인 경우 예외 발생
         }
         if (adminAlarm == null) {
-            System.out.println("알람 없음 ----------------------------------------------");
-            throw new ApiException(ExceptionEnum.BAD_REQUEST); // 알람이 null인 경우 예외 발생
+            throw new ApiException(ExceptionEnum.ALARM_NOT_FOUND); // 알람이 null인 경우 예외 발생
         }
 
         try {
-            // adminAlarm 엔티티의 user_id를 설정
-            User user = userRepository.findById(id).get();
-
-            adminAlarm.setUser(user);
-            return adminAlarmRepository.save(adminAlarm);
+            User user = userRepository.findById(id).get();// adminAlarm 엔티티의 user_id를 설정
+            adminAlarm.setUser(user); // adminAlarm에 사용자 정보 설정
+            return adminAlarmRepository.save(adminAlarm); // 알람 저장
         } catch (Exception e) {
-            throw new ApiException(ExceptionEnum.INTERNAL_SERVER_ERROR); // 저장 중 예외 발생 시 처리
+            throw new ApiException(ExceptionEnum.INTERNAL_SERVER_ERROR); // 저장 중 예외 발생 시
         }
     }
 
 
 
-
     /**
-     * 인증된 사용자 정보 가져오기
+     * 인증된 사용자 정보를 가져오는 서비스 메서드
      *
-     * @return
+     * @return 인증된 사용자 정보를 반환
      */
     @Transactional(readOnly = true)
     public User getAuthenticatedUser() {
+        // 인증 정보를 가져오기
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // 인증 체크
+        // 인증 정보가 없거나 사용자가 인증되지 않은 경우 예외 발생
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ApiException(ExceptionEnum.UNAUTHORIZED); // 인증되지 않은 경우 예외 발생
+            throw new ApiException(ExceptionEnum.UNAUTHORIZED);
         }
 
-        // 사용자 정보 타입 체크
+        // 인증 정보에서 사용자 세부 정보가 유효하지 않은 경우 예외 발생
         if (!(authentication.getPrincipal() instanceof CustomUserDetails customUserDetails)) {
-            throw new ApiException(ExceptionEnum.INVALID_USER_DETAILS); // 사용자 정보가 올바르지 않을 때 예외 발생
+            throw new ApiException(ExceptionEnum.INVALID_USER_DETAILS);
         }
 
-        Long id = customUserDetails.getUserId();
+        Long id = customUserDetails.getUserId();  // 사용자 ID를 가져옴
 
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND)); // 사용자를 찾지 못할 경우 ApiException 사용
+        return userRepository.findById(id)// 사용자 ID를 통해 데이터베이스에서 사용자를 조회
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND)); // 사용자가 존재하지 않으면 예외를 발생시킴
     }
 
 }
