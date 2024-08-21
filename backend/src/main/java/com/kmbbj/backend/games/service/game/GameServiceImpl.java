@@ -55,11 +55,6 @@ public class GameServiceImpl implements GameService {
     public GameStatusDTO startGame(Long roomId) {
         Room room = roomService.findById(roomId); // 방 ID 조회함
 
-        // 시작된 상태 확인
-        if (room.getIsStarted()) {
-            throw new ApiException(ExceptionEnum.GAME_ALREADY_STARTED);
-        }
-
         // 새 게임 생성 & 저장
         Game game = new Game();
         game.setGameStatus(GameStatus.ACTIVE); // 게임 상태를 설정
@@ -85,40 +80,6 @@ public class GameServiceImpl implements GameService {
 
         return status;
     }
-
-
-//    /** 비동기적으로 게임 시작 -> 스케줄러 으로 변경함
-//     *  1. 마지막 라운드 도달할 떄까지 새 라운드 계속 시작함
-//     *  2. 마지막 라운드에 도달하면 게임 종료
-//     *
-//     * @param game           게임 객체
-//     * @param endRoundNumber 게임이 종료될 라운드 번호
-//     */
-//    @Async
-//    public void startGameAsync(Game game, int endRoundNumber) {
-//        try {
-//            // 마지막 라운드 도달할 때까지 계속 라운드를 진행
-//            while (!roundService.isLastRound(game, endRoundNumber)) {
-//                try {
-//                    roundService.startNewRound(game); // 새 라운드 시작
-//
-//                    // 라운드가 끝날 때까지 대기 (24시간)
-//                    Thread.sleep(24 * 60 * 60 * 1000); // 24시간 대기
-//                } catch (Exception ex) {
-//                    throw ex; // 예외가 발생하면 반복문을 멈추고 상위로 예외를 던짐
-//                }
-//            }
-//
-//            // 게임 완료 처리
-//            endGame(game.getRoom().getRoomId());
-//        } catch (InterruptedException e) {
-//            Thread.currentThread().interrupt(); // 쓰레드 인터럽트 시도
-//        } catch (Exception e) {
-//            game.setGameStatus(GameStatus.COMPLETED); // 예외 발생 시 게임 상태를 완료로 설정
-//            gameRepository.save(game);
-//            throw e; // 예외를 다시 던져 트랜잭션을 롤백하도록 처리
-//        }
-//    }
 
 
     /** 게임 종료
