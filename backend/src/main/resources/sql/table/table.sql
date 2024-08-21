@@ -208,3 +208,16 @@ CREATE TABLE kline (
                                REFERENCES coins(coin_id)
                                ON DELETE CASCADE
 );
+
+-- 거래 로그를 남기는 용 table
+CREATE TABLE transactions (
+                              transaction_id BIGSERIAL PRIMARY KEY,
+                              transaction_type VARCHAR(10) NOT NULL,
+                              quantity DECIMAL(20,10) NOT NULL,
+                              price DECIMAL(20,10) NOT NULL,
+                              create_date TIMESTAMP NOT NULL,
+                              execution_date TIMESTAMP NULL,
+                              balances_id BIGINT NOT NULL,
+                              game_id BIGINT NOT NULL,
+                              coin_id BIGINT NOT NULL
+);
