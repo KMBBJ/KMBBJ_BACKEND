@@ -130,7 +130,7 @@ CREATE TABLE round_results (
 -- Game_Results 테이블 생성
 CREATE TABLE game_results (
                               result_id BIGSERIAL PRIMARY KEY,
-                              game_id BIGINT,
+                              game_id UUID,
                               user_id BIGINT,
                               total_profit INTEGER,
                               total_loss INTEGER,
