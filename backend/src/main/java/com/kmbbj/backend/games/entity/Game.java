@@ -25,7 +25,7 @@ public class Game {
     // 게임 ID (기본 키)
     @Id @GeneratedValue (generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column (name = "game_id", updatable = false,nullable = false)
+    @Column (name = "game_id", updatable = false, nullable = false)
     private UUID gameId;
 
     /**
@@ -33,7 +33,7 @@ public class Game {
      * ACTIVE 또는 COMPLETED 값 가질수 있음
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "enum", nullable = false)
+    @Column(name = "game_status", nullable = false, columnDefinition = "VARCHAR(10) DEFAULT 'ACTIVE'")
     private GameStatus gameStatus;
 
     /**
@@ -47,5 +47,14 @@ public class Game {
     @OneToOne
     @JoinColumn(name = "room_id", nullable = false)
     private Room room;
+
+    // 데이터 저장되기 전에 실행 게임 null 일 경우 기본 값 ACTIVE 상태 변경
+    @PrePersist
+    protected void onCreate() {
+        if (this.gameStatus == null) {
+            this.gameStatus = GameStatus.ACTIVE; // 기본값 설정
+        }
+    }
+
 
 }
