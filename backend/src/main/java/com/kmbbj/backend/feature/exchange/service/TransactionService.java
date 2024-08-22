@@ -1,11 +1,20 @@
 package com.kmbbj.backend.feature.exchange.service;
 
-import com.kmbbj.backend.feature.exchange.service.buy.Buy;
-import com.kmbbj.backend.feature.exchange.service.execution.Execution;
-import com.kmbbj.backend.feature.exchange.service.sell.Sell;
+import com.kmbbj.backend.feature.exchange.service.buy.cansel.CanselBuyOrder;
+import com.kmbbj.backend.feature.exchange.service.buy.save.SaveBuyOrder;
+import com.kmbbj.backend.feature.exchange.service.execution.matching.ExecutionAllMatchingOrder;
+import com.kmbbj.backend.feature.exchange.service.sell.cansel.CanselSellOrder;
+import com.kmbbj.backend.feature.exchange.service.sell.save.SaveSellOrder;
+import org.springframework.stereotype.Service;
 
+@Service
 public interface TransactionService extends
-        Buy,
-        Sell,
-        Execution
+        //Sell
+        SaveSellOrder,
+        CanselSellOrder,
+        //Buy
+        SaveBuyOrder,
+        CanselBuyOrder,
+        //excution
+        ExecutionAllMatchingOrder
 {}

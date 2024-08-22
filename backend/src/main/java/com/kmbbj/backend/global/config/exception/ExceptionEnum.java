@@ -62,7 +62,10 @@ public enum ExceptionEnum {
     // Coin
     EXIST_COIN(HttpStatus.BAD_REQUEST, "EXIST_COIN", "이미 있는 코인 입니다."),
     NOT_FOUND_SYMBOL(HttpStatus.BAD_REQUEST, "NOT_FOUND_SYMBOL", "존재하지 않는 코인 코드입니다."),
-    UNSUPPORTED_INTERVAL(HttpStatus.BAD_REQUEST, "UNSUPPORTED_INTERVAL", "지원하지 않는 Interval 형식 입니다.");
+    UNSUPPORTED_INTERVAL(HttpStatus.BAD_REQUEST, "UNSUPPORTED_INTERVAL", "지원하지 않는 Interval 형식 입니다."),
+
+    // trasaction
+    CASSANDRA_SAVE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_SAVE_EXCEPTION", "Cassandra에 데이터를 저장하는 중 오류가 발생했습니다.");
 
     private final HttpStatus status;
     private final String code;

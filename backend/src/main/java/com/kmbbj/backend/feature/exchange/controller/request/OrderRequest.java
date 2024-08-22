@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Schema(name = "주문 요청시 사용하는 객체", description = "주문 요청시 사용하면됩니다.")
 @Getter
@@ -21,8 +22,11 @@ public class OrderRequest {
     private BigDecimal price;
 
     @Schema(name = "게임 Id")
-    private String gameId;
+    private UUID gameId;
 
     @Schema(name = "코인 Id")
     private Long coinId;
+
+    @Schema(name = "주문한 사람 Id")
+    private Long userId;
 }
