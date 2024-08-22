@@ -10,5 +10,5 @@ import java.util.List;
 
 @Repository
 public interface SellOrderRepository extends CassandraRepository<SellOrder, OrderPrimaryKey> {
-    List<SellOrder> findAllByIdSymbolAndIdPriceLessThanEqual(String symbol, BigDecimal price);
+    List<SellOrder> findAllByIdCoinIdAndIdPriceLessThanEqual(Long coinId, BigDecimal price);
 }
