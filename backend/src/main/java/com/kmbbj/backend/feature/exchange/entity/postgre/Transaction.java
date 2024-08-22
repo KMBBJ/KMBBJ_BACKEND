@@ -42,7 +42,7 @@ public class Transaction {
     private Long balancesId; // 잔액 ID, 외래 키로 사용될 수 있음
 
     @Column(name = "game_id")
-    private Long gameId; // 게임 ID, 외래 키로 사용될 수 있음
+    private String gameId; // 게임 ID, 외래 키로 사용될 수 있음
 
     @Column(name = "coin_id")
     private Long coinId; // 코인 아이디
