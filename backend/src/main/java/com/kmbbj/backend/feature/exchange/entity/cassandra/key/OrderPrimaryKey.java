@@ -14,8 +14,8 @@ import java.time.Instant;
 @Getter
 @Builder
 public class OrderPrimaryKey implements Serializable {
-    @PrimaryKeyColumn(name = "symbol", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-    private String symbol;
+    @PrimaryKeyColumn(name = "coin_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+    private Long coinId;
 
     @PrimaryKeyColumn(name = "price", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
     private BigDecimal price;

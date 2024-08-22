@@ -45,5 +45,5 @@ public class Transaction {
     private Long gameId; // 게임 ID, 외래 키로 사용될 수 있음
 
     @Column(name = "coin_id")
-    private Long coinId; // 코인 ID, 외래 키로 사용될 수 있음
+    private Long coinId; // 코인 아이디
 }

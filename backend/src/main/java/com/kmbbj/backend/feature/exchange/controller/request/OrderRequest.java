@@ -20,5 +20,5 @@ public class OrderRequest {
     private String orderId;
 
     @Schema(name = "코인 Id")
-    private String coinId;
+    private Long coinId;
 }
