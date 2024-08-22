@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "transactions")
@@ -35,6 +36,9 @@ public class Transaction {
     @Column(name = "create_date")
     private LocalDateTime createDate; // 생성일시, 거래가 생성된 시간
 
+    @Column(name = "is_execution")
+    private Boolean isExecution = false; // 체결이 됐는지 알려줌
+
     @Column(name = "execution_date", nullable = true)
     private LocalDateTime executionDate; // 거래 체결일, nullable 설정됨
 
@@ -42,7 +46,7 @@ public class Transaction {
     private Long balancesId; // 잔액 ID, 외래 키로 사용될 수 있음
 
     @Column(name = "game_id")
-    private String gameId; // 게임 ID, 외래 키로 사용될 수 있음
+    private UUID gameId; // 게임 ID, 외래 키로 사용될 수 있음
 
     @Column(name = "coin_id")
     private Long coinId; // 코인 아이디

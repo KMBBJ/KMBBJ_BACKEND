@@ -20,5 +20,5 @@ public class SellOrder {
     private OrderPrimaryKey id;
 
     //postgre랑 연동할 아이디.
-    private Long orderId;
+    private Long transactionId;
 }
