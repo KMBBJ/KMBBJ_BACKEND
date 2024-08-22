@@ -100,7 +100,10 @@ public class AdminService {
         }
 
         try {
-            User user = userRepository.findById(id).get();// adminAlarm 엔티티의 user_id를 설정
+            // 유저가 존재하는지 확인
+            User user = userRepository.findById(id)
+                    .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND)); // 유저를 찾지 못한 경우 예외 발생
+
             adminAlarm.setUser(user); // adminAlarm에 사용자 정보 설정
             return adminAlarmRepository.save(adminAlarm); // 알람 저장
         } catch (Exception e) {
