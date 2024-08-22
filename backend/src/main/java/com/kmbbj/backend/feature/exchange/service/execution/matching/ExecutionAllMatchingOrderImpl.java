@@ -18,12 +18,12 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
     private final SellOrderRepository sellOrderRepository;
     private final BuyOrderRepository buyOrderRepository;
 
-    public List<SellOrder> findEligibleSellOrders(String symbol, BigDecimal price) {
-        return sellOrderRepository.findAllByIdSymbolAndIdPriceLessThanEqual(symbol, price);
+    public List<SellOrder> findEligibleSellOrders(Long coinId, BigDecimal price) {
+        return sellOrderRepository.findAllByIdCoinIdAndIdPriceLessThanEqual(coinId, price);
     }
 
-    public List<BuyOrder> findEligibleBuyOrders(String symbol, BigDecimal price) {
-        return buyOrderRepository.findAllByIdSymbolAndIdPriceGreaterThanEqual(symbol, price);
+    public List<BuyOrder> findEligibleBuyOrders(Long coinId, BigDecimal price) {
+        return buyOrderRepository.findAllByIdCoinIdAndIdPriceGreaterThanEqual(coinId, price);
     }
 
     @Transactional
