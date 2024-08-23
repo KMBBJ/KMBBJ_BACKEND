@@ -90,13 +90,8 @@ CREATE TABLE user_rooms (
 
 -- Games 테이블 생성
 CREATE TABLE games (
-                       game_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                       enum VARCHAR(255) NOT NULL,
-                       room_id BIGINT,
-                       CONSTRAINT fk_room
-                           FOREIGN KEY (room_id)
-                               REFERENCES rooms(room_id)
-                               ON DELETE CASCADE
+                       game_id BIGSERIAL PRIMARY KEY,
+                       enum VARCHAR(255) NOT NULL
 );
 
 -- Rounds 테이블 생성
@@ -104,7 +99,7 @@ CREATE TABLE rounds (
                         round_id BIGSERIAL PRIMARY KEY,
                         round_number INTEGER,
                         duration_minutes INTEGER,
-                        game_id UUID,
+                        game_id BIGINT,
                         CONSTRAINT fk_game
                             FOREIGN KEY (game_id)
                                 REFERENCES games(game_id)
@@ -130,7 +125,7 @@ CREATE TABLE round_results (
 -- Game_Results 테이블 생성
 CREATE TABLE game_results (
                               result_id BIGSERIAL PRIMARY KEY,
-                              game_id UUID,
+                              game_id BIGINT,
                               user_id BIGINT,
                               total_profit INTEGER,
                               total_loss INTEGER,
@@ -212,4 +207,28 @@ CREATE TABLE kline (
                            FOREIGN KEY(coin_id)
                                REFERENCES coins(coin_id)
                                ON DELETE CASCADE
+);
+
+-- 거래 로그를 남기는 용 table
+CREATE TABLE transactions (
+                              transaction_id BIGSERIAL PRIMARY KEY,
+                              transaction_type VARCHAR(10) NOT NULL,
+                              quantity DECIMAL(20,10) NOT NULL,
+                              price DECIMAL(20,10) NOT NULL,
+                              create_date TIMESTAMP NOT NULL,
+                              status varchar(20) NOT NULL,
+                              execution_date TIMESTAMP NULL,
+                              balances_id BIGINT NOT NULL,
+                              game_id UUID NOT NULL,
+                              coin_id BIGINT NOT NULL
+);
+
+-- 공지 테이블
+CREATE TABLE admin_alarms (
+                              admin_alarms_id SERIAL PRIMARY KEY,
+                              title VARCHAR(255) NOT NULL,
+                              content TEXT NOT NULL,
+                              create_date_posted TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                              user_id BIGINT NOT NULL,
+                              CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );

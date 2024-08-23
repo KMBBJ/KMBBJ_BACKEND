@@ -10,6 +10,7 @@ import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,7 +23,6 @@ public class RoundServiceImpl implements RoundService {
     private final CoinSummaryService coinSummaryService;
 
 
-
     /** 새로운 라운드 시작
      *
      * @param game 현재 진행 중인 게임 객체
@@ -31,57 +31,29 @@ public class RoundServiceImpl implements RoundService {
     @Override
     @Transactional
     public void startNewRound(Game game) {
-        if (game == null) {
-            throw new ApiException(ExceptionEnum.GAME_NOT_FOUND);
-        }
-
         // 현재 라운드 중인 라운드 조회
         Round currentRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
 
-
         // 현재 라운드의 결과 분석
-//        if (currentRound.getRoundNumber() > 1) {
-//            try {
-//                coinSummaryService.getRoundResult(currentRound.getRoundId());
-//            } catch (ApiException e) {
-//                if (!e.getException().equals(ExceptionEnum.ROUND_RESULT_NOT_FOUND)) {
-//                    throw e;
-//                }
-//            }
-//        }
+        coinSummaryService.getRoundResult(currentRound.getRoundId());
 
         // 다음 라운드 번호가 이미 존재하는지 확인 여부
         if (roundRepository.existsByGameAndRoundNumber(game, currentRound.getRoundNumber() + 1)) {
             throw new ApiException(ExceptionEnum.DUPLICATE_ROUND);
         }
 
-        int newRoundNumber = currentRound.getRoundNumber() + 1; // 기존 라운드 + 1
-
-        // 유효하지 않은 라운드 번호 체크
-        if (newRoundNumber <= 0) {
-            throw new ApiException(ExceptionEnum.INVALID_ROUND_NUMBER);
-        }
-
-        // 다음 라운드 번호가 이미 존재하는지 확인
-        if (roundRepository.existsByGameAndRoundNumber(game, newRoundNumber)) {
-            throw new ApiException(ExceptionEnum.DUPLICATE_ROUND);
-        }
-
         // 새로운 라운드 생성
         Round newRound = new Round();
         newRound.setGame(game);
-        newRound.setRoundNumber(newRoundNumber);
-        int durationMinutes = currentRound.getDurationMinutes();
-        newRound.setDurationMinutes(durationMinutes);
+        newRound.setRoundNumber(currentRound.getRoundNumber() + 1);
+        newRound.setDurationMinutes(Integer.parseInt(System.getenv("GAME_ROUND_DURATION_MINUTES")));
         roundRepository.save(newRound);
 
         // 게임 상태 업데이트
         game.setGameStatus(GameStatus.ACTIVE);
         gameRepository.save(game);
     }
-
-    
 
 
     /** 게임이 마지막 라운드에 도달 했는지 확인
