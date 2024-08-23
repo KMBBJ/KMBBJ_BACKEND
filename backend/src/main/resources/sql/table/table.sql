@@ -219,6 +219,6 @@ CREATE TABLE transactions (
                               is_execution boolean default FALSE,
                               execution_date TIMESTAMP NULL,
                               balances_id BIGINT NOT NULL,
-                              game_id VARCHAR(255) NOT NULL,
+                              game_id UUID NOT NULL,
                               coin_id BIGINT NOT NULL
 );
