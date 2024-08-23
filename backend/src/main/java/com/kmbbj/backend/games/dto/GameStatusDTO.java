@@ -6,10 +6,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.UUID;
 
 @Getter@Setter
 public class GameStatusDTO {
-    private Long gameId;           // 게임 ID
+    private String gameId;           // 게임 ID
     private GameStatus status;     // 게임의 현재 상태
-    private List<RoundResultDTO> rounds; // 게임의 라운드 결과 목록
 }
