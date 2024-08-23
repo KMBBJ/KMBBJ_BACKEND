@@ -187,20 +187,25 @@ public class GameServiceImpl implements GameService {
     /** 사용자 해당 게임에 접근할 수 있는 권한
      *
      * @param encryptedGameId 게임 암호화된 ID
-     * @return 사용자가 해당 접근할 수있는 권한
+     * @return 사용자 해당 접근
+     * @throws ApiException 공통 예외처리
      */
     @Override
     public boolean isUserAuthorizedForGame(String encryptedGameId) {
         UserRoom currentUserRoom = userRoomService.findCurrentRoom();
 
-        if (currentUserRoom == null || !currentUserRoom.getIsPlayed()){
-            return false;
+        // 사용자가 방에 참여하지 않으면 예외 발생
+        if (currentUserRoom == null || !currentUserRoom.getIsPlayed()) {
+            throw new ApiException(ExceptionEnum.FORBIDDEN);
         }
+
         UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
 
+        // 게임을 찾을 수 없으면 예외 발생
         Game requestedGame = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
+        // 사용자가 현재 방 ID와 요청된 게임의 ID 일치 하는지 확인
         return currentUserRoom.getRoom().getRoomId().equals(requestedGame.getRoom().getRoomId());
     }
 
