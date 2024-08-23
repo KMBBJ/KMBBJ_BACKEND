@@ -53,7 +53,6 @@ public enum ExceptionEnum {
     GAME_ALREADY_STARTED(HttpStatus.BAD_REQUEST, "GAME_ALREADY_STARTED", "게임이 이미 시작되었습니다."),
     DUPLICATE_ROUND(HttpStatus.BAD_REQUEST, "DUPLICATE_ROUND", "이미 존재하는 라운드입니다."),
     ROUND_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUND_RESULT_NOT_FOUND", "라운드 결과를 찾지 못했습니다."),
-    INVALID_ROUND_NUMBER(HttpStatus.BAD_REQUEST, "INVALID_ROUND_NUMBER", "유효하지 않은 라운드 번호입니다."),
 
 //    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 

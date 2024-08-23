@@ -2,22 +2,19 @@ package com.kmbbj.backend.games.service.round;
 
 import com.kmbbj.backend.games.entity.RoundResult;
 import com.kmbbj.backend.games.repository.RoundResultRepository;
-import com.kmbbj.backend.games.util.GameEncryptionUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class RoundResultService {
 
     private final RoundResultRepository roundResultRepository;
-    private final GameEncryptionUtil gameEncryptionUtil;
 
-    public List<RoundResult> getRoundResultsForGameId(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public List<RoundResult> getRoundResultsForGame(Long gameId) {
+        // 라운드 결과를 조회 - > 라운드 ID 순서대로 정렬해서 반환
         return roundResultRepository.findByRoundGameGameIdOrderByRoundRoundIdAsc(gameId);
     }
 
