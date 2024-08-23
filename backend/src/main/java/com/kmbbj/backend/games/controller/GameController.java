@@ -2,11 +2,9 @@ package com.kmbbj.backend.games.controller;
 
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
-import com.kmbbj.backend.games.entity.Game;
 import com.kmbbj.backend.games.entity.RoundResult;
 import com.kmbbj.backend.games.service.game.GameService;
 import com.kmbbj.backend.games.service.round.RoundResultService;
-import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -19,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/games")
@@ -43,10 +40,9 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<GameStatusDTO>> startGame(@PathVariable Long roomId, Authentication authentication) {
+    public CustomResponse<GameStatusDTO> startGame(@PathVariable Long roomId, Authentication authentication) {
         GameStatusDTO gameStatus = gameService.startGame(roomId);
-        CustomResponse<GameStatusDTO> response = new CustomResponse<>(HttpStatus.OK, "게임 시작 성공", gameStatus);
-        return ResponseEntity.ok().body(response);
+        return new CustomResponse<>(HttpStatus.OK, "게임 시작 성공", gameStatus);
     }
 
     /** 게임 ID 가져와서 게임의 현재 상태 조회
@@ -60,10 +56,12 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "게임 상태 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<GameStatusDTO>> getGameStatus(@PathVariable String encryptedGameId) {
+    public CustomResponse<GameStatusDTO> getGameStatus(@PathVariable String encryptedGameId) {
+        if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
+            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임의 상태를 조회할 권한이 없습니다.", null);
+        }
         GameStatusDTO status = gameService.getGameStatus(encryptedGameId);
-        CustomResponse<GameStatusDTO> response = new CustomResponse<>(HttpStatus.OK, "게임 상태 조회 성공", status);
-        return ResponseEntity.ok().body(response);
+        return new CustomResponse<>(HttpStatus.OK, "게임 상태 조회 성공", status);
     }
 
 
@@ -79,10 +77,12 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "게임 종료 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<String>> endGame(@PathVariable String encryptedGameId, Authentication authentication) {
+    public CustomResponse<String> endGame(@PathVariable String encryptedGameId, Authentication authentication) {
+        if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
+            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임을 종료할 권한이 없습니다.", null);
+        }
         gameService.endGame(encryptedGameId);
-        CustomResponse<String> response = new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", "게임이 성공적으로 종료되었습니다.");
-        return ResponseEntity.ok().body(response);
+        return new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", "게임이 성공적으로 종료되었습니다.");
     }
 
     /** 게임 현재 라운드 조회
@@ -97,9 +97,12 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "현재 라운드 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<CurrentRoundDTO>> getCurrentRound(@PathVariable String encryptedGameId) {
+    public CustomResponse<CurrentRoundDTO> getCurrentRound(@PathVariable String encryptedGameId) {
+        if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
+            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임에 접근할 권한이 없습니다.", null);
+        }
         CurrentRoundDTO currentRound = gameService.getCurrentRound(encryptedGameId);
-        return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "현재 라운드 조회 성공", currentRound));
+        return new CustomResponse<>(HttpStatus.OK, "현재 라운드 조회 성공", currentRound);
     }
 
 
@@ -114,12 +117,11 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "라운드 결과 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<List<RoundResult>>> getRoundResults(@PathVariable String encryptedGameId) {
-
+    public CustomResponse<List<RoundResult>> getRoundResults(@PathVariable String encryptedGameId) {
+        if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
+            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임에 접근할 권한이 없습니다.", null);
+        }
         List<RoundResult> results = roundResultService.getRoundResultsForGameId(encryptedGameId);
-        return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "라운드 결과 조회 성공", results));
+        return new CustomResponse<>(HttpStatus.OK, "라운드 결과 조회 성공", results);
     }
-
-
-
 }
