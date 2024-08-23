@@ -216,7 +216,7 @@ CREATE TABLE transactions (
                               quantity DECIMAL(20,10) NOT NULL,
                               price DECIMAL(20,10) NOT NULL,
                               create_date TIMESTAMP NOT NULL,
-                              is_execution boolean default FALSE,
+                              status varchar(20) NOT NULL,
                               execution_date TIMESTAMP NULL,
                               balances_id BIGINT NOT NULL,
                               game_id UUID NOT NULL,

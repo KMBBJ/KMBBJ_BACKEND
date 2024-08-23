@@ -65,7 +65,10 @@ public enum ExceptionEnum {
     UNSUPPORTED_INTERVAL(HttpStatus.BAD_REQUEST, "UNSUPPORTED_INTERVAL", "지원하지 않는 Interval 형식 입니다."),
 
     // trasaction
-    CASSANDRA_SAVE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_SAVE_EXCEPTION", "Cassandra에 데이터를 저장하는 중 오류가 발생했습니다.");
+    CASSANDRA_SAVE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_SAVE_EXCEPTION", "Cassandra에 데이터를 저장하는 중 오류가 발생했습니다."),
+    CASSANDRA_DELETE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_DELETE_EXCEPTION", "Cassandra에 데이터를 삭제하는 중 오류가 발생했습니다."),
+    NOT_FOUND_TRANSACTION_TYPE(HttpStatus.NOT_FOUND, "NOT_FOUND_TRANSACTIONTYPE", "거래 유형이 없습니다."),
+    NOT_FOUND_TRANSACTION(HttpStatus.NOT_FOUND,"NOT_FOUND_TRANSACTION","거래 내역이 없습니다.");
 
     private final HttpStatus status;
     private final String code;
