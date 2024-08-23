@@ -39,4 +39,8 @@ public class GameBalance {
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
+
+    //게임내 사용자가 가지고 있는 돈
+    @Column(name = "seed")
+    private Long seed;
 }

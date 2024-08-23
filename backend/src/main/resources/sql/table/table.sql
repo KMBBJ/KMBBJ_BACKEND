@@ -141,6 +141,7 @@ CREATE TABLE game_balances (
                                game_balances_id BIGSERIAL PRIMARY KEY,
                                room_id BIGINT NOT NULL,
                                user_id BIGINT NOT NULL UNIQUE,
+                               seed BIGINT NOT NULL,
                                CONSTRAINT fk_room
                                    FOREIGN KEY (room_id)
                                        REFERENCES rooms(room_id)
