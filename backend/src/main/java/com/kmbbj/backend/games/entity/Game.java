@@ -33,7 +33,7 @@ public class Game {
      * ACTIVE 또는 COMPLETED 값 가질수 있음
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "game_status", nullable = false, columnDefinition = "VARCHAR(10) DEFAULT 'ACTIVE'")
+    @Column(name = "enum", nullable = false, columnDefinition = "VARCHAR(10) DEFAULT 'ACTIVE'")
     private GameStatus gameStatus;
 
     /**
