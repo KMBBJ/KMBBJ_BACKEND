@@ -1,5 +1,6 @@
 package com.kmbbj.backend.feature.exchange.entity.postgre;
 
+import com.kmbbj.backend.feature.exchange.entity.TransactionStatus;
 import com.kmbbj.backend.feature.exchange.entity.TransactionType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -36,8 +37,8 @@ public class Transaction {
     @Column(name = "create_date")
     private LocalDateTime createDate; // 생성일시, 거래가 생성된 시간
 
-    @Column(name = "is_execution")
-    private Boolean isExecution = false; // 체결이 됐는지 알려줌
+    @Column(name = "status")
+    private TransactionStatus status = TransactionStatus.PENDING; // 체결이 됐는지 알려줌
 
     @Column(name = "execution_date", nullable = true)
     private LocalDateTime executionDate; // 거래 체결일, nullable 설정됨

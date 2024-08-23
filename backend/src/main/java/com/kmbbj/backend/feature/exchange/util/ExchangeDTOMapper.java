@@ -1,6 +1,7 @@
 package com.kmbbj.backend.feature.exchange.util;
 
 import com.kmbbj.backend.feature.exchange.controller.request.OrderRequest;
+import com.kmbbj.backend.feature.exchange.entity.TransactionStatus;
 import com.kmbbj.backend.feature.exchange.entity.cassandra.BuyOrder;
 import com.kmbbj.backend.feature.exchange.entity.cassandra.SellOrder;
 import com.kmbbj.backend.feature.exchange.entity.cassandra.key.OrderPrimaryKey;
@@ -64,7 +65,7 @@ public class ExchangeDTOMapper {
                 .quantity(orderRequest.getAmount())
                 .price(orderRequest.getPrice())
                 .createDate(LocalDateTime.now())
-                .isExecution(false)
+                .status(TransactionStatus.PENDING)
                 .balancesId(balancesId)
                 .gameId(orderRequest.getGameId())
                 .coinId(orderRequest.getCoinId())
