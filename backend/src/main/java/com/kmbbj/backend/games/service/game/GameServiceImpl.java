@@ -3,27 +3,28 @@ package com.kmbbj.backend.games.service.game;
 
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
+import com.kmbbj.backend.games.dto.RoundResultDTO;
 import com.kmbbj.backend.games.entity.Game;
 import com.kmbbj.backend.games.entity.Round;
+import com.kmbbj.backend.games.entity.RoundResult;
 import com.kmbbj.backend.games.enums.GameStatus;
 import com.kmbbj.backend.games.repository.GameRepository;
 import com.kmbbj.backend.games.repository.RoundRepository;
+import com.kmbbj.backend.games.repository.RoundResultRepository;
 import com.kmbbj.backend.games.service.round.RoundResultService;
 import com.kmbbj.backend.games.service.round.RoundService;
-import com.kmbbj.backend.games.util.GameEncryptionUtil;
-import com.kmbbj.backend.games.util.GameProperties;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.matching.entity.Room;
-import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.room.RoomService;
-import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
+import java.util.List;
 
 
 @Service
@@ -33,87 +34,95 @@ public class GameServiceImpl implements GameService {
     private final GameRepository gameRepository;
     private final RoomService roomService;
     private final RoomRepository roomRepository;
-    private final UserRoomService userRoomService;
     private final RoundRepository roundRepository;
     private final RoundResultService roundResultService;
     private final RoundService roundService;
-    private final GameEncryptionUtil gameEncryptionUtil;
-    private final GameProperties gameProperties;
 
 
 
-    /** 방 ID를 통해 게임 시작
+    /**
+     * 방 ID로 게임 시작
      *
-     * 방 정보 조회 -> 방 시작 확인여부
-     * 새 게임 객체 생성 후 데이터베이스 저장
-     * 첫 번째 라운드 생성 후 데이터베이스 저장
-     * 게임 ID를 암호화 반환
+     * 방 정보 조회 -> 게임 시작 확인여부 -> 새 게임 객체 만들고 저장
+     * 첫 라운드 생성 하고 저장 -> 비동기적으로 게임 시작
      *
      * @param roomId 게임 시작 할 ID
-     * @return 시작된 게임 상태 정보 DTO 객체
+     * @return 시작된 게임 객체
      * @throws ExceptionEnum 공통 예외
      */
     @Override
     @Transactional
-    public GameStatusDTO startGame(Long roomId) {
+    public Game startGame(Long roomId) {
         Room room = roomService.findById(roomId); // 방 ID 조회함
+
+        // 시작된 상태 확인
+        if (room.getIsStarted()) {
+            throw new ApiException(ExceptionEnum.GAME_ALREADY_STARTED);
+        }
 
         // 새 게임 생성 & 저장
         Game game = new Game();
-        game.setGameStatus(GameStatus.ACTIVE); // 게임 상태를 설정
-        game.setRoom(room); // 방 <-> 게임 연결
-        game = gameRepository.save(game); // 데이터 베이스 저장
-
+        game = gameRepository.save(game);
 
         // 첫 라운드 생성 & 저장
         Round round = new Round();
         round.setGame(game);
-        round.setRoundNumber(1); //  첫 라운드 시작
-        int durationMinutes = getDurationMinutes(); // 라운드의 지속 시간
-        round.setDurationMinutes(durationMinutes);
+        round.setRoundNumber(1); //  라운드 시작
+        round.setDurationMinutes(Integer.parseInt(System.getenv("GAME_ROUND_DURATION_MINUTES")));
         roundRepository.save(round);
 
-        // 게임 UUID 값을 암호화
-        String encryptedGameId = gameEncryptionUtil.encryptUUID(game.getGameId());
 
-        // 게임 상태 정보 DTO
-        GameStatusDTO status = new GameStatusDTO();
-        status.setGameId(encryptedGameId); // UUID -> 암호화 ID 변경
-        status.setStatus(GameStatus.ACTIVE);
+        // 비동기적으로 게임을 시작함
+        startGameAsync(game, room.getEnd());
 
-        return status;
+
+        return game;
+    }
+
+
+    /** 비동기적으로 게임 시작
+     *  1. 마지막 라운드 도달할 떄까지 새 라운드 계속 시작함
+     *  2. 마지막 라운드에 도달하면 게임 종료
+     *
+     * @param game           게임 객체
+     * @param endRoundNumber 게임이 종료될 라운드 번호
+     */
+    @Async
+    public void startGameAsync(Game game, int endRoundNumber) {
+        // 마지막 라운드 까지 반복함
+        while (!roundService.isLastRound(game, endRoundNumber)) {
+            // 새 라운드 바로 시작함
+            roundService.startNewRound(game);
+        }
+
+        // 마지막 라운드 도달하면 게임 종료 됨
+        endGame(game.getGameId());
     }
 
 
     /** 게임 종료
      *
-     * 게임 객체와 최신 라운드 정보 조회
-     * 게임 종료 조건 확인
-     * 게임 상태 COMPLETED 로 변경
+     * 1. 게임과 최신 라운드 정보 조회 -> 게임 종료 조건 확인함
+     * 2. 게임 상태를 COMPLETED 가져오고 -> 방 상태 업데이트 함
      *
-     *
-     * @param encryptedGameId 암호화 게임 ID
+     * @param roomId
      */
     @Override
     @Transactional
-    public void endGame(String encryptedGameId) {
-        // 암호화된 게임 ID 복호화
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public void endGame(Long roomId) {
+        // 방 & 게임 정보 조회
+        Room room = roomService.findById(roomId);
 
-        // 게임 존재 확인 여부
-        Game game = gameRepository.findById(gameId)
+        Game game = gameRepository.findById(room.getRoomId())
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
-        // 최신 라운드 존재 확인 여부
         Round latestRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
-
-        Room room = game.getRoom(); // 게임과 연결 된 방을 가져옴
 
         // 게임 종료 조건 확인
         if (latestRound.getRoundNumber() >= room.getEnd()) {
             game.setGameStatus(GameStatus.COMPLETED); // 게임 완료
-            gameRepository.save(game); // 데이터 베이스 저장
+            gameRepository.save(game);
 
             // 모든 라운드 결과 가져오기
 
@@ -129,22 +138,20 @@ public class GameServiceImpl implements GameService {
     }
 
 
-    /** 게임의 상태 조회
+    /** 게임 상태 조회
      *
-     *  게임 객체 조회
-     *  게임 상태 정보를 담은 DTO 객체 생성하여 반환
+     *  게임 정보 조회하고 -> 게임 상태 정보를 DTO 담아 반환
      *
-     * @param encryptedGameId 암호화된 게임 ID
-     * @return 게임 상태 정보를 게임 상태 DTO
+     * @param gameId
+     * @return 게임 상태 DTO
      */
     @Override
-    public GameStatusDTO getGameStatus(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public GameStatusDTO getGameStatus(Long gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
         GameStatusDTO statusDTO = new GameStatusDTO();
-        statusDTO.setGameId(encryptedGameId);
+        statusDTO.setGameId(gameId);
         statusDTO.setStatus(game.getGameStatus());
 
         return statusDTO;
@@ -152,16 +159,15 @@ public class GameServiceImpl implements GameService {
 
     /** 현재 진행 중인 라운드 정보 조회
      *
-     * 게임 객체 조회
-     * 최신 라운드 정보 조회
-     * 현재 라운드 정보를 담은 DTO 객체 반환
+     * 1. 게임 정보 조회함
+     * 2. 최신 라운드 정보 조회함
+     * 3. 현재 라운드 정보를 DTO 담아 반환
      *
-     * @param encryptedGameId 조회할 암호화된 ID
-     * @return 현재 진행 중인 라운드 정보 DTO 객체 반환
+     * @param gameId 조회할 게임 ID
+     * @return 현재 라운드 DTO
      */
     @Override
-    public CurrentRoundDTO getCurrentRound(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public CurrentRoundDTO getCurrentRound(Long gameId) {
         // 게임 정보 조회
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
@@ -172,39 +178,15 @@ public class GameServiceImpl implements GameService {
 
         // 현재 라운드 DTO 생성 & 반환
         CurrentRoundDTO dto = new CurrentRoundDTO();
-        dto.setGameId(encryptedGameId);
+        dto.setGameId(gameId);
         dto.setCurrentRoundNumber(currentRound.getRoundNumber());
         dto.setGameStatus(game.getGameStatus().toString());
 
         return dto;
     }
 
-    // 게임 라운드의 지속시간 (24시간)
-    private int getDurationMinutes() {
-        return gameProperties.getGameRoundDurationMinutes();
-    }
 
-    /** 사용자 해당 게임에 접근할 수 있는 권한
-     *
-     * @param encryptedGameId 게임 암호화된 ID
-     * @return 사용자가 해당 접근할 수있는 권한
-     */
-    @Override
-    public boolean isUserAuthorizedForGame(String encryptedGameId) {
-        UserRoom currentUserRoom = userRoomService.findCurrentRoom();
-
-        if (currentUserRoom == null || !currentUserRoom.getIsPlayed()){
-            return false;
-        }
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
-
-        Game requestedGame = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
-
-        return currentUserRoom.getRoom().getRoomId().equals(requestedGame.getRoom().getRoomId());
-    }
+}
 
 
-
-    }
 
