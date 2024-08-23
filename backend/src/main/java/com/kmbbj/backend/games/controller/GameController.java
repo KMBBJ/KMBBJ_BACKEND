@@ -5,6 +5,8 @@ import com.kmbbj.backend.games.dto.GameStatusDTO;
 import com.kmbbj.backend.games.entity.RoundResult;
 import com.kmbbj.backend.games.service.game.GameService;
 import com.kmbbj.backend.games.service.round.RoundResultService;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -58,7 +60,7 @@ public class GameController {
     })
     public CustomResponse<GameStatusDTO> getGameStatus(@PathVariable String encryptedGameId) {
         if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
-            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임의 상태를 조회할 권한이 없습니다.", null);
+            throw new ApiException(ExceptionEnum.FORBIDDEN);
         }
         GameStatusDTO status = gameService.getGameStatus(encryptedGameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 상태 조회 성공", status);
@@ -79,7 +81,7 @@ public class GameController {
     })
     public CustomResponse<String> endGame(@PathVariable String encryptedGameId, Authentication authentication) {
         if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
-            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임을 종료할 권한이 없습니다.", null);
+            throw new ApiException(ExceptionEnum.FORBIDDEN);
         }
         gameService.endGame(encryptedGameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", "게임이 성공적으로 종료되었습니다.");
@@ -99,8 +101,9 @@ public class GameController {
     })
     public CustomResponse<CurrentRoundDTO> getCurrentRound(@PathVariable String encryptedGameId) {
         if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
-            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임에 접근할 권한이 없습니다.", null);
+            throw new ApiException(ExceptionEnum.FORBIDDEN);
         }
+
         CurrentRoundDTO currentRound = gameService.getCurrentRound(encryptedGameId);
         return new CustomResponse<>(HttpStatus.OK, "현재 라운드 조회 성공", currentRound);
     }
@@ -119,8 +122,9 @@ public class GameController {
     })
     public CustomResponse<List<RoundResult>> getRoundResults(@PathVariable String encryptedGameId) {
         if (!gameService.isUserAuthorizedForGame(encryptedGameId)) {
-            return new CustomResponse<>(HttpStatus.FORBIDDEN, "이 게임에 접근할 권한이 없습니다.", null);
+            throw new ApiException(ExceptionEnum.FORBIDDEN);
         }
+
         List<RoundResult> results = roundResultService.getRoundResultsForGameId(encryptedGameId);
         return new CustomResponse<>(HttpStatus.OK, "라운드 결과 조회 성공", results);
     }
