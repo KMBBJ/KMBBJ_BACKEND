@@ -90,8 +90,13 @@ CREATE TABLE user_rooms (
 
 -- Games 테이블 생성
 CREATE TABLE games (
-                       game_id BIGSERIAL PRIMARY KEY,
-                       enum VARCHAR(255) NOT NULL
+                       game_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                       enum VARCHAR(255) NOT NULL,
+                       room_id BIGINT,
+                       CONSTRAINT fk_room
+                           FOREIGN KEY (room_id)
+                               REFERENCES rooms(room_id)
+                               ON DELETE CASCADE
 );
 
 -- Rounds 테이블 생성
@@ -99,7 +104,7 @@ CREATE TABLE rounds (
                         round_id BIGSERIAL PRIMARY KEY,
                         round_number INTEGER,
                         duration_minutes INTEGER,
-                        game_id BIGINT,
+                        game_id UUID,
                         CONSTRAINT fk_game
                             FOREIGN KEY (game_id)
                                 REFERENCES games(game_id)
@@ -125,7 +130,7 @@ CREATE TABLE round_results (
 -- Game_Results 테이블 생성
 CREATE TABLE game_results (
                               result_id BIGSERIAL PRIMARY KEY,
-                              game_id BIGINT,
+                              game_id UUID,
                               user_id BIGINT,
                               total_profit INTEGER,
                               total_loss INTEGER,
