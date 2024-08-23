@@ -12,4 +12,6 @@ public interface GameService {
     GameStatusDTO getGameStatus(String encryptedGameId);
 
     CurrentRoundDTO getCurrentRound(String encryptedGameId);
+
+    boolean isUserAuthorizedForGame(String encryptedGameId);
 }

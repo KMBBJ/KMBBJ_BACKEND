@@ -15,8 +15,10 @@ import com.kmbbj.backend.games.util.GameProperties;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.matching.entity.Room;
+import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.room.RoomService;
+import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +33,7 @@ public class GameServiceImpl implements GameService {
     private final GameRepository gameRepository;
     private final RoomService roomService;
     private final RoomRepository roomRepository;
+    private final UserRoomService userRoomService;
     private final RoundRepository roundRepository;
     private final RoundResultService roundResultService;
     private final RoundService roundService;
@@ -180,4 +183,28 @@ public class GameServiceImpl implements GameService {
     private int getDurationMinutes() {
         return gameProperties.getGameRoundDurationMinutes();
     }
-}
+
+    /** 사용자 해당 게임에 접근할 수 있는 권한
+     *
+     * @param encryptedGameId 게임 암호화된 ID
+     * @return 사용자가 해당 접근할 수있는 권한
+     */
+    @Override
+    public boolean isUserAuthorizedForGame(String encryptedGameId) {
+        UserRoom currentUserRoom = userRoomService.findCurrentRoom();
+
+        if (currentUserRoom == null || !currentUserRoom.getIsPlayed()){
+            return false;
+        }
+        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+
+        Game requestedGame = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
+
+        return currentUserRoom.getRoom().getRoomId().equals(requestedGame.getRoom().getRoomId());
+    }
+
+
+
+    }
+
