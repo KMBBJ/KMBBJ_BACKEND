@@ -209,6 +209,19 @@ CREATE TABLE kline (
                                ON DELETE CASCADE
 );
 
+-- 거래 로그를 남기는 용 table
+CREATE TABLE transactions (
+                              transaction_id BIGSERIAL PRIMARY KEY,
+                              transaction_type VARCHAR(10) NOT NULL,
+                              quantity DECIMAL(20,10) NOT NULL,
+                              price DECIMAL(20,10) NOT NULL,
+                              create_date TIMESTAMP NOT NULL,
+                              is_execution boolean default FALSE,
+                              execution_date TIMESTAMP NULL,
+                              balances_id BIGINT NOT NULL,
+                              game_id UUID NOT NULL,
+                              coin_id BIGINT NOT NULL
+);
 
 -- 공지 테이블
 CREATE TABLE admin_alarms (
