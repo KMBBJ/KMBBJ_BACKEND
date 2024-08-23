@@ -38,6 +38,7 @@ public class Transaction {
     @Column(name = "status")
     private TransactionStatus status = TransactionStatus.PENDING; // 체결이 됐는지 알려줌
 
+    @Setter
     @Column(name = "execution_date", nullable = true)
     private LocalDateTime executionDate; // 거래 체결일, nullable 설정됨
 
