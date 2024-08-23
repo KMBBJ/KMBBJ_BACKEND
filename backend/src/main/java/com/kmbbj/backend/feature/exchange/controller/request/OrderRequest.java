@@ -19,7 +19,7 @@ public class OrderRequest {
     private BigDecimal amount;
 
     @Schema(name = "거래된 가격")
-    private BigDecimal price;
+    private Long price;
 
     @Schema(name = "게임 Id")
     private UUID gameId;

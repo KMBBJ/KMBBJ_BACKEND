@@ -28,8 +28,8 @@ public class Transaction {
     @Column(name = "quantity", precision = 20, scale = 10)
     private BigDecimal quantity; // 거래된 수량, 소수점 10자리까지 저장
 
-    @Column(name = "price", precision = 20, scale = 10)
-    private BigDecimal price; // 거래된 가격, 소수점 10자리까지 저장
+    @Column(name = "price")
+    private Long price; // 거래된 가격
 
     @Column(name = "create_date")
     private LocalDateTime createDate; // 생성일시, 거래가 생성된 시간

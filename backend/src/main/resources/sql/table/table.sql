@@ -214,7 +214,7 @@ CREATE TABLE transactions (
                               transaction_id BIGSERIAL PRIMARY KEY,
                               transaction_type VARCHAR(10) NOT NULL,
                               quantity DECIMAL(20,10) NOT NULL,
-                              price DECIMAL(20,10) NOT NULL,
+                              price BIGINT NOT NULL,
                               create_date TIMESTAMP NOT NULL,
                               status varchar(20) NOT NULL,
                               execution_date TIMESTAMP NULL,
