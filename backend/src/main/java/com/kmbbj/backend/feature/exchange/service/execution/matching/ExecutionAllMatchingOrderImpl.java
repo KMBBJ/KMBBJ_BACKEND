@@ -1,5 +1,7 @@
 package com.kmbbj.backend.feature.exchange.service.execution.matching;
 
+import com.kmbbj.backend.charts.entity.coin.Coin;
+import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.feature.exchange.entity.TransactionStatus;
 import com.kmbbj.backend.feature.exchange.entity.cassandra.BuyOrder;
 import com.kmbbj.backend.feature.exchange.entity.cassandra.SellOrder;
@@ -7,6 +9,9 @@ import com.kmbbj.backend.feature.exchange.entity.postgre.Transaction;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.buy.BuyOrderRepository;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.sell.SellOrderRepository;
 import com.kmbbj.backend.feature.exchange.repository.postgre.TransactionRepository;
+import com.kmbbj.backend.games.entity.CoinBalance;
+import com.kmbbj.backend.games.entity.GameBalance;
+import com.kmbbj.backend.games.repository.CoinBalanceRepository;
 import com.kmbbj.backend.games.repository.GameBalanceRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
@@ -31,6 +36,8 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
     private final TransactionRepository transactionRepository;
     //게임 계좌 리파지토리
     private final GameBalanceRepository gameBalanceRepository;
+    //게임 코인 계좌
+    private final CoinBalanceRepository coinBalanceRepository;
 
     /**
      * 주어진 코인 ID와 가격에 따라 판매 및 구매 주문을 매칭
@@ -49,6 +56,8 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
 
         // 업데이트할 트랜잭션 리스트와 매칭된 주문 ID 리스트 초기화
         List<Transaction> transactionsToUpdate = new ArrayList<>();
+        List<GameBalance> gameBalancesToUpdate = new ArrayList<>();
+        List<CoinBalance> coinBalancesToUpdate = new ArrayList<>();
 
         // 매칭 로직: 모든 판매 주문과 구매 주문을 비교하여 매칭
         // 판매 및 구매 트랜잭션 상태를 COMPLETED로 업데이트
@@ -56,6 +65,7 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
 
         for (SellOrder sellOrder : eligibleSellOrders) {
             Transaction sellTransaction = updateTransactionStatus(sellOrder);
+            sumGameBalanceSeed(sellTransaction, gameBalancesToUpdate);
 
             // 업데이트할 트랜잭션 리스트에 추가
             transactionsToUpdate.add(sellTransaction);
@@ -63,6 +73,7 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
 
         for (BuyOrder buyOrder : eligibleBuyOrders) {
             Transaction buyTransaction = updateTransactionStatus(buyOrder);
+            sumCoinBalanceCoin(buyTransaction, coinBalancesToUpdate);
 
             // 업데이트할 트랜잭션 리스트에 추가
             transactionsToUpdate.add(buyTransaction);
@@ -71,8 +82,42 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
         // PostgreSQL에 트랜잭션 일괄 업데이트
         transactionRepository.saveAll(transactionsToUpdate);
 
+        // PostgreSQL에 게임 계좌와 코인 계좌 일괄 업데이트
+        gameBalanceRepository.saveAll(gameBalancesToUpdate);
+        coinBalanceRepository.saveAll(coinBalancesToUpdate);
+
         // Cassandra에서 매칭된 주문 삭제
         deleteMatchedOrders(eligibleSellOrders, eligibleBuyOrders);
+    }
+
+    /**
+     * 판매가 체결 됐을때 게임 계좌의 잔액을 증가시키는 메서드
+     * @param transaction 정보를 담고있는 거래 객체
+     * @param gameBalances 업데이트할 게임 계좌 리스트
+     */
+    private void sumGameBalanceSeed(Transaction transaction, List<GameBalance> gameBalances) {
+        GameBalance gameBalance = gameBalanceRepository.findById(transaction.getBalancesId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
+        gameBalance.setSeed(gameBalance.getSeed() + transaction.getTotalPrice());
+        // 업데이트된 게임 계좌를 리스트에 추가
+        gameBalances.add(gameBalance);
+    }
+
+    /**
+     * 코인이 체결 됐을때 코인 계좌의 잔액을 증가시키는 메서드 계좌가 없으면 만든다.
+     * @param transaction 정보를 담고있는 거래 객체
+     * @param coinBalances 업데이트할 코인 계좌 리스트
+     */
+    private void sumCoinBalanceCoin(Transaction transaction, List<CoinBalance> coinBalances) {
+        CoinBalance coinBalance = coinBalanceRepository.findCoinBalanceByGameBalanceIdAndCoinId(transaction.getBalancesId(), transaction.getCoinId()).orElseGet(() ->
+                CoinBalance.builder()
+                        .gameBalanceId(transaction.getBalancesId())
+                        .coinId(transaction.getCoinId())
+                        .quantity(BigDecimal.valueOf(0))
+                        .build()
+        );
+        coinBalance.setQuantity(coinBalance.getQuantity().add(transaction.getQuantity()));
+        // 업데이트된 코인 계좌를 리스트에 추가
+        coinBalances.add(coinBalance);
     }
 
     /**
