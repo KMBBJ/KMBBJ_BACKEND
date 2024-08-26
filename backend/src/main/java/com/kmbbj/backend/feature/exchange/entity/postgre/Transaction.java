@@ -31,6 +31,9 @@ public class Transaction {
     @Column(name = "price")
     private Long price; // 거래된 가격
 
+    @Column(name = "total_price")
+    private Long totalPrice; // 거래된 총 가격
+
     @Column(name = "create_date")
     private LocalDateTime createDate; // 생성일시, 거래가 생성된 시간
 

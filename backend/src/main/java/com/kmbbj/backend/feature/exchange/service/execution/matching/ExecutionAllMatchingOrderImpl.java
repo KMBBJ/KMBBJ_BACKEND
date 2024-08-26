@@ -7,6 +7,7 @@ import com.kmbbj.backend.feature.exchange.entity.postgre.Transaction;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.buy.BuyOrderRepository;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.sell.SellOrderRepository;
 import com.kmbbj.backend.feature.exchange.repository.postgre.TransactionRepository;
+import com.kmbbj.backend.games.repository.GameBalanceRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,8 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
     private final BuyOrderRepository buyOrderRepository;
     //postgre 주문 저장 로직
     private final TransactionRepository transactionRepository;
+    //게임 계좌 리파지토리
+    private final GameBalanceRepository gameBalanceRepository;
 
     /**
      * 주어진 코인 ID와 가격에 따라 판매 및 구매 주문을 매칭
@@ -48,16 +51,21 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
         List<Transaction> transactionsToUpdate = new ArrayList<>();
 
         // 매칭 로직: 모든 판매 주문과 구매 주문을 비교하여 매칭
-        for (SellOrder sellOrder : eligibleSellOrders) {
-            for (BuyOrder buyOrder : eligibleBuyOrders) {
-                // 판매 및 구매 트랜잭션 상태를 COMPLETED로 업데이트
-                Transaction sellTransaction = updateTransactionStatus(sellOrder);
-                Transaction buyTransaction = updateTransactionStatus(buyOrder);
+        // 판매 및 구매 트랜잭션 상태를 COMPLETED로 업데이트
 
-                // 업데이트할 트랜잭션 리스트에 추가
-                transactionsToUpdate.add(sellTransaction);
-                transactionsToUpdate.add(buyTransaction);
-            }
+
+        for (SellOrder sellOrder : eligibleSellOrders) {
+            Transaction sellTransaction = updateTransactionStatus(sellOrder);
+
+            // 업데이트할 트랜잭션 리스트에 추가
+            transactionsToUpdate.add(sellTransaction);
+        }
+
+        for (BuyOrder buyOrder : eligibleBuyOrders) {
+            Transaction buyTransaction = updateTransactionStatus(buyOrder);
+
+            // 업데이트할 트랜잭션 리스트에 추가
+            transactionsToUpdate.add(buyTransaction);
         }
 
         // PostgreSQL에 트랜잭션 일괄 업데이트

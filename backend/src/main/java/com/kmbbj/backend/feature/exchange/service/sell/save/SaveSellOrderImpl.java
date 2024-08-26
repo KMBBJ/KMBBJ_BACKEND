@@ -1,9 +1,16 @@
 package com.kmbbj.backend.feature.exchange.service.sell.save;
 
+import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.feature.exchange.controller.request.OrderRequest;
+import com.kmbbj.backend.feature.exchange.entity.postgre.Transaction;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.sell.SellOrderRepository;
+import com.kmbbj.backend.feature.exchange.repository.postgre.TransactionRepository;
 import com.kmbbj.backend.feature.exchange.util.ExchangeDTOMapper;
-import com.kmbbj.backend.feature.exchange.util.SaveOrderUtil;
+import com.kmbbj.backend.games.entity.CoinBalance;
+import com.kmbbj.backend.games.repository.CoinBalanceRepository;
+import com.kmbbj.backend.games.repository.GameBalanceRepository;
+import com.kmbbj.backend.games.repository.GameRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;
@@ -16,30 +23,54 @@ import org.springframework.transaction.annotation.Transactional;
 public class SaveSellOrderImpl implements SaveSellOrder {
     //카산드라 판매 기록 리파지토리
     private final SellOrderRepository sellOrderRepository;
-    //주문 생성 공통 로직을 불러올 유틸파일
-    private final SaveOrderUtil saveOrderUtil;
     //DTO 관리 전용 Util
     private final ExchangeDTOMapper exchangeDTOMapper;
+    //사용자 확인용 리파지토리
+    private final UserRepository userRepository;
+    //코인 확인용 리파지토리
+    private final CoinRepository coinRepository;
+    //게임 확인용 리파지토리
+    private final GameRepository gameRepository;
+    //게임안 계좌 리파지토리
+    private final GameBalanceRepository gameBalanceRepository;
+    //거래로그 리파지토리
+    private final TransactionRepository transactionRepository;
+    //게임안 코인 지갑
+    private final CoinBalanceRepository coinBalanceRepository;
 
-    /**
-     * 주문 요청을 받아 SellOrder를 저장하는 메서드.
-     *
-     * 이 메서드는 다음 작업을 수행함:
-     * 1. OrderRequest를 검증하고, 이를 기반으로 Transaction을 생성한 뒤, 그 ID를 반환받음.
-     * 2. 반환된 Transaction ID를 사용해 SellOrder를 생성하고, Cassandra에 저장.
-     * 3. 만약 데이터 저장 중 Cassandra 관련 예외가 발생하면, CASSANDRA_SAVE_EXCEPTION 예외를 발생시킴.
-     *
-     * @param orderRequest 주문 요청 객체
-     * @throws ApiException Cassandra에 저장 중 예외가 발생할 경우 던짐
-     */
+
     @Override
     @Transactional
     public void saveSellOrder(OrderRequest orderRequest) {
-        Long transactionId = saveOrderUtil.validateAndCreateTransaction(orderRequest);
+        // 사용자 있는지 확인
+        userRepository.findById(orderRequest.getUserId()).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+        // 코인 있는지 확인
+        coinRepository.findById(orderRequest.getCoinId()).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
+        //게임 있는지 확인
+        //gameRepository.findById(orderRequest.getGameId()).orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
+        // 게임 안 계좌 조회
+        Long gameBalanceId = gameBalanceRepository.findIdByUserId(orderRequest.getUserId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
+        // 게임안 코인 조회
+        CoinBalance coinBalance = coinBalanceRepository.findCoinBalanceByGameBalanceIdAndCoinId(gameBalanceId, orderRequest.getCoinId()).orElseThrow(() -> new ApiException(ExceptionEnum.COIN_BALANCE_NOT_FOUND));
 
+        //판매할수 있는 코인을 가지고 있는지 확인후 기록
+        if (orderRequest.getAmount().compareTo(coinBalance.getQuantity()) <= 0) {
+            // orderRequest.getAmount()가 coinBalance.getQuantity()보다 작거나 같은 경우 코인을 빼고 주문에 저장
+            coinBalance.setQuantity(coinBalance.getQuantity().subtract(orderRequest.getAmount()));
+            coinBalanceRepository.save(coinBalance);
+        } else {
+            // orderRequest.getAmount()가 coinBalance.getQuantity()보다 큰 경우 코인이 부족합니다.
+            throw new ApiException(ExceptionEnum.NOT_ENOUGH_COIN);
+        }
+
+        //거래 로그 기록
+        Transaction transaction = exchangeDTOMapper.orderRequestToTransaction(orderRequest, gameBalanceId);
+        transactionRepository.save(transaction);
+
+        //카산드라에 등록
         try {
             sellOrderRepository.save(
-                    exchangeDTOMapper.orderRequestToSellOrder(orderRequest, transactionId)
+                    exchangeDTOMapper.orderRequestToSellOrder(orderRequest, transaction.getTransactionId())
             );
         } catch (DataAccessException e) {
             throw new ApiException(ExceptionEnum.CASSANDRA_SAVE_EXCEPTION);

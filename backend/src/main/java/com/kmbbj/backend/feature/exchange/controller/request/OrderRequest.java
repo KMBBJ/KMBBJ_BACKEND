@@ -29,4 +29,7 @@ public class OrderRequest {
 
     @Schema(name = "주문한 사람 Id")
     private Long userId;
+
+    @Schema(name = "주문 총 가격")
+    private Long totalPrice;
 }
