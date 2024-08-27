@@ -3,5 +3,5 @@ package com.kmbbj.backend.feature.exchange.service.transaction.finduserassetdeta
 import com.kmbbj.backend.feature.exchange.controller.response.UserAssetResponse;
 
 public interface FindUserAssetDetails {
-    UserAssetResponse FindUserAssetDetails(Long userId);
+    UserAssetResponse findUserAssetDetails(Long userId);
 }

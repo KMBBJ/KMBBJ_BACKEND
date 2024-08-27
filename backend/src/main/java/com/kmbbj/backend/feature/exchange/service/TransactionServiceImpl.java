@@ -1,10 +1,7 @@
 package com.kmbbj.backend.feature.exchange.service;
 
 import com.kmbbj.backend.feature.exchange.controller.request.*;
-import com.kmbbj.backend.feature.exchange.controller.response.AvailableBuyFundsResponse;
-import com.kmbbj.backend.feature.exchange.controller.response.AvailableSellCoinsResponse;
-import com.kmbbj.backend.feature.exchange.controller.response.TransactionsResponse;
-import com.kmbbj.backend.feature.exchange.controller.response.UserAssetResponse;
+import com.kmbbj.backend.feature.exchange.controller.response.*;
 import com.kmbbj.backend.feature.exchange.service.buy.availablefunds.FindAvailableFundsImpl;
 import com.kmbbj.backend.feature.exchange.service.buy.save.SaveBuyOrder;
 import com.kmbbj.backend.feature.exchange.service.cansel.CanselOrder;
@@ -21,15 +18,20 @@ import java.util.List;
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
+
+    // Grouping similar service dependencies together
     private final SaveSellOrder saveSellOrder;
     private final SaveBuyOrder saveBuyOrder;
     private final CanselOrder canselOrder;
     private final ExecutionAllMatchingOrder executionAllMatchingOrder;
+
     private final FindTransactionsByUserId findTransactionsByUserId;
     private final FindUserAssetDetails findUserAssetDetails;
+
     private final FindAvailableFundsImpl findAvailableFunds;
     private final FindAvailableCoins findAvailableCoins;
 
+    // Constructor injection with clear grouping of parameters
     public TransactionServiceImpl(@Qualifier("saveSellOrderImpl") SaveSellOrder saveSellOrder,
                                   @Qualifier("saveBuyOrderImpl") SaveBuyOrder saveBuyOrder,
                                   @Qualifier("findAvailableFundsImpl") FindAvailableFundsImpl findAvailableFundsImpl,
@@ -69,13 +71,13 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<TransactionsResponse> getTransactionsByUserId(TransactionsRequest transactionsRequest){
+    public List<TransactionsResponse> getTransactionsByUserId(TransactionsRequest transactionsRequest) {
         return findTransactionsByUserId.getTransactionsByUserId(transactionsRequest);
     }
 
     @Override
-    public UserAssetResponse FindUserAssetDetails(Long userId) {
-        return findUserAssetDetails.FindUserAssetDetails(userId);
+    public UserAssetResponse findUserAssetDetails(Long userId) {
+        return findUserAssetDetails.findUserAssetDetails(userId);
     }
 
     @Override

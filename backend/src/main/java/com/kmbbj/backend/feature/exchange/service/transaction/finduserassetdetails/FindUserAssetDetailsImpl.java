@@ -28,7 +28,7 @@ public class FindUserAssetDetailsImpl implements FindUserAssetDetails{
      * @throws ApiException 사용자의 게임 잔액 정보를 찾을 수 없는 경우 예외가 발생
      */
     @Override
-    public UserAssetResponse FindUserAssetDetails(Long userId){
+    public UserAssetResponse findUserAssetDetails(Long userId){
         // 사용자의 게임 잔액 정보를 조회
         GameBalance gameBalance = gameBalanceRepository.findByUserId(userId).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
         List<CoinAssetResponse> coinAssets = transactionRepository.findAllCoinAssets(gameBalance.getGameBalancesId()); // 게임 잔액 ID를 기반으로 모든 코인 자산 정보를 가져옵
