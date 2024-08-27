@@ -64,6 +64,7 @@ public class ExchangeDTOMapper {
                 .transactionType(orderRequest.getTransactionType())
                 .quantity(orderRequest.getAmount())
                 .price(orderRequest.getPrice())
+                .totalPrice(orderRequest.getTotalPrice())
                 .createDate(LocalDateTime.now())
                 .status(TransactionStatus.PENDING)
                 .balancesId(balancesId)

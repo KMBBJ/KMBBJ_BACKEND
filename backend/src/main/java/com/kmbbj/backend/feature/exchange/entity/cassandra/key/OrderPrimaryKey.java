@@ -7,7 +7,6 @@ import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.Instant;
 
 @PrimaryKeyClass
@@ -18,7 +17,7 @@ public class OrderPrimaryKey implements Serializable {
     private Long coinId;
 
     @PrimaryKeyColumn(name = "price", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
-    private BigDecimal price;
+    private Long price;
 
     @PrimaryKeyColumn(name = "timestamp", ordinal = 2, type = PrimaryKeyType.CLUSTERED)
     private Instant timestamp;
