@@ -77,7 +77,7 @@ public class GameController {
     public CustomResponse<String> endGame(@PathVariable String encryptedGameId, Authentication authentication) {
         gameService.isUserAuthorizedForGame(encryptedGameId);
         gameService.endGame(encryptedGameId);
-        return new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", "게임이 성공적으로 종료되었습니다.");
+        return new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", null);
     }
 
     /** 게임 현재 라운드 조회
