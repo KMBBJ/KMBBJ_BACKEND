@@ -34,9 +34,13 @@ public class GameBalance {
 
     /**
      *  게임 계좌의 소유자인 사용자
-     *  일대일 관계 , 각 게임 계좌 사용자와 연결 
+     *  일대일 관계 , 각 게임 계좌 사용자와 연결
      */
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
+
+    //게임내 사용자가 가지고 있는 돈
+    @Column(name = "seed")
+    private Long seed;
 }

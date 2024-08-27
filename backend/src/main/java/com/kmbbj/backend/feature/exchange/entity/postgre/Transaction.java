@@ -1,11 +1,9 @@
 package com.kmbbj.backend.feature.exchange.entity.postgre;
 
+import com.kmbbj.backend.feature.exchange.entity.TransactionStatus;
 import com.kmbbj.backend.feature.exchange.entity.TransactionType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -30,15 +28,20 @@ public class Transaction {
     @Column(name = "quantity", precision = 20, scale = 10)
     private BigDecimal quantity; // 거래된 수량, 소수점 10자리까지 저장
 
-    @Column(name = "price", precision = 20, scale = 10)
-    private BigDecimal price; // 거래된 가격, 소수점 10자리까지 저장
+    @Column(name = "price")
+    private Long price; // 거래된 가격
+
+    @Column(name = "total_price")
+    private Long totalPrice; // 거래된 총 가격
 
     @Column(name = "create_date")
     private LocalDateTime createDate; // 생성일시, 거래가 생성된 시간
 
-    @Column(name = "is_execution")
-    private Boolean isExecution = false; // 체결이 됐는지 알려줌
+    @Setter
+    @Column(name = "status")
+    private TransactionStatus status = TransactionStatus.PENDING; // 체결이 됐는지 알려줌
 
+    @Setter
     @Column(name = "execution_date", nullable = true)
     private LocalDateTime executionDate; // 거래 체결일, nullable 설정됨
 

@@ -1,9 +1,8 @@
 package com.kmbbj.backend.feature.exchange.service;
 
-import com.kmbbj.backend.feature.exchange.service.buy.cansel.CanselBuyOrder;
+import com.kmbbj.backend.feature.exchange.service.cansel.CanselOrder;
 import com.kmbbj.backend.feature.exchange.service.buy.save.SaveBuyOrder;
 import com.kmbbj.backend.feature.exchange.service.execution.matching.ExecutionAllMatchingOrder;
-import com.kmbbj.backend.feature.exchange.service.sell.cansel.CanselSellOrder;
 import com.kmbbj.backend.feature.exchange.service.sell.save.SaveSellOrder;
 import org.springframework.stereotype.Service;
 
@@ -11,10 +10,10 @@ import org.springframework.stereotype.Service;
 public interface TransactionService extends
         //Sell
         SaveSellOrder,
-        CanselSellOrder,
         //Buy
         SaveBuyOrder,
-        CanselBuyOrder,
+        //Cansel
+        CanselOrder,
         //excution
         ExecutionAllMatchingOrder
 {}

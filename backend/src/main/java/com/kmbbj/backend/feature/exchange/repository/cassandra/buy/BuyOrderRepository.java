@@ -11,4 +11,5 @@ import java.util.List;
 @Repository
 public interface BuyOrderRepository extends CassandraRepository<BuyOrder, OrderPrimaryKey> {
     List<BuyOrder> findAllByIdCoinIdAndIdPriceGreaterThanEqual(Long coinId, BigDecimal price);
+    void deleteByIdCoinIdAndTransactionId(Long coinId, Long transactionId);
 }

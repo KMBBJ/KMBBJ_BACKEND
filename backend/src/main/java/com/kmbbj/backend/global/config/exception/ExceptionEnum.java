@@ -54,11 +54,13 @@ public enum ExceptionEnum {
     GAME_ALREADY_STARTED(HttpStatus.BAD_REQUEST, "GAME_ALREADY_STARTED", "게임이 이미 시작되었습니다."),
     DUPLICATE_ROUND(HttpStatus.BAD_REQUEST, "DUPLICATE_ROUND", "이미 존재하는 라운드입니다."),
     ROUND_RESULT_NOT_FOUND(HttpStatus.NOT_FOUND, "ROUND_RESULT_NOT_FOUND", "라운드 결과를 찾지 못했습니다."),
+    INVALID_ROUND_NUMBER(HttpStatus.BAD_REQUEST, "INVALID_ROUND_NUMBER", "유효하지 않은 라운드 번호입니다."),
 
 //    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 
     // Balance
     BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "자산을 찾지 못했습니다."),
+    COIN_BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "코인을 가지고 있지 않습니다."),
 
     // Coin
     EXIST_COIN(HttpStatus.BAD_REQUEST, "EXIST_COIN", "이미 있는 코인 입니다."),
@@ -66,7 +68,12 @@ public enum ExceptionEnum {
     UNSUPPORTED_INTERVAL(HttpStatus.BAD_REQUEST, "UNSUPPORTED_INTERVAL", "지원하지 않는 Interval 형식 입니다."),
 
     // trasaction
-    CASSANDRA_SAVE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_SAVE_EXCEPTION", "Cassandra에 데이터를 저장하는 중 오류가 발생했습니다.");
+    CASSANDRA_SAVE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_SAVE_EXCEPTION", "Cassandra에 데이터를 저장하는 중 오류가 발생했습니다."),
+    CASSANDRA_DELETE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_DELETE_EXCEPTION", "Cassandra에 데이터를 삭제하는 중 오류가 발생했습니다."),
+    NOT_FOUND_TRANSACTION_TYPE(HttpStatus.NOT_FOUND, "NOT_FOUND_TRANSACTIONTYPE", "거래 유형이 없습니다."),
+    NOT_FOUND_TRANSACTION(HttpStatus.NOT_FOUND,"NOT_FOUND_TRANSACTION","거래 내역이 없습니다."),
+    NOT_ENOUGH_COIN(HttpStatus.BAD_REQUEST, "NOT_ENOUGH_COIN", "코인이 충분하지 않습니다."),
+    NOT_ENOUGH_MONEY(HttpStatus.BAD_REQUEST,"NOT_ENOUGH_MONEY", "자금이 충분하지 않습니다.");
 
     private final HttpStatus status;
     private final String code;
