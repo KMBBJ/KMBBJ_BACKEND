@@ -239,6 +239,14 @@ CREATE TABLE admin_alarms (
                               CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+
+CREATE TABLE token_blacklist (
+                                 id BIGSERIAL PRIMARY KEY,
+                                 token VARCHAR(500) NOT NULL UNIQUE,
+                                 expiry_date TIMESTAMP NOT NULL
+);
+
+
 CREATE TABLE coin_balances (
                                coin_balances_id BIGSERIAL PRIMARY KEY,
                                game_balances_id BIGINT NOT NULL,
@@ -247,3 +255,4 @@ CREATE TABLE coin_balances (
                                CONSTRAINT fk_game_balances FOREIGN KEY (game_balances_id) REFERENCES game_balances(game_balances_id) ON DELETE CASCADE,
                                CONSTRAINT fk_coin FOREIGN KEY (coin_id) REFERENCES coins(coin_id) ON DELETE CASCADE
 );
+

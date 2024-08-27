@@ -26,4 +26,9 @@ public class redisToken implements Serializable {
                 .timeOut(timeOut)
                 .build();
     }
+
+    // 필드값 반환
+    public String getTokenValue() {
+         return refreshToken;
+    }
 }

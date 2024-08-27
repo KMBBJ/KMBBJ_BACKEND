@@ -1,5 +1,9 @@
 package com.kmbbj.backend.global.config.security;
 
+import com.kmbbj.backend.admin.repository.TokenBlacklistRepository;
+import com.kmbbj.backend.admin.service.BlackListUserService;
+import com.kmbbj.backend.admin.token.filter.BlacklistFilter;
+import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.global.config.jwt.filter.TokenAuthenticationFilter;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
@@ -28,6 +32,10 @@ public class SecurityConfig {
     // JWT util
     private final JwtTokenizer jwtTokenizer;
     private final TokenService tokenService;
+    private final BlackListUserService blackListUserService;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final UserRepository userRepository;
+
 
     // 모든 유저 허용 페이지
     String[] allAllowPage = new String[]{
@@ -123,7 +131,10 @@ public class SecurityConfig {
         http.httpBasic(auth -> auth.disable());
 
         //jwt 필터를 한 번 타서 검사하도록 그리고 인증하도록 설정
-        http.addFilterBefore(new TokenAuthenticationFilter(jwtTokenizer, tokenService), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(new TokenAuthenticationFilter(jwtTokenizer, tokenService, userRepository), UsernamePasswordAuthenticationFilter.class);
+
+        // 두번쨰로 BlacklistFilter 타서 정지 유저를 걸러내는 작업을 함
+        http.addFilterBefore(new BlacklistFilter(tokenBlacklistRepository, tokenService, blackListUserService, jwtTokenizer), TokenAuthenticationFilter.class);
 
         // SecurityFilterChain을 빌드 후 반환
         return http.build();

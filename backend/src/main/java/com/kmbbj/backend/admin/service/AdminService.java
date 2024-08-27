@@ -8,6 +8,7 @@ import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.infrastructure.CustomUserDetails;
+import com.kmbbj.backend.notifications.loginemail.LoginEmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,7 +18,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -26,6 +29,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final AdminAlarmRepository adminAlarmRepository;
+    private final LoginEmailService emailService;
 
     /**
      *
@@ -114,7 +118,7 @@ public class AdminService {
 
 
     /**
-     * 인증된 사용자 정보를 가져오는 서비스 메서드
+     * 인증된 사용자 정보(현재 사용중인 유저의 정보)를 가져오는 서비스 메서드
      *
      * @return 인증된 사용자 정보를 반환
      */
@@ -138,5 +142,66 @@ public class AdminService {
         return userRepository.findById(id)// 사용자 ID를 통해 데이터베이스에서 사용자를 조회
                 .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND)); // 사용자가 존재하지 않으면 예외를 발생시킴
     }
+
+
+
+    /**
+     * 회원 정보 (타입, 이메일, 이름) ("/user/{id}")
+     *
+     * @param id
+     * @return
+     */
+    @Transactional(readOnly = true)
+    public Map<String, String> getUser(Long id) {
+        User user = userRepository.findById(id) // 해당 id의 User 가 없을 경우
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND)); // 예외 처리 추가
+
+        // 이름, 이메일, 타입 추출
+        Map<String, String> userInfo = new HashMap<>();
+        userInfo.put("name", user.getNickname());
+        userInfo.put("email", user.getEmail());
+        userInfo.put("type", String.valueOf(user.getAuthority()));
+        userInfo.put("suspensionEndDate", String.valueOf(user.getSuspensionEndDate()));
+        return userInfo;
+    }
+
+
+    /**
+     *
+     * @param user
+     */
+    public void sendSuspensionEmail(User user) {
+        if (user == null) { // User 가 없을 경우
+            throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
+        }
+
+        // 이메일 관련 정보 설정
+        String recipientEmail = user.getEmail();
+        String emailSubject = "계정 제제 안내";
+        String emailText = "계정이 관리자에 의해 " + user.getSuspensionEndDate() + "까지 정지되었습니다.";
+
+        // 이메일 보내기
+        emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
+    }
+
+
+    /**
+     *
+     * @param user
+     */
+    public void sendAccountUnblockingEmail(User user) {
+        if (user == null) { // User 가 없을 경우
+            throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
+        }
+
+        // 이메일 관련 정보 설정
+        String recipientEmail = user.getEmail();
+        String emailSubject = "계정 차단 해제";
+        String emailText = "계정이 관리자에 의해 계정이 차단 해제되었습니다.";
+
+        // 이메일 보내기
+        emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
+    }
+
 
 }
