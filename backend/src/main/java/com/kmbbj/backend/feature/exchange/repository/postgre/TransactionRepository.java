@@ -1,5 +1,6 @@
 package com.kmbbj.backend.feature.exchange.repository.postgre;
 
+import com.kmbbj.backend.feature.exchange.controller.response.CoinAssetResponse;
 import com.kmbbj.backend.feature.exchange.controller.response.TransactionsResponse;
 import com.kmbbj.backend.feature.exchange.entity.postgre.Transaction;
 import io.lettuce.core.dynamic.annotation.Param;
@@ -20,4 +21,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "JOIN Coin c ON t.coinId = c.coinId " +
             "WHERE t.balancesId = :balancesId")
     List<TransactionsResponse> findAllByBalancesIdWithCoinSymbol(@Param("balancesId") Long balancesId);
+
+    //평균 매수 금액을 구하는 쿼리
+    @Query("SELECT new com.kmbbj.backend.feature.exchange.controller.response.CoinAssetResponse(c.symbol, cb.quantity, " +
+            "SUM(CASE WHEN t.transactionType = 'BUY' AND t.status = 'COMPLETED' THEN t.quantity * CAST(t.price AS java.math.BigDecimal) ELSE 0 END), " +
+            "cb.quantity * CAST(d.price AS java.math.BigDecimal), " +
+            "(cb.quantity * CAST(d.price AS java.math.BigDecimal) - SUM(CASE WHEN t.transactionType = 'BUY' AND t.status = 'COMPLETED' THEN t.quantity * CAST(t.price AS big_decimal) ELSE 0 END)) / SUM(CASE WHEN t.transactionType = 'BUY' AND t.status = 'COMPLETED' THEN t.quantity * CAST(t.price AS big_decimal) ELSE 0 END) * 100) " +
+            "FROM CoinBalance cb " +
+            "JOIN Coin c ON cb.coinId = c.coinId " +
+            "JOIN Coin24hDetail d ON c.coinId = d.coin.coinId " +
+            "LEFT JOIN Transaction t ON cb.gameBalanceId = t.balancesId AND cb.coinId = t.coinId " +
+            "WHERE cb.gameBalanceId = :gameBalanceId " +
+            "GROUP BY c.symbol, cb.quantity, d.price")
+    List<CoinAssetResponse> findAllCoinAssets(@Param("gameBalanceId") Long gameBalanceId);
+
 }

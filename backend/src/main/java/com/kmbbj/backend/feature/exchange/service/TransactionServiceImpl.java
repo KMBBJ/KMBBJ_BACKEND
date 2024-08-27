@@ -4,11 +4,13 @@ import com.kmbbj.backend.feature.exchange.controller.request.CanselRequest;
 import com.kmbbj.backend.feature.exchange.controller.request.OrderRequest;
 import com.kmbbj.backend.feature.exchange.controller.request.TransactionsRequest;
 import com.kmbbj.backend.feature.exchange.controller.response.TransactionsResponse;
+import com.kmbbj.backend.feature.exchange.controller.response.UserAssetResponse;
 import com.kmbbj.backend.feature.exchange.service.buy.save.SaveBuyOrder;
 import com.kmbbj.backend.feature.exchange.service.cansel.CanselOrder;
 import com.kmbbj.backend.feature.exchange.service.execution.matching.ExecutionAllMatchingOrder;
 import com.kmbbj.backend.feature.exchange.service.sell.save.SaveSellOrder;
-import com.kmbbj.backend.feature.exchange.service.transaction.getlist.FindTransactionsByUserId;
+import com.kmbbj.backend.feature.exchange.service.transaction.findlist.FindTransactionsByUserId;
+import com.kmbbj.backend.feature.exchange.service.transaction.finduserassetdetails.FindUserAssetDetails;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -22,17 +24,20 @@ public class TransactionServiceImpl implements TransactionService {
     private final CanselOrder canselOrder;
     private final ExecutionAllMatchingOrder executionAllMatchingOrder;
     private final FindTransactionsByUserId findTransactionsByUserId;
+    private final FindUserAssetDetails findUserAssetDetails;
 
     public TransactionServiceImpl(@Qualifier("saveSellOrderImpl") SaveSellOrder saveSellOrder,
                                   @Qualifier("saveBuyOrderImpl") SaveBuyOrder saveBuyOrder,
                                   @Qualifier("canselOrderImpl") CanselOrder canselOrder,
                                   @Qualifier("executionAllMatchingOrderImpl") ExecutionAllMatchingOrder executionAllMatchingOrder,
-                                  @Qualifier("findTransactionsListByUserIdImpl") FindTransactionsByUserId findTransactionsByUserId) {
+                                  @Qualifier("findTransactionsListByUserIdImpl") FindTransactionsByUserId findTransactionsByUserId,
+                                  @Qualifier("findUserAssetDetailsImpl") FindUserAssetDetails findUserAssetDetails) {
         this.saveSellOrder = saveSellOrder;
         this.saveBuyOrder = saveBuyOrder;
         this.canselOrder = canselOrder;
         this.executionAllMatchingOrder = executionAllMatchingOrder;
         this.findTransactionsByUserId = findTransactionsByUserId;
+        this.findUserAssetDetails = findUserAssetDetails;
     }
 
     @Override
@@ -58,5 +63,10 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public List<TransactionsResponse> getTransactionsByUserId(TransactionsRequest transactionsRequest){
         return findTransactionsByUserId.getTransactionsByUserId(transactionsRequest);
+    }
+
+    @Override
+    public UserAssetResponse FindUserAssetDetails(Long userId) {
+        return findUserAssetDetails.FindUserAssetDetails(userId);
     }
 }
