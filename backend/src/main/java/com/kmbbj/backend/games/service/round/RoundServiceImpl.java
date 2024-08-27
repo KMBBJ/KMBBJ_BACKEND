@@ -63,11 +63,6 @@ public class RoundServiceImpl implements RoundService {
             throw new ApiException(ExceptionEnum.INVALID_ROUND_NUMBER);
         }
 
-        // 다음 라운드 번호가 이미 존재하는지 확인
-        if (roundRepository.existsByGameAndRoundNumber(game, newRoundNumber)) {
-            throw new ApiException(ExceptionEnum.DUPLICATE_ROUND);
-        }
-
         // 새로운 라운드 생성
         Round newRound = new Round();
         newRound.setGame(game);
