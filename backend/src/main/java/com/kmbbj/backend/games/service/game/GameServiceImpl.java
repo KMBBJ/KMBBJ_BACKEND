@@ -4,10 +4,14 @@ package com.kmbbj.backend.games.service.game;
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
 import com.kmbbj.backend.games.entity.Game;
+import com.kmbbj.backend.games.entity.GameBalance;
+import com.kmbbj.backend.games.entity.GameResult;
 import com.kmbbj.backend.games.entity.Round;
 import com.kmbbj.backend.games.enums.GameStatus;
 import com.kmbbj.backend.games.repository.GameRepository;
 import com.kmbbj.backend.games.repository.RoundRepository;
+import com.kmbbj.backend.games.service.gamebalance.GameBalanceService;
+import com.kmbbj.backend.games.service.gameresult.GameResultService;
 import com.kmbbj.backend.games.service.round.RoundResultService;
 import com.kmbbj.backend.games.service.round.RoundService;
 import com.kmbbj.backend.games.util.GameEncryptionUtil;
@@ -23,6 +27,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 
@@ -39,6 +44,9 @@ public class GameServiceImpl implements GameService {
     private final RoundService roundService;
     private final GameEncryptionUtil gameEncryptionUtil;
     private final GameProperties gameProperties;
+    private final GameResultService gameResultService;
+    private final GameBalanceService gameBalanceService;
+
 
 
 
@@ -64,6 +72,9 @@ public class GameServiceImpl implements GameService {
         game.setRoom(room); // 방 <-> 게임 연결
         game = gameRepository.save(game); // 데이터 베이스 저장
 
+
+        // 방 속한 플레이한 사용자들에게 게임 잔액 생성
+        List<GameBalance> gameBalances = gameBalanceService.createGameBalance(game);
 
         // 첫 라운드 생성 & 저장
         Round round = new Round();
@@ -118,7 +129,8 @@ public class GameServiceImpl implements GameService {
             // 모든 라운드 결과 가져오기
 
 
-            // 여기에 최종 결과 구현 할것 (미구현)
+            // 게임 결과 생성 메서드 호출
+            gameResultService.createGameResults(encryptedGameId);
 
 
             // 방 상태 업데이트
