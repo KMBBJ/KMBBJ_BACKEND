@@ -4,6 +4,7 @@ import com.kmbbj.backend.feature.exchange.service.cansel.CanselOrder;
 import com.kmbbj.backend.feature.exchange.service.buy.save.SaveBuyOrder;
 import com.kmbbj.backend.feature.exchange.service.execution.matching.ExecutionAllMatchingOrder;
 import com.kmbbj.backend.feature.exchange.service.sell.save.SaveSellOrder;
+import com.kmbbj.backend.feature.exchange.service.transaction.getlist.FindTransactionsByUserId;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,5 +16,7 @@ public interface TransactionService extends
         //Cansel
         CanselOrder,
         //excution
-        ExecutionAllMatchingOrder
+        ExecutionAllMatchingOrder,
+        //transaction
+        FindTransactionsByUserId
 {}
