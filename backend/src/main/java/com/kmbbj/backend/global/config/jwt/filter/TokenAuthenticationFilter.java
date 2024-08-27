@@ -1,6 +1,8 @@
 package com.kmbbj.backend.global.config.jwt.filter;
 
 import com.kmbbj.backend.auth.entity.Authority;
+import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.entity.redisToken;
@@ -39,6 +41,7 @@ import java.util.List;
 public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenizer jwtTokenizer;
     private final TokenService tokenService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -106,12 +109,21 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
      * @param response 응답
      * @param token 사용할 과거 access 토큰
      */
-    private void makeNewResponseTokens(HttpServletResponse response, String token) {
+    private void makeNewResponseTokens(HttpServletResponse response, String token) throws IOException {
         Claims claims = jwtTokenizer.parseAccessToken(token);
         Long userId = claims.get("userId", Long.class);
         String email = claims.get("email", String.class);
         String nickname = claims.get("nickname", String.class);
         Authority authority = Authority.valueOf(claims.get("authority", String.class));
+
+        // 유저의 계정 상태를 확인
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+
+        // 유저 테이블의 Suspended 값이 null이 아니라면(정지) 예외처리
+        if (user.isSuspended()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "User is suspended.");
+        }
 
         String newAccessToken = jwtTokenizer.createAccessToken(userId, email, nickname, authority);
         String newRefreshToken = jwtTokenizer.createRefreshToken(userId, email, nickname, authority);

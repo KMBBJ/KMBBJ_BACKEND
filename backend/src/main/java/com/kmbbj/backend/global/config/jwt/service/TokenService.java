@@ -54,4 +54,17 @@ public class TokenService {
             redisTemplate.delete("userId:" + token.getUserId());
         });
     }
+
+    /**
+     * 임의의 유저 id의 토큰값 얻기
+     *
+     * @param userId 임의의 유저의 id 값
+     * @return 사용자 id의 토큰 값
+     */
+    @Transactional
+    public redisToken getToken(Long userId) {
+        return tokenRepository.findByUserId(userId)
+                .orElse(null);  // 토큰이 없을 경우 null 반환
+    }
+
 }

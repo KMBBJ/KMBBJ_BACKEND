@@ -232,3 +232,10 @@ CREATE TABLE admin_alarms (
                               user_id BIGINT NOT NULL,
                               CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+CREATE TABLE token_blacklist (
+                                 id BIGSERIAL PRIMARY KEY,
+                                 token VARCHAR(500) NOT NULL UNIQUE,
+                                 expiry_date TIMESTAMP NOT NULL
+);
+

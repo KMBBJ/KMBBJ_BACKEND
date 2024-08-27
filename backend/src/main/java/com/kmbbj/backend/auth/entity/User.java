@@ -36,6 +36,13 @@ public class User extends AuditingFields {
     @Column(name = "is_deleted")
     private Boolean isDeleted;
 
+    @Setter
     @Column(name = "suspension_end_date")
     private LocalDateTime suspensionEndDate;
+
+    // 정지 상태 확인 메서드
+    public boolean isSuspended() {
+        return suspensionEndDate != null && LocalDateTime.now().isBefore(suspensionEndDate);
+
+    }
 }
