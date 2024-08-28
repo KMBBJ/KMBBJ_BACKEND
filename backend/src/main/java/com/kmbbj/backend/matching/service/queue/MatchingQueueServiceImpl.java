@@ -25,10 +25,6 @@ public class MatchingQueueServiceImpl implements MatchingQueueService {
 
     @Override
     public void addUserToQueue(User user) {
-        // 유저가 이미 매칭된 상태인지 확인
-        if (isUserAlreadyMatched(user)) {
-            return;  // 이미 매칭된 상태라면 큐에 추가하지 않음
-        }
         Long asset = totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
         redisTemplate.opsForZSet().add("matchingQueue", user.getId().toString(),asset);
     }
@@ -52,6 +48,7 @@ public class MatchingQueueServiceImpl implements MatchingQueueService {
     @Override
     // 유저가 이미 매칭된 상태인지 확인하는 메서드 추가
     public boolean isUserAlreadyMatched(User user) {
-        return redisTemplate.opsForZSet().rank("matchingQueue", user.getId().toString()) != null;
+        System.out.println(redisTemplate.opsForZSet().rank("matchingQueue",user.getId().toString()));
+        return redisTemplate.opsForZSet().rank("matchingQueue", user.getId().toString()) == null;
     }
 }

@@ -55,7 +55,6 @@ public class MatchingServiceImpl implements MatchingService{
     public void startQuickMatching() {
         User user = findUserBySecurity.getCurrentUser();
         isShutdownRequested = false;
-        matchingQueueService.addUserToQueue(user);
         scheduleMatchingTasks(user,true);
     }
 
@@ -99,10 +98,8 @@ public class MatchingServiceImpl implements MatchingService{
                 if (isShutdownRequested || Thread.interrupted()) return;
                 if (isQuickMatch) {
                     handleQuickMatch(user);
-                    System.out.println("matchingTask1");
                 } else {
                     handleRandomMatch(user, isFiveMinutesPassed, isThirtyMinutesPassed);
-                    System.out.println("matchingTask2");
                 }
 
             } finally {
@@ -120,7 +117,6 @@ public class MatchingServiceImpl implements MatchingService{
             try {
                 if (isShutdownRequested || Thread.interrupted()) return;
                 isThirtyMinutesPassed.set(true);
-                System.out.println("isThirtyMinutesPassed");
                 if (!isQuickMatch) switchToQuickMatch(user);
             } finally {
                 // SecurityContext 정리
@@ -136,7 +132,6 @@ public class MatchingServiceImpl implements MatchingService{
             try {
                 if (isShutdownRequested || Thread.interrupted()) return;
                 isFiveMinutesPassed.set(true);
-                System.out.println("isFiveMinutesPassed");
             } finally {
                 // SecurityContext 정리
                 SecurityContextHolder.clearContext();
@@ -154,10 +149,6 @@ public class MatchingServiceImpl implements MatchingService{
     @Override
     @Transactional
     public void handleRandomMatch(User user, AtomicBoolean isFiveMinutesPassed, AtomicBoolean isThirtyMinutesPassed) {
-        if (matchingQueueService.isUserAlreadyMatched(user)) {
-            return;  // 유저가 이미 매칭된 상태라면 반환
-        }
-
         double currentRange = rangeCalculator.calculateAssetRange(time.getAndIncrement());
         synchronized (this) {  // 동기화 블록 추가
             if (isThirtyMinutesPassed.get()) switchToQuickMatch(user);
@@ -191,7 +182,7 @@ public class MatchingServiceImpl implements MatchingService{
         if (!availableRooms.isEmpty()) {
             // 가능한 방이 있다면, 첫 번째 방에 유저 입장
             Room room = availableRooms.get(0);
-            roomService.enterRoom(room.getRoomId());
+            roomService.enterRoom(user,room.getRoomId());
             matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
@@ -214,7 +205,6 @@ public class MatchingServiceImpl implements MatchingService{
             matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
-            System.out.println("handleQuickMatch");
         }
     }
 
@@ -295,6 +285,7 @@ public class MatchingServiceImpl implements MatchingService{
         Room room = roomService.createRoom(createRoomDTO, richestUser);
         matchWebSocketHandler.notifyAboutMatch(richestUser.getId(),room.getRoomId());
         users.forEach(user -> {
+            roomService.enterRoom(user,room.getRoomId());
             matchWebSocketHandler.notifyAboutMatch(user.getId(), room.getRoomId());
             cancelCurrentUserScheduledTasks();
             cancelMatching(user);
@@ -311,7 +302,6 @@ public class MatchingServiceImpl implements MatchingService{
     public void switchToQuickMatch(User user) {
         cancelMatching(user);
         startQuickMatching();
-        System.out.println("switchToQuickMatch");
     }
 
     /**
@@ -323,7 +313,6 @@ public class MatchingServiceImpl implements MatchingService{
     public void cancelMatching(User user) {
         ScheduledFuture<?> matchingTask = matchingTasks.remove(user.getId());
         if (matchingTask != null) matchingTask.cancel(false);
-        System.out.println("cancelMatching");
     }
 
     @Override
@@ -335,12 +324,7 @@ public class MatchingServiceImpl implements MatchingService{
         isShutdownRequested = true;
         scheduledTasks.forEach((key, future) -> {
             if (!future.isDone()) {
-                boolean wasCancelled = future.cancel(false);
-                if (wasCancelled) {
-                    System.out.println("종료 성공" + key);
-                } else {
-                    System.out.println("종료 실패 " + key);
-                }
+                future.cancel(false);
             }
         });
         // 참조 제거 전 모든 상태 로깅
