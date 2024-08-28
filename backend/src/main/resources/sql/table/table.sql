@@ -131,8 +131,8 @@ CREATE TABLE game_results (
                               result_id BIGSERIAL PRIMARY KEY,
                               game_id UUID,
                               user_id BIGINT,
-                              total_profit INTEGER,
-                              total_loss INTEGER,
+                              total_profit BIGINT,
+                              total_loss BIGINT,
                               user_rank INTEGER,
                               CONSTRAINT fk_game_result
                                   FOREIGN KEY (game_id)
@@ -143,11 +143,12 @@ CREATE TABLE game_results (
 -- Game_Balances 테이블 생성
 CREATE TABLE game_balances (
                                game_balances_id BIGSERIAL PRIMARY KEY,
-                               room_id BIGINT NOT NULL,
+                               game_id UUID NOT NULL,
                                user_id BIGINT NOT NULL UNIQUE,
-                               CONSTRAINT fk_room
-                                   FOREIGN KEY (room_id)
-                                       REFERENCES rooms(room_id)
+                               seed BIGINT NOT NULL,
+                               CONSTRAINT fk_game
+                                   FOREIGN KEY (game_id)
+                                       REFERENCES games(game_id)
                                        ON DELETE CASCADE,
                                CONSTRAINT fk_user
                                    FOREIGN KEY (user_id)
