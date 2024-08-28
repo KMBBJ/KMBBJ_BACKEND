@@ -48,6 +48,16 @@ public class RoomController {
         return new CustomResponse<>(HttpStatus.OK,String.format("%d번방 생성 성공",room.getRoomId()), room);
     }
 
+    @PostMapping("/edit/{roomId}")
+    @Operation(summary = "방 수정", description = "이미 만들어진 방을 방장이 수정")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "방 수정 성공")
+    })
+    public CustomResponse<Void> editRoom(@PathVariable(name = "roomId") Long roomId,@RequestBody EditRoomDTO editRoomDTO) {
+        roomService.editRoom(roomId,editRoomDTO);
+        return new CustomResponse<>(HttpStatus.OK, String.format("%d번방 수정 성공", roomId), null);
+    }
+
 
     /**
      * 방 삭제
