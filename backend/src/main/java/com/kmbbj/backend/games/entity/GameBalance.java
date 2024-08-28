@@ -16,7 +16,6 @@ import lombok.Setter;
 @Getter@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-
 public class GameBalance {
 
     // 게임 잔액 (기본 키)
@@ -36,13 +35,13 @@ public class GameBalance {
      *  게임 계좌의 소유자인 사용자
      *  일대일 관계 , 각 게임 계좌 사용자와 연결
      */
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     /**
      * 게임에서 사용자가 보유한 시드머니(자금)
      */
     @Column(name = "seed", nullable = false)
-    private Integer seed;
+    private Long seed;
 }

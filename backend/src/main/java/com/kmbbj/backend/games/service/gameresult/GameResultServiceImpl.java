@@ -89,13 +89,13 @@ public class GameResultServiceImpl implements GameResultService{
      * @param rank 사용자 순위
      * @return 저장된 GameResult 반환
      */
-    private GameResult createGameResult(Game game, User user, Integer finalBalance, int rank) {
+    private GameResult createGameResult(Game game, User user, Long finalBalance, int rank) {
         // 게임 시작할 때의 초기 시드머니를 가져옴
-        Integer initialSeed = game.getRoom().getStartSeedMoney();
+        Long initialSeed = Long.valueOf(game.getRoom().getStartSeedMoney());
 
         // 사용자 최종 잔액과 초기 시드 비교하여 총 수익 ,총 손실 계산
-        Integer totalProfit = finalBalance > initialSeed ? finalBalance - initialSeed : 0;
-        Integer totalLoss = finalBalance < initialSeed ? initialSeed - finalBalance : 0;
+        long totalProfit = finalBalance > initialSeed ? finalBalance - initialSeed : 0;
+        long totalLoss = finalBalance < initialSeed ? initialSeed - finalBalance : 0;
 
         //GameResult 객체를 생성한 후 게임, 사용자 ID , 수익, 손실, 순위 정보 설정
         GameResult gameResult = new GameResult();
