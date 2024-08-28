@@ -1,5 +1,6 @@
 package com.kmbbj.backend.matching.dto;
 
+import com.kmbbj.backend.matching.entity.StartSeedMoney;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,7 +13,7 @@ public class RoomListDTO {
 
     private String title;
 
-    private Long startSeedMoney;
+    private StartSeedMoney startSeedMoney;
 
     private int end;
 

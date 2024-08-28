@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,7 +37,6 @@ public class RoomServiceImpl implements RoomService{
 
 
 
-
     /**
      *
      * @param createRoomDTO     방 생성시 필요한 정보(제목, 시작 시드머니, 마지막 라운드,
@@ -46,9 +46,12 @@ public class RoomServiceImpl implements RoomService{
     @Override
     @Transactional
     public Room createRoom(CreateRoomDTO createRoomDTO,User user) {
-        // 이미 다른 방에 들어가 있는경우
+        // 이미 다른 방에 들어가 있는 경우
         if (userRoomService.findCurrentRoom() != null) {
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
+        if (Long.parseLong(String.valueOf(createRoomDTO.getStartSeedMoney())) > (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3)) {
+            throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
         // 방 생성
         Room room = new Room();
@@ -90,11 +93,20 @@ public class RoomServiceImpl implements RoomService{
     public void editRoom(Long roomId, EditRoomDTO editRoomDTO) {
         User user = findUserBySecurity.getCurrentUser();
         Room room = findById(roomId);
-        Optional<UserRoom> userRoom = userRoomService.findByUserAndRoom(user, room);
-        if (userRoom.isPresent()) {
-            if (userRoom.get().getIsManager()) {
+        List<UserRoom> userRoom1 = userRoomService.findUserRooms(room);
+        UserRoom min = userRoom1.stream()
+                .min(Comparator.comparing(userRoom -> balanceService.totalBalanceFindByUserId(userRoom.getUser().getId()).get().getAsset()))
+                .orElseThrow(() -> new ApiException(ExceptionEnum.ANYONE_IN_ROOM));
+
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(user, room).orElse(null);
+        if (Long.parseLong(String.valueOf(editRoomDTO.getStartSeedMoney())) > balanceService.totalBalanceFindByUserId(min.getUser().getId()).get().getAsset() / 3) {
+            throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET_USER);
+        }
+        if (userRoom != null) {
+            if (userRoom.getIsManager()) {
                 room.setTitle(editRoomDTO.getTitle());
                 room.setEnd(editRoomDTO.getEnd());
+                room.setStartSeedMoney(editRoomDTO.getStartSeedMoney());
                 roomRepository.save(room);
             } else {
                 throw new ApiException(ExceptionEnum.FORBIDDEN);
@@ -227,11 +239,11 @@ public class RoomServiceImpl implements RoomService{
         if (room.getUserRooms().size() >= 10) {
             throw new ApiException(ExceptionEnum.ROOM_FULL);
         }
-        if (asset / 3 < room.getStartSeedMoney()) {
+        if (asset / 3 < Long.parseLong(String.valueOf(room.getStartSeedMoney()))) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
 
-        UserRoom userRoom = userRoomService.findByUserAndRoom(user, room)
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(user, room)
                 .orElse(null);
 
         if (userRoom == null) {
@@ -279,10 +291,21 @@ public class RoomServiceImpl implements RoomService{
      */
     @Override
     @Transactional
-    // 방장 퇴장할 경우 맨 앞사람이 방장
     public void quitRoom(Long roomId) {
-        UserRoom userRoom = userRoomService.deleteUserFromRoom(roomId);
-        Room room = userRoom.getRoom();
+        User currentUser = findUserBySecurity.getCurrentUser();
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(currentUser, findById(roomId)).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+        List<UserRoom> userRoomList = userRoomService.findUserRooms(findById(roomId));
+        // 방장이 나갈 경우 자산 가장 많은 사람으로 방장 바뀜
+        if (userRoom.getIsManager()) {
+            UserRoom max = userRoomList.stream()
+                    .filter(userRoom1 -> !userRoom1.equals(userRoom))
+                    .max(Comparator.comparing(currentUserRoom -> balanceService.totalBalanceFindByUserId(userRoom.getUser().getId()).get().getAsset()))
+                    .orElseThrow(() -> new ApiException(ExceptionEnum.ANYONE_IN_ROOM));
+            max.setIsManager(true);
+            userRoom.setIsManager(false);
+        }
+        userRoomService.deleteUserFromRoom(roomId);
+        Room room = findById(roomId);
         room.setUserCount(room.getUserCount() - 1);
         roomRepository.save(room);
     }

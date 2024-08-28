@@ -1,5 +1,6 @@
 package com.kmbbj.backend.matching.dto;
 
+import com.kmbbj.backend.matching.entity.StartSeedMoney;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,7 +16,7 @@ public class CreateRoomDTO {
     private String title;
 
     // 시작 시드머니
-    private Long startSeedMoney;
+    private StartSeedMoney startSeedMoney;
 
     // 마지막 라운드번호
     private int end;

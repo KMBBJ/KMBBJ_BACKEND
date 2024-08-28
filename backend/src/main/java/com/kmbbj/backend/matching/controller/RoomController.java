@@ -1,6 +1,7 @@
 package com.kmbbj.backend.matching.controller;
 
 
+import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
