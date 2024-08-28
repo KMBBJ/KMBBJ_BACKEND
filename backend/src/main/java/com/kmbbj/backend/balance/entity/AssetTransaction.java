@@ -2,10 +2,7 @@ package com.kmbbj.backend.balance.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.format.annotation.DateTimeFormat;
-
-import java.security.Timestamp;
+import java.time.LocalDateTime;
 
 //자산 변동 내역
 @ToString
@@ -32,10 +29,8 @@ public class AssetTransaction {
     private Long changeAmount;
 
     //자산 변동 시간
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-    @CreatedDate
     @Column(name = "create_time", updatable = false)
-    private Timestamp createTime;
+    private LocalDateTime createTime;
 
     //변경된 계좌
     @JoinColumn(name = "total_balance_id", nullable = false)
