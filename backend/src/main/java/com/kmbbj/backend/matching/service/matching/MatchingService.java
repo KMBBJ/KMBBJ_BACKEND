@@ -12,19 +12,17 @@ public interface MatchingService {
 
     void startRandomMatching();
 
-    void updateAssetRange(User user, int increment);
-
     void cancelMatching(User user);
 
-    List<User> findPotentialMatches(Long asset, Long range);
+    List<User> findPotentialMatches(Long currentUserAsset, double range);
 
     void createRoomWithUsers(List<User> users);
 
-    List<Room> findAvailableRooms(Long range, AtomicReference<Long> minUser);
+    List<Room> findAvailableRooms();
 
-    void scheduleMatchingTasks(User user, int increment, boolean isQuickMatch);
+    void scheduleMatchingTasks(User user, boolean isQuickMatch);
 
-    void handleRandomMatch(User user, boolean isQuickMatch, AtomicBoolean isFiveMinutesPassed, AtomicBoolean isTenMinutesPassed);
+    void handleRandomMatch(User user, AtomicBoolean isFiveMinutesPassed, AtomicBoolean isThirtyMinutesPassed);
 
     void switchToQuickMatch(User user);
 

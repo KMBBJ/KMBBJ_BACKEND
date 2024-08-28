@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Matching", description = "랜덤 매칭 API")
 public class MatchingController {
     private final MatchingService matchingService;
+    private final FindUserBySecurity findUserBySecurity;
 
     /**
      * 랜덤 매칭
@@ -27,7 +28,7 @@ public class MatchingController {
      */
     @Operation(summary = "랜덤 매칭", description = "자산이 비슷한 유저끼리 매칭 , 안될경우 평균자산이 자신과 비슷한 방에 입장.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "{roomId}번 방 게임 시작 성공"),
+            @ApiResponse(responseCode = "200", description = "랜덤 매칭 요청 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
             @ApiResponse(responseCode = "404", description = "방을 찾지 못했습니다."),
             @ApiResponse(responseCode = "404", description = "유저를 찾지 못했습니다."),
@@ -37,7 +38,7 @@ public class MatchingController {
     @PostMapping("/start/random")
     public CustomResponse<Void> startRandomMatching() {
         matchingService.startRandomMatching();
-        return new CustomResponse<>(HttpStatus.OK, "랜덤 매칭 요청 성공", null);
+        return new CustomResponse<>(HttpStatus.OK, "매칭 요청 성공", null);
     }
 
     /**
@@ -46,13 +47,14 @@ public class MatchingController {
      */
     @Operation(summary = "매칭 취소", description = "랜덤 혹은 빠른 매칭 취소")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "{roomId}번 방 게임 시작 성공"),
+            @ApiResponse(responseCode = "200", description = "대기열 취소"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
             @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
     })
     @PostMapping("/cancel")
     public CustomResponse<Void> cancelMatching() {
         matchingService.cancelCurrentUserScheduledTasks();
+        matchingService.cancelMatching(findUserBySecurity.getCurrentUser());
         return new CustomResponse<>(HttpStatus.OK, "대기열 취소", null);
     }
 }
