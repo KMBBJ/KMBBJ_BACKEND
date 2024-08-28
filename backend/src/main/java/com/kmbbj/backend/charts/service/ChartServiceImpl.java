@@ -60,10 +60,7 @@ public class ChartServiceImpl implements ChartService {
         // 업데이트 할 모든 코인 리스트를 가져옴
         List<Coin> coins = coinRepository.findAll();
         // 각 코인에 대해 모든 시간 간격의 Kline 데이터를 업데이트
-        // 코인 리스트를 병렬 스트림으로 처리하여 병렬로 Kline 데이터를 업데이트
-        coins.forEach(coin -> {
-            updateKlineData(coin.getSymbol(), "5m", 120);
-        });
+        coins.forEach(coin -> updateKlineData(coin.getSymbol(), "5m", 120));
     }
 
     /**
