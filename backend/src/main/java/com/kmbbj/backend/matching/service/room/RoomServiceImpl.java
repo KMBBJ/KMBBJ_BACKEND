@@ -13,19 +13,15 @@ import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -214,12 +210,11 @@ public class RoomServiceImpl implements RoomService{
      */
     @Override
     @Transactional
-    public void enterRoom(Long roomId) {
+    public void enterRoom(User user,Long roomId) {
         Room room = roomRepository.findById(roomId).orElseThrow(()->new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
-        User currentUser = findUserBySecurity.getCurrentUser();
 
         // 방에 들어온 상태 확인
-        if (room.getUserRooms().stream().anyMatch(userRoom -> userRoom.getUser().equals(currentUser) && userRoom.getIsPlayed())) {
+        if (room.getUserRooms().stream().anyMatch(userRoom -> userRoom.getUser().equals(user) && userRoom.getIsPlayed())) {
             return; // 이미 입장함
         }
 
@@ -228,20 +223,20 @@ public class RoomServiceImpl implements RoomService{
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
         }
 
-        Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
         if (room.getUserRooms().size() >= 10) {
             throw new ApiException(ExceptionEnum.ROOM_FULL);
         }
-        if (asset / 3 < room.getStartSeedMoney() * 10000) {
+        if (asset / 3 < room.getStartSeedMoney()) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
 
-        UserRoom userRoom = userRoomService.findByUserAndRoom(currentUser, room)
+        UserRoom userRoom = userRoomService.findByUserAndRoom(user, room)
                 .orElse(null);
 
         if (userRoom == null) {
             userRoom = UserRoom.builder()
-                    .user(currentUser)
+                    .user(user)
                     .room(room)
                     .isPlayed(true)  // 처음 생성 시만 설정
                     .isManager(false)

@@ -152,7 +152,8 @@ public class RoomController {
             @ApiResponse(responseCode = "409", description = "방이 가득 찼습니다.")
     })
     public CustomResponse<EnterRoomDTO> enterRoom(@PathVariable Long roomId) {
-        roomService.enterRoom(roomId);
+        User currentUser = findUserBySecurity.getCurrentUser();
+        roomService.enterRoom(currentUser,roomId);
         Room room = roomService.findById(roomId);
         EnterRoomDTO enterRoomDto = roomService.getEnterRoomDto(room);
         return new CustomResponse<>(HttpStatus.OK, String.format("%d번 방 입장 성공",roomId), enterRoomDto);

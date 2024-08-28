@@ -22,7 +22,7 @@ public interface RoomService {
 
     void startGame(Long roomId);
 
-    void enterRoom(Long roomId);
+    void enterRoom(User user,Long roomId);
 
     void quitRoom(Long roomId);
 

@@ -18,7 +18,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Page<Room> findAllByIsDeletedAndIsStarted(boolean isDeleted, boolean isStarted, Pageable pageable);
 
-    @Query("SELECT r FROM Room r WHERE NOT r.isDeleted AND NOT r.isStarted AND r.averageAsset <= :maxAsset")
+    @Query("SELECT r FROM Room r WHERE NOT r.isDeleted AND NOT r.isStarted AND r.startSeedMoney <= :maxAsset")
     List<Room> findRoomsWithinAssetRange(
             @Param("maxAsset") Long maxAsset);
 
