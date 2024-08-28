@@ -2,8 +2,10 @@ package com.kmbbj.backend.feature.exchange.controller.request;
 
 import com.kmbbj.backend.feature.exchange.entity.TransactionType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -11,6 +13,8 @@ import java.util.UUID;
 @Schema(name = "주문 요청시 사용하는 객체", description = "주문 요청시 사용하면됩니다.")
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderRequest {
     @Schema(name = "거래 내용")
     private TransactionType transactionType;

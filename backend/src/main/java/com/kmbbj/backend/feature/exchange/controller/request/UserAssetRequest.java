@@ -6,12 +6,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Schema(name = "주문 취소시 사용하는 객체", description = "주문 취소시 사용하면 됩니다.")
+@Schema(name = "사용자가 자산을 조회를 요청할때 보내는 아이디")
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CanselRequest {
-    @Schema(name = "게임 Id")
-    private Long transactoinId;
+public class UserAssetRequest {
+    @Schema(name = "사용자 아이디")
+    private Long userId;
 }

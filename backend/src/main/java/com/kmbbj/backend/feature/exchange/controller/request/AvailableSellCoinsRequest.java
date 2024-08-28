@@ -6,12 +6,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Schema(name = "주문 취소시 사용하는 객체", description = "주문 취소시 사용하면 됩니다.")
+@Schema(name = "사용자가 사용할수 있는 코인이 얼마나 남았는지 불러오는 요청에 사용")
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CanselRequest {
-    @Schema(name = "게임 Id")
-    private Long transactoinId;
+public class AvailableSellCoinsRequest {
+    @Schema(name = "사용자 ID")
+    private Long userId;
+
+    @Schema(name = "코인 Id")
+    private Long coinId;
 }
