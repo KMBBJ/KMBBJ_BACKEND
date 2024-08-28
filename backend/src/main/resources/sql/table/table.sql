@@ -90,16 +90,20 @@ CREATE TABLE user_rooms (
 
 -- Games 테이블 생성
 CREATE TABLE games (
-                       game_id BIGSERIAL PRIMARY KEY,
-                       enum VARCHAR(255) NOT NULL
+                       game_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                       enum VARCHAR(255) NOT NULL,
+                       room_id BIGINT,
+                       CONSTRAINT fk_room
+                           FOREIGN KEY (room_id)
+                               REFERENCES rooms(room_id)
+                               ON DELETE CASCADE
 );
-
 -- Rounds 테이블 생성
 CREATE TABLE rounds (
                         round_id BIGSERIAL PRIMARY KEY,
                         round_number INTEGER,
                         duration_minutes INTEGER,
-                        game_id BIGINT,
+                        game_id UUID,
                         CONSTRAINT fk_game
                             FOREIGN KEY (game_id)
                                 REFERENCES games(game_id)
@@ -125,7 +129,7 @@ CREATE TABLE round_results (
 -- Game_Results 테이블 생성
 CREATE TABLE game_results (
                               result_id BIGSERIAL PRIMARY KEY,
-                              game_id BIGINT,
+                              game_id UUID,
                               user_id BIGINT,
                               total_profit INTEGER,
                               total_loss INTEGER,
@@ -235,6 +239,14 @@ CREATE TABLE admin_alarms (
                               CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+
+CREATE TABLE token_blacklist (
+                                 id BIGSERIAL PRIMARY KEY,
+                                 token VARCHAR(500) NOT NULL UNIQUE,
+                                 expiry_date TIMESTAMP NOT NULL
+);
+
+
 CREATE TABLE coin_balances (
                                coin_balances_id BIGSERIAL PRIMARY KEY,
                                game_balances_id BIGINT NOT NULL,
@@ -243,3 +255,4 @@ CREATE TABLE coin_balances (
                                CONSTRAINT fk_game_balances FOREIGN KEY (game_balances_id) REFERENCES game_balances(game_balances_id) ON DELETE CASCADE,
                                CONSTRAINT fk_coin FOREIGN KEY (coin_id) REFERENCES coins(coin_id) ON DELETE CASCADE
 );
+
