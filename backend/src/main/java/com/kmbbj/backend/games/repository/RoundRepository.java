@@ -11,5 +11,6 @@ import java.util.Optional;
 @Repository
 public interface RoundRepository extends JpaRepository<Round, Long> {
     Optional<Round> findFirstByGameOrderByRoundNumberDesc(Game game); // 최신 라운드 조회
-    boolean existsByGameAndRoundNumber(Game game, int roundNumber); // 라운드 번호 존재 확인여부
+
+    List<Round> findByGameOrderByRoundNumberAsc(Game game);
 }
