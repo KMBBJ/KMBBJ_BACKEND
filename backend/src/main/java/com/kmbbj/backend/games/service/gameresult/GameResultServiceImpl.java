@@ -1,7 +1,10 @@
 package com.kmbbj.backend.games.service.gameresult;
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.balance.entity.AssetTransaction;
+import com.kmbbj.backend.balance.entity.ChangeType;
 import com.kmbbj.backend.balance.entity.TotalBalance;
 import com.kmbbj.backend.balance.repository.totalbalances.TotalBalancesRepository;
+import com.kmbbj.backend.balance.repository.transaction.AssetTransactionRepository;
 import com.kmbbj.backend.games.entity.Game;
 import com.kmbbj.backend.games.entity.GameBalance;
 import com.kmbbj.backend.games.entity.GameResult;
@@ -31,6 +34,7 @@ public class GameResultServiceImpl implements GameResultService{
     private final GameResultRepository gameResultRepository;
     private final GameEncryptionUtil gameEncryptionUtil;
     private final TotalBalancesRepository totalBalancesRepository;
+    private final AssetTransactionRepository assetTransactionRepository;
 
 
     /** 게임 종료 시 모든 참여자의 게임 결과를 생성
@@ -71,7 +75,7 @@ public class GameResultServiceImpl implements GameResultService{
             results.add(result);
 
             // 순위에 따른 고정 보상 계산
-            Integer reward = calculateFixedReward(rank);
+            Long reward = calculateFixedReward(rank);
 
             // 사용자 보유 자산 업데이트 (보상 지급)
             updateUserTotalBalance(balance.getUser().getId(), reward);
@@ -114,14 +118,21 @@ public class GameResultServiceImpl implements GameResultService{
      * @param userId 사용자 ID
      * @param reward 순위에 따른 보상 금액
      */
-    private void updateUserTotalBalance(Long userId, Integer reward) {
+    private void updateUserTotalBalance(Long userId, Long reward) {
         // 사용자 자산 정보 조회
         TotalBalance totalBalance = totalBalancesRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.TOTAL_BALANCE_NOT_FOUND));
 
-        // 보상을 반영한 자산 업데이트
-        totalBalance.changeAsset((long) reward);
+        AssetTransaction transaction = AssetTransaction.builder()
+                .changeType(ChangeType.GAME)
+                .changeAmount(reward)
+                .totalBalance(totalBalance)
+                .build();
 
+        // 거래 내역 저장
+        assetTransactionRepository.save(transaction);
+        // 사용자 총 자산 업데이트
+        totalBalance.changeAsset(reward);
         // 변경된 자산 정보 저장
         totalBalancesRepository.save(totalBalance);
     }
@@ -132,16 +143,16 @@ public class GameResultServiceImpl implements GameResultService{
      * @param rank 사용자 순위
      * @return 계산된 보상 금액
      */
-    private Integer calculateFixedReward(int rank) {
+    private Long calculateFixedReward(int rank) {
         // 순위별 고정 보상 금액
         if (rank == 1) {
-            return 5000000;  // 1위는 500만 원
+            return 5000000L;  // 1위는 500만 원
         } else if (rank == 2) {
-            return 3000000;  // 2위는 300만 원
+            return 3000000L;  // 2위는 300만 원
         } else if (rank == 3) {
-            return 1000000;  // 3위는 100만 원
+            return 1000000L;  // 3위는 100만 원
         } else {
-            return 0;  // 꼴등 ...?
+            return 0L;  // 꼴등 ...?
         }
     }
 }

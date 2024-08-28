@@ -18,4 +18,6 @@ public interface GameBalanceRepository extends JpaRepository<GameBalance, Long> 
 
     Optional<GameBalance> findByUserId(Long userId);
 
+    List<GameBalance> findByGame(Game game);
+
 }

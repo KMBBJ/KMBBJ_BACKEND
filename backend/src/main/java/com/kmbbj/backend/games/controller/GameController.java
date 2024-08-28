@@ -2,9 +2,7 @@ package com.kmbbj.backend.games.controller;
 
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
-import com.kmbbj.backend.games.entity.RoundResult;
 import com.kmbbj.backend.games.service.game.GameService;
-import com.kmbbj.backend.games.service.round.RoundResultService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,7 +22,6 @@ import java.util.List;
 public class GameController {
 
     private final GameService gameService;
-    private final RoundResultService roundResultService;
 
     /** 방 ID 가져와서 게임 시작
      *
@@ -98,21 +95,4 @@ public class GameController {
         return new CustomResponse<>(HttpStatus.OK, "현재 라운드 조회 성공", currentRound);
     }
 
-
-    /** 게임의 라운드 결과 조회
-     *
-     * @param encryptedGameId 라운드 결과 조회
-     * @return 조회된 라운드 결과 리스트
-     */
-    @GetMapping("/{encryptedGameId}/round-results")
-    @Operation(summary = "라운드 결과 조회", description = "게임 ID를 받아 모든 라운드 결과를 조회함")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "라운드 결과 조회 성공"),
-            @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
-    })
-    public CustomResponse<List<RoundResult>> getRoundResults(@PathVariable String encryptedGameId) {
-        gameService.isUserAuthorizedForGame(encryptedGameId);
-        List<RoundResult> results = roundResultService.getRoundResultsForGameId(encryptedGameId);
-        return new CustomResponse<>(HttpStatus.OK, "라운드 결과 조회 성공", results);
-    }
 }
