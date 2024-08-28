@@ -15,12 +15,12 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserAssetResponse {
-    @Schema(name = "총 보유 자산")
+    @Schema(description = "총 보유 자산")
     private BigDecimal totalEvaluationAmount;
-    @Schema(name = "총 매수 금액")
+    @Schema(description = "총 매수 금액")
     private Long totalPurchaseAmount;
-    @Schema(name = "총 수익률")
+    @Schema(description = "총 수익률")
     private BigDecimal totalProfitRate;
-    @Schema(name = "보유 코인 정보")
+    @Schema(description = "보유 코인 정보")
     private List<CoinAssetResponse> coinAssets;
 }

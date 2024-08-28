@@ -12,14 +12,14 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Setter
 public class CoinAssetResponse {
-    @Schema(name = "코인 심볼 이름")
+    @Schema(description = "코인 심볼 이름")
     private String coinSymbol;
-    @Schema(name = "보유 코인 갯수", description = "거래를 신청해 놨을 경우 코인 갯수가 그보다 작게 나타남")
+    @Schema(description = "보유 코인 갯수, 거래를 신청해 놨을 경우 코인 갯수가 그보다 작게 나타남")
     private BigDecimal quantity;
-    @Schema(name = "매수 금액")
+    @Schema(description = "매수 금액")
     private Long purchaseAmount;
-    @Schema(name = "평가 긍맥")
+    @Schema(description = "평가 긍맥")
     private BigDecimal evaluationAmount;
-    @Schema(name = "수익률")
+    @Schema(description = "수익률")
     private BigDecimal profitRate;
 }

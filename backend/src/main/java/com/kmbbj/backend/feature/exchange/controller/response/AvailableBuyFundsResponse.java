@@ -6,12 +6,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@Schema(name = "사용 가능한 자산 응답")
+@Schema(description = "사용 가능한 자산 응답")
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class AvailableBuyFundsResponse {
-    @Schema(name = "사용가능한 자산")
+    @Schema(description = "사용가능한 자산")
     private Long availableAsset;
 }

@@ -8,12 +8,12 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Schema(name = "사용 가능한 코인을 보여줄 응답")
+@Schema(description = "사용 가능한 코인을 보여줄 응답")
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class AvailableSellCoinsResponse {
-    @Schema(name = "사용 가능한 코인")
+    @Schema(description = "사용 가능한 코인")
     private BigDecimal availableCoin;
 }
