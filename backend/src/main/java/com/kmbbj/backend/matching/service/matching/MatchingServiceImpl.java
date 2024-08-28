@@ -10,6 +10,7 @@ import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import com.kmbbj.backend.global.config.websocket.MatchWebSocketHandler;
 import com.kmbbj.backend.matching.dto.CreateRoomDTO;
 import com.kmbbj.backend.matching.entity.Room;
+import com.kmbbj.backend.matching.entity.StartSeedMoney;
 import com.kmbbj.backend.matching.service.queue.MatchingQueueService;
 import com.kmbbj.backend.matching.service.room.RoomService;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
@@ -191,7 +192,7 @@ public class MatchingServiceImpl implements MatchingService{
             // 방 생성
             Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
             // 초기 시드머니
-            long startSeedMoney = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3;
+            StartSeedMoney startSeedMoney = getStartSeedMoney(user);
             CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                     .title(String.format("빠른 매칭 %d", latestRoomId))
                     .end(5) // 게임 라운드 수
@@ -270,7 +271,7 @@ public class MatchingServiceImpl implements MatchingService{
                 .min(Comparator.comparing(TotalBalance::getAsset))
                 .map(TotalBalance::getUser)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
-        long startSeedMoney = balanceService.totalBalanceFindByUserId(poor.getId()).get().getAsset() / 3;
+        StartSeedMoney startSeedMoney = getStartSeedMoney(poor);
         Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
         CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                 .title(String.format("랜덤 매칭 %d", latestRoomId + 1))
@@ -329,5 +330,23 @@ public class MatchingServiceImpl implements MatchingService{
         });
         // 참조 제거 전 모든 상태 로깅
         scheduledTasks.clear();
+    }
+
+    public StartSeedMoney getStartSeedMoney(User user) {
+        StartSeedMoney startSeedMoney = null;
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 10000000) {
+            startSeedMoney = StartSeedMoney.TEN_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 20000000) {
+            startSeedMoney = StartSeedMoney.TWENTY_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 30000000) {
+            startSeedMoney = StartSeedMoney.THIRTY_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 40000000) {
+            startSeedMoney = StartSeedMoney.FORTY_MILLION;
+        }
+
+        return startSeedMoney;
     }
 }
