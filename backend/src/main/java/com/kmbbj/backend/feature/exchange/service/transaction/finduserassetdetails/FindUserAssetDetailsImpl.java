@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,21 +31,50 @@ public class FindUserAssetDetailsImpl implements FindUserAssetDetails{
     @Override
     public UserAssetResponse findUserAssetDetails(Long userId){
         // 사용자의 게임 잔액 정보를 조회
-        GameBalance gameBalance = gameBalanceRepository.findByUserId(userId).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
-        List<CoinAssetResponse> coinAssets = transactionRepository.findAllCoinAssets(gameBalance.getGameBalancesId()); // 게임 잔액 ID를 기반으로 모든 코인 자산 정보를 가져옵
+        GameBalance gameBalance = gameBalanceRepository.findByUserId(userId)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
 
-        BigDecimal totalEvaluationAmount = BigDecimal.ZERO; // 총 평가 금액 초기화
-        Long totalPurchaseAmount = 0L; // 총 매수 금액 초기화
+        List<Object[]> rawAssets = transactionRepository.findAllCoinAssets(gameBalance.getGameBalancesId());
 
-        // 각 코인에 대한 자산 정보를 순회하며 총 평가 금액과 총 매수 금액을 계산
-        for (CoinAssetResponse asset : coinAssets) {
-            totalEvaluationAmount = totalEvaluationAmount.add(asset.getEvaluationAmount());
-            totalPurchaseAmount += asset.getPurchaseAmount(); // 매수 금액 합산
+        BigDecimal totalEvaluationAmount = BigDecimal.ZERO;
+        Long totalPurchaseAmount = 0L;
+        List<CoinAssetResponse> coinAssets = new ArrayList<>();
+
+        for (Object[] rawAsset : rawAssets) {
+            String coinSymbol = (String) rawAsset[0];
+            BigDecimal quantity = (BigDecimal) rawAsset[1];
+            Long totalPrice = (Long) rawAsset[2];
+            BigDecimal currentPrice = BigDecimal.valueOf((Double) rawAsset[3]);
+
+            // 평가 금액 계산
+            BigDecimal evaluationAmount = quantity.multiply(currentPrice);
+
+            // 매수 금액 합산
+            totalPurchaseAmount += totalPrice;
+
+            // 코인 자산 정보 생성
+            CoinAssetResponse assetResponse = new CoinAssetResponse(
+                    coinSymbol,
+                    quantity,
+                    totalPrice,
+                    evaluationAmount,
+                    BigDecimal.ZERO // 초기값, 나중에 수익률을 계산
+            );
+
+            coinAssets.add(assetResponse);
+
+            // 총 평가 금액 합산
+            totalEvaluationAmount = totalEvaluationAmount.add(evaluationAmount);
         }
 
-        // 전체 수익률을 계산
+        // 전체 수익률 계산
         BigDecimal totalProfitRate = calculateProfitRate(totalPurchaseAmount, totalEvaluationAmount);
 
+        // 각 코인의 수익률 계산
+        for (CoinAssetResponse asset : coinAssets) {
+            BigDecimal profitRate = calculateProfitRate(asset.getPurchaseAmount(), asset.getEvaluationAmount());
+            asset.setProfitRate(profitRate);
+        }
         return new UserAssetResponse(totalEvaluationAmount, totalPurchaseAmount, totalProfitRate, coinAssets);
     }
 

@@ -1,10 +1,7 @@
 package com.kmbbj.backend.feature.exchange.controller.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -13,6 +10,7 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Setter
 public class CoinAssetResponse {
     @Schema(name = "코인 심볼 이름")
     private String coinSymbol;
