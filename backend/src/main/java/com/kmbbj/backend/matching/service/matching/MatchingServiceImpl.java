@@ -67,13 +67,22 @@ public class MatchingServiceImpl implements MatchingService{
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
         }
 
+        // 현재 유저
         User user = findUserBySecurity.getCurrentUser();
+
+        // 현재 유저의 자산
         TotalBalance totalBalance = balanceService.totalBalanceFindByUserId(user.getId()).orElse(null);
+
+        // 자산을 찾을 수 없는 경우 매칭 취소
         if (totalBalance == null) {
             cancelCurrentUserScheduledTasks();
             throw new ApiException(ExceptionEnum.BALANCE_NOT_FOUND);
         }
+
+        // 종료 플레그 false 설정
         isShutdownRequested = false;
+
+        // 매칭큐에 현재 유저 넣음
         matchingQueueService.addUserToQueue(user);
         scheduleMatchingTasks(user,false);
     }
@@ -90,7 +99,7 @@ public class MatchingServiceImpl implements MatchingService{
         // 현재 SecurityContext 를 저장
         SecurityContext context = SecurityContextHolder.getContext();
 
-        // 매칭 실행 스케줄링
+        // 매칭 실행 스케줄링 (3초마다)
         ScheduledFuture<?> matchingTask = taskScheduler.scheduleWithFixedDelay(() -> {
 
             // 작업 스레드에 SecurityContext 설정
@@ -158,8 +167,10 @@ public class MatchingServiceImpl implements MatchingService{
                 connection.multi();  // 트랜잭션 시작
 
                 Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
+                // 매칭 잡힌 유저들
                 List<User> potentialMatch = findPotentialMatches(asset, currentRange);
 
+                // 5분 전 -> 10명, 5분 후 4명이상
                 int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
 
                 if (potentialMatch.size() >= requiredUserCount) {
@@ -188,8 +199,8 @@ public class MatchingServiceImpl implements MatchingService{
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
-        else {
-            // 방 생성
+        else { // 가능한 방이 없을 경우 방 생성
+
             Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
             // 초기 시드머니
             StartSeedMoney startSeedMoney = getStartSeedMoney(user);
@@ -202,7 +213,11 @@ public class MatchingServiceImpl implements MatchingService{
                     .createDate(LocalDateTime.now())
                     .startSeedMoney(startSeedMoney)
                     .build();
+
+
             Room room = roomService.createRoom(createRoomDTO, user);
+
+            // 해당 유저에게 알림
             matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
@@ -267,11 +282,16 @@ public class MatchingServiceImpl implements MatchingService{
                 .map(TotalBalance::getUser)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
 
+        // 자산이 가장 적은 사용자 찾기
         User poor = balances.stream()
                 .min(Comparator.comparing(TotalBalance::getAsset))
                 .map(TotalBalance::getUser)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+
+        // 자산이 가장 적은 사용자 기준으로 시작 시드머니 설정
         StartSeedMoney startSeedMoney = getStartSeedMoney(poor);
+
+        // 현재 생성되어 있는 방 중 가장 최신 방 roomId
         Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
         CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                 .title(String.format("랜덤 매칭 %d", latestRoomId + 1))
@@ -284,6 +304,7 @@ public class MatchingServiceImpl implements MatchingService{
                 .build();
 
         Room room = roomService.createRoom(createRoomDTO, richestUser);
+        // 각 사용자들 알람 및 방 입장
         matchWebSocketHandler.notifyAboutMatch(richestUser.getId(),room.getRoomId());
         users.forEach(user -> {
             roomService.enterRoom(user,room.getRoomId());
@@ -322,6 +343,8 @@ public class MatchingServiceImpl implements MatchingService{
         User user = findUserBySecurity.getCurrentUser();
         // 모든 작업에 대해 종료 요청
         matchingQueueService.removeUserFromQueue(user);
+
+        // 종료 플레그 true 설정
         isShutdownRequested = true;
         scheduledTasks.forEach((key, future) -> {
             if (!future.isDone()) {
@@ -332,8 +355,10 @@ public class MatchingServiceImpl implements MatchingService{
         scheduledTasks.clear();
     }
 
+    // 시작 시드머니 설정
     public StartSeedMoney getStartSeedMoney(User user) {
         StartSeedMoney startSeedMoney = null;
+        // 유저의 자산 1/3이상으로 시드머니 설정
         if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 10000000) {
             startSeedMoney = StartSeedMoney.TEN_MILLION;
         }
