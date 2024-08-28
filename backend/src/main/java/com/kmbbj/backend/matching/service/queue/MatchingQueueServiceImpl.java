@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -23,33 +24,34 @@ public class MatchingQueueServiceImpl implements MatchingQueueService {
     private final TotalBalancesRepository totalBalancesRepository;
 
     @Override
-    public void addUserToQueue(User user, boolean isQuickMatch) {
+    public void addUserToQueue(User user) {
+        // 유저가 이미 매칭된 상태인지 확인
+        if (isUserAlreadyMatched(user)) {
+            return;  // 이미 매칭된 상태라면 큐에 추가하지 않음
+        }
         Long asset = totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
-        String key = isQuickMatch ? "quickMatchQueue" : "randomMatchQueue";
-        String value = String.format("%d:%d", user.getId(), asset);
-        redisTemplate.opsForList().rightPush(key, value);
+        redisTemplate.opsForZSet().add("matchingQueue", user.getId().toString(),asset);
     }
 
     @Override
-    public List<User> getUsersInQueue(boolean isQuickMatch) {
-        String key = isQuickMatch ? "quickMatchQueue" : "randomMatchQueue";
-        List<String> entries = redisTemplate.opsForList().range(key, 0, -1);
+    public List<User> getUsersInQueue(double min, double max) {
+        Set<String> userIds = redisTemplate.opsForZSet().rangeByScore("matchingQueue", min, max);
         List<User> users = new ArrayList<>();
-        for (String entry : entries) {
-            String[] parts = entry.split(":");
-            Long userId = Long.parseLong(parts[0]);
-            Long asset = Long.parseLong(parts[1]);
-            User user = userService.UserfindById(userId).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+        for (String userId : userIds) {
+            User user = userService.UserfindById(Long.parseLong(userId)).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
             users.add(user);
         }
         return users;
     }
 
     @Override
-    public void removeUserFromQueue(User user, boolean isQuickMatch) {
-        Long asset = totalBalancesRepository.findByUserId(user.getId()).get().getAsset();
-        String key = isQuickMatch ? "quickMatchQueue" : "randomMatchQueue";
-        String value = String.format("%d:%d", user.getId(), asset);
-        redisTemplate.opsForList().remove(key, 1, value);
+    public void removeUserFromQueue(User user) {
+        redisTemplate.opsForZSet().remove("matchingQueue", user.getId().toString());
+    }
+
+    @Override
+    // 유저가 이미 매칭된 상태인지 확인하는 메서드 추가
+    public boolean isUserAlreadyMatched(User user) {
+        return redisTemplate.opsForZSet().rank("matchingQueue", user.getId().toString()) != null;
     }
 }
