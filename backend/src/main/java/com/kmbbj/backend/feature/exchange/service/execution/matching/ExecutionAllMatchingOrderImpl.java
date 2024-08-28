@@ -1,7 +1,5 @@
 package com.kmbbj.backend.feature.exchange.service.execution.matching;
 
-import com.kmbbj.backend.charts.entity.coin.Coin;
-import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.feature.exchange.entity.TransactionStatus;
 import com.kmbbj.backend.feature.exchange.entity.cassandra.BuyOrder;
 import com.kmbbj.backend.feature.exchange.entity.cassandra.SellOrder;

@@ -7,7 +7,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.*;
 
-import java.security.Timestamp;
+import java.time.LocalDateTime;
 
 @Schema(description = "변동내역 응답용 Dto")
 @ToString
@@ -27,5 +27,5 @@ public class AssetTransactionresponse {
     private Long changeAmount;
 
     @Schema(description = "자산 변동 시간")
-    private Timestamp changeDate;
+    private LocalDateTime changeDate;
 }
