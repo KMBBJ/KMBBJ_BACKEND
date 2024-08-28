@@ -1,14 +1,17 @@
 package com.kmbbj.backend.charts.service;
 
 import com.kmbbj.backend.charts.dto.CoinResponse;
-import com.kmbbj.backend.charts.entity.OrderType;
+import com.kmbbj.backend.charts.entity.CoinStatus;
+import com.kmbbj.backend.charts.entity.coin.Coin;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface CoinService {
     CoinResponse getCoinResponse(String symbol);
-    Page<CoinResponse> getAllCoins(Pageable pageable);
+    List<CoinResponse> getCoinResponseList(List<Coin> coins);
+    Page<CoinResponse> getAllCoins(int pageNo, int size, String orderBy, String sort, String name);
     void addCoin(String symbol, String coin_name);
     void deleteCoin(String symbol);
-    void updateCoin(String symbol, String status, OrderType orderType);
+    void updateCoin(String symbol, CoinStatus status);
 }

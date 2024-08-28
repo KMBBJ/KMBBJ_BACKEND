@@ -63,6 +63,9 @@ dependencies {
 	/* webClient */
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
+	/* PageModel */
+	implementation 'org.springframework.boot:spring-boot-starter-hateoas'
+
 	/* 스프링 테스트*/
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
