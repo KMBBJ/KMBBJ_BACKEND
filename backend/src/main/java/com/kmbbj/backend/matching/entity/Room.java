@@ -24,7 +24,7 @@ public class Room {
     private String title;
 
     @Column(name = "start_seed_money", nullable = false)
-    private Integer startSeedMoney;
+    private Long startSeedMoney;
 
     @Column(name = "end_round", nullable = false)
     private Integer end;

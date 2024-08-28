@@ -200,7 +200,7 @@ public class MatchingServiceImpl implements MatchingService{
             // 방 생성
             Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
             // 초기 시드머니
-            long l = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3;
+            long startSeedMoney = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3;
             CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                     .title(String.format("빠른 매칭 %d", latestRoomId))
                     .end(5) // 게임 라운드 수
@@ -208,7 +208,7 @@ public class MatchingServiceImpl implements MatchingService{
                     .isDeleted(false)
                     .isStarted(false)
                     .createDate(LocalDateTime.now())
-                    .startSeedMoney(1000)
+                    .startSeedMoney(startSeedMoney)
                     .build();
             Room room = roomService.createRoom(createRoomDTO, user);
             matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
@@ -275,6 +275,12 @@ public class MatchingServiceImpl implements MatchingService{
                 .max(Comparator.comparing(TotalBalance::getAsset))
                 .map(TotalBalance::getUser)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+
+        User poor = balances.stream()
+                .min(Comparator.comparing(TotalBalance::getAsset))
+                .map(TotalBalance::getUser)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+        long startSeedMoney = balanceService.totalBalanceFindByUserId(poor.getId()).get().getAsset() / 3;
         Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
         CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                 .title(String.format("랜덤 매칭 %d", latestRoomId + 1))
@@ -283,7 +289,7 @@ public class MatchingServiceImpl implements MatchingService{
                 .isDeleted(false)
                 .isStarted(false)
                 .createDate(LocalDateTime.now())
-                .startSeedMoney(1000)
+                .startSeedMoney(startSeedMoney) // 변경
                 .build();
 
         Room room = roomService.createRoom(createRoomDTO, richestUser);

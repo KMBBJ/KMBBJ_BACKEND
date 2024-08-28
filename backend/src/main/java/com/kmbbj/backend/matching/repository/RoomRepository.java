@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Long> {
@@ -19,8 +18,10 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Page<Room> findAllByIsDeletedAndIsStarted(boolean isDeleted, boolean isStarted, Pageable pageable);
 
-    @Query("SELECT r FROM Room r WHERE NOT r.isDeleted AND r.userCount < 4 AND ABS(r.averageAsset - :asset) <= :range")
-    List<Room> findRoomsWithinAssetRange(@Param("asset") Long asset, @Param("range") Long range);
+    @Query("SELECT r FROM Room r WHERE NOT r.isDeleted AND NOT r.isStarted AND r.averageAsset <= :maxAsset")
+    List<Room> findRoomsWithinAssetRange(
+            @Param("maxAsset") Long maxAsset);
+
 
     List<Room> findAllByOrderByCreateDateDesc();
 }

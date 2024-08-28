@@ -26,7 +26,7 @@ public interface RoomService {
 
     void quitRoom(Long roomId);
 
-    List<Room> findRoomsWithinAssetRange(Long asset, Long range);
+    List<Room> findRoomsWithinAssetRange(Long maxAsset);
 
     Room findRoomByLatestCreateDate();
 

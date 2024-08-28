@@ -213,6 +213,7 @@ public class RoomServiceImpl implements RoomService{
      * @param roomId    선택한 방 번호
      */
     @Override
+    @Transactional
     public void enterRoom(Long roomId) {
         Room room = roomRepository.findById(roomId).orElseThrow(()->new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
         User currentUser = findUserBySecurity.getCurrentUser();
@@ -292,8 +293,8 @@ public class RoomServiceImpl implements RoomService{
     }
 
     @Override
-    public List<Room> findRoomsWithinAssetRange(Long asset, Long range) {
-        return roomRepository.findRoomsWithinAssetRange(asset, range);
+    public List<Room> findRoomsWithinAssetRange(Long maxAsset) {
+        return roomRepository.findRoomsWithinAssetRange(maxAsset);
     }
 
     @Override

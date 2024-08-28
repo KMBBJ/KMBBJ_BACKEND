@@ -12,7 +12,7 @@ public class RoomListDTO {
 
     private String title;
 
-    private int startSeedMoney;
+    private Long startSeedMoney;
 
     private int end;
 

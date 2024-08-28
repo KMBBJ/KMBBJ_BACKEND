@@ -15,7 +15,7 @@ public class CreateRoomDTO {
     private String title;
 
     // 시작 시드머니
-    private int startSeedMoney;
+    private Long startSeedMoney;
 
     // 마지막 라운드번호
     private int end;
