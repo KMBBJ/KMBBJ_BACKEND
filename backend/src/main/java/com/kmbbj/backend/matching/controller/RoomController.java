@@ -51,7 +51,12 @@ public class RoomController {
     @PostMapping("/edit/{roomId}")
     @Operation(summary = "방 수정", description = "이미 만들어진 방을 방장이 수정")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "방 수정 성공")
+            @ApiResponse(responseCode = "200", description = "방 수정 성공"),
+            @ApiResponse(responseCode = "404", description = "해당 방에 아무도 없습니다."),
+            @ApiResponse(responseCode = "403", description = "권한이 없습니다."),
+            @ApiResponse(responseCode = "409", description = "방 조건에 맞지 않는 유저가 있습니다."),
+            @ApiResponse(responseCode = "404", description = "해당 방 입장기록이 없습니다.")
+
     })
     public CustomResponse<Void> editRoom(@PathVariable(name = "roomId") Long roomId,@RequestBody EditRoomDTO editRoomDTO) {
         roomService.editRoom(roomId,editRoomDTO);
