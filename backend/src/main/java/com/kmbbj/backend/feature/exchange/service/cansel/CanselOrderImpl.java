@@ -7,6 +7,10 @@ import com.kmbbj.backend.feature.exchange.entity.postgre.Transaction;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.buy.BuyOrderRepository;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.sell.SellOrderRepository;
 import com.kmbbj.backend.feature.exchange.repository.postgre.TransactionRepository;
+import com.kmbbj.backend.games.entity.CoinBalance;
+import com.kmbbj.backend.games.entity.GameBalance;
+import com.kmbbj.backend.games.repository.CoinBalanceRepository;
+import com.kmbbj.backend.games.repository.GameBalanceRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +28,10 @@ public class CanselOrderImpl implements CanselOrder {
     private final BuyOrderRepository buyOrderRepository;
     //카산드라 판매 리파지토리
     private final SellOrderRepository sellOrderRepository;
+    //게임안 계좌 리파지토리
+    private final GameBalanceRepository gameBalanceRepository;
+    //게임안 코인 지갑
+    private final CoinBalanceRepository coinBalanceRepository;
 
     /**
      * 주어진 요청에 따라 구매 주문을 취소함.
@@ -47,8 +55,20 @@ public class CanselOrderImpl implements CanselOrder {
         try {
             if (transaction.getTransactionType().equals(TransactionType.BUY)) {
                 buyOrderRepository.deleteByIdCoinIdAndTransactionId(transaction.getTransactionId(), transaction.getCoinId());
+
+                //게임 계좌를 찾고 금액을 원상 복구
+                GameBalance gameBalance = gameBalanceRepository.findById(transaction.getBalancesId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
+                gameBalance.setSeed(gameBalance.getSeed() + transaction.getTotalPrice());
+                gameBalanceRepository.save(gameBalance);
+
             } else if (transaction.getTransactionType().equals(TransactionType.SELL)) {
-                sellOrderRepository.deleteByIdCoinIdAndTransactionId(transaction.getTransactionId(), transaction.getCoinId());
+                sellOrderRepository.deleteByIdCoinIdAndTransactionId(transaction.getBalancesId(), transaction.getCoinId());
+
+                //게임 코인 계좌를 찾고 코인 개수를 원상 복구
+                CoinBalance coinBalance = coinBalanceRepository.findCoinBalanceByGameBalanceIdAndCoinId(transaction.getBalancesId(), transaction.getCoinId()).orElseThrow(() -> new ApiException(ExceptionEnum.COIN_BALANCE_NOT_FOUND));
+                coinBalance.setQuantity(transaction.getQuantity().add(coinBalance.getQuantity()));
+                coinBalanceRepository.save(coinBalance);
+
             } else {
                 throw new ApiException(ExceptionEnum.NOT_FOUND_TRANSACTION_TYPE);
             }

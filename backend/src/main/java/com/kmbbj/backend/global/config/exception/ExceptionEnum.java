@@ -38,6 +38,7 @@ public enum ExceptionEnum {
     NOT_ALLOW_FILED(HttpStatus.BAD_REQUEST, "NOT_ALLOW_FILED", "이메일 혹은 비밀번호 형식이 틀립니다."),
     DIFFERENT_PASSWORD(HttpStatus.BAD_REQUEST, "DIFFERENT_PASSWORD", "비밀번호가 둘이 다릅니다."),
     NOT_FOUND_USER(HttpStatus.NOT_FOUND, "NOT_FOUND_USER", "사용자가 없습니다."),
+    USER_SUSPENDED(HttpStatus.NOT_FOUND, "USER_SUSPENDED", "사용자가 정지되었습니다."),
 
     // Room
     NOT_ENTRY_ROOM(HttpStatus.NOT_FOUND, "NOT_ENTRY_ROOM", "해당 방 입장기록이 없습니다."),
@@ -59,6 +60,7 @@ public enum ExceptionEnum {
 
     // Balance
     BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "자산을 찾지 못했습니다."),
+    COIN_BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "코인을 가지고 있지 않습니다."),
 
     // Coin
     EXIST_COIN(HttpStatus.BAD_REQUEST, "EXIST_COIN", "이미 있는 코인 입니다."),
@@ -69,7 +71,9 @@ public enum ExceptionEnum {
     CASSANDRA_SAVE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_SAVE_EXCEPTION", "Cassandra에 데이터를 저장하는 중 오류가 발생했습니다."),
     CASSANDRA_DELETE_EXCEPTION(HttpStatus.INTERNAL_SERVER_ERROR, "CASSANDRA_DELETE_EXCEPTION", "Cassandra에 데이터를 삭제하는 중 오류가 발생했습니다."),
     NOT_FOUND_TRANSACTION_TYPE(HttpStatus.NOT_FOUND, "NOT_FOUND_TRANSACTIONTYPE", "거래 유형이 없습니다."),
-    NOT_FOUND_TRANSACTION(HttpStatus.NOT_FOUND,"NOT_FOUND_TRANSACTION","거래 내역이 없습니다.");
+    NOT_FOUND_TRANSACTION(HttpStatus.NOT_FOUND,"NOT_FOUND_TRANSACTION","거래 내역이 없습니다."),
+    NOT_ENOUGH_COIN(HttpStatus.BAD_REQUEST, "NOT_ENOUGH_COIN", "코인이 충분하지 않습니다."),
+    NOT_ENOUGH_MONEY(HttpStatus.BAD_REQUEST,"NOT_ENOUGH_MONEY", "자금이 충분하지 않습니다.");
 
     private final HttpStatus status;
     private final String code;

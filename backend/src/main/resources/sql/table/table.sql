@@ -146,9 +146,12 @@ CREATE TABLE game_balances (
                                game_id UUID NOT NULL,
                                user_id BIGINT NOT NULL UNIQUE,
                                seed BIGINT NOT NULL,
+
                                CONSTRAINT fk_game
                                    FOREIGN KEY (game_id)
                                        REFERENCES games(game_id)
+
+
                                        ON DELETE CASCADE,
                                CONSTRAINT fk_user
                                    FOREIGN KEY (user_id)
@@ -219,7 +222,8 @@ CREATE TABLE transactions (
                               transaction_id BIGSERIAL PRIMARY KEY,
                               transaction_type VARCHAR(10) NOT NULL,
                               quantity DECIMAL(20,10) NOT NULL,
-                              price DECIMAL(20,10) NOT NULL,
+                              price BIGINT NOT NULL,
+                              total_price BIGINT NOT NULL,
                               create_date TIMESTAMP NOT NULL,
                               status varchar(20) NOT NULL,
                               execution_date TIMESTAMP NULL,
@@ -237,3 +241,21 @@ CREATE TABLE admin_alarms (
                               user_id BIGINT NOT NULL,
                               CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+
+CREATE TABLE token_blacklist (
+                                 id BIGSERIAL PRIMARY KEY,
+                                 token VARCHAR(500) NOT NULL UNIQUE,
+                                 expiry_date TIMESTAMP NOT NULL
+);
+
+
+CREATE TABLE coin_balances (
+                               coin_balances_id BIGSERIAL PRIMARY KEY,
+                               game_balances_id BIGINT NOT NULL,
+                               coin_id BIGINT NOT NULL,
+                               quantity DECIMAL(20,10) NOT NULL DEFAULT 0,
+                               CONSTRAINT fk_game_balances FOREIGN KEY (game_balances_id) REFERENCES game_balances(game_balances_id) ON DELETE CASCADE,
+                               CONSTRAINT fk_coin FOREIGN KEY (coin_id) REFERENCES coins(coin_id) ON DELETE CASCADE
+);
+

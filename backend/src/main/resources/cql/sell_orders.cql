@@ -1,6 +1,6 @@
 CREATE TABLE sell_orders (
                              coin_id BIGINT,
-                             price DECIMAL,
+                             price BIGINT,
                              timestamp TIMESTAMP,
                              transaction_id BIGINT,
                              quantity DECIMAL,

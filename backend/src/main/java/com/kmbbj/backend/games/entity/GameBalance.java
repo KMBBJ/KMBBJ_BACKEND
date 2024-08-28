@@ -43,5 +43,6 @@ public class GameBalance {
      * 게임에서 사용자가 보유한 시드머니(자금)
      */
     @Column(name = "seed", nullable = false)
+
     private Long seed;
 }

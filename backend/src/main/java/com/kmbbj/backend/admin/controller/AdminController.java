@@ -1,12 +1,17 @@
 package com.kmbbj.backend.admin.controller;
 
 
+import com.kmbbj.backend.admin.dto.ExampleRequestDTO;
 import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.service.AdminService;
 //import com.kmbbj.backend.admin.service.NotificationService;
+import com.kmbbj.backend.admin.service.BlackListUserService;
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
+import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,12 +21,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,6 +36,11 @@ import java.util.stream.Collectors;
 public class AdminController {
 
     private final AdminService adminService;
+    private final UserRepository userRepository;
+    private final TokenService tokenService;
+    private final BlackListUserService blackListUserService;
+    private final UserService userService;
+
 //    private final NotificationService notificationService;
 
     /**
@@ -149,4 +160,100 @@ public class AdminController {
         return new CustomResponse<>(HttpStatus.OK, "알림 추가 성공", savedAlarm);
     }
 
+
+
+
+    /**
+     * 유저 정보 조회
+     *
+     * @param id 사용자 ID
+     * @return 사용자 정보
+     */
+    @GetMapping("/{id}")
+    @Operation(summary = "유저 정보 조회", description = "특정 유저의 정보를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "유저 정보 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "유저 정보를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
+    })
+    public CustomResponse<Map<String, Object>> userInformationScreen(@PathVariable Long id) {
+        // 유저 정보를 가져옴
+        Map<String, String> userInfo = adminService.getUser(id);
+
+        // 결과를 합침
+        Map<String, Object> result = new HashMap<>();
+        result.put("userInfo", userInfo);
+
+        return new CustomResponse<>(HttpStatus.OK, "유저 정보 조회 성공", result);
+    }
+
+    /**
+     * 유저 계정 정지
+     *
+     * @param id 사용자 id
+     * @param requestBody 정지 요청 정보
+     * @return 계정 정지 결과
+     */
+    @PostMapping("/suspend/{id}")
+    @Operation(summary = "유저 계정 정지", description = "특정 유저의 계정을 정지시킵니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "계정 정지 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청: EndDate가 필요함"),
+            @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
+    })
+    public CustomResponse<String> suspendUser(
+            @PathVariable Long id,
+            @RequestBody ExampleRequestDTO requestBody) {
+
+            LocalDateTime endDate = requestBody.getEndDate();
+
+            // EndDate가 없으면 잘못된 요청 응답
+            if (endDate == null) {
+                return new CustomResponse<>(HttpStatus.BAD_REQUEST, "정지 종료 날짜가 정해지지 않았습니다", null);
+            }
+
+            blackListUserService.suspendUser(id, endDate); // 유저 엔티티 정지 날짜 삽입 / 해당 유저 토큰을 블랙리스트 토근에 저장
+
+            Optional<User> user = userRepository.findById(id); // 아이디를 이용 사용자 조회
+
+            if (user.isPresent()) { // 정지 날짜가 들어있는 경우(정지 성공)
+
+                adminService.sendSuspensionEmail(user.get());// 이메일 보내기
+
+                return new CustomResponse<>(HttpStatus.OK, "이 시간까지 사요자가 정지됩니다." + endDate, null);
+            } else {
+                return new CustomResponse<>(HttpStatus.NOT_FOUND, "사용자의 정지 종료 날짜를 찾지 못했습니다", null);
+            }
+    }
+
+    /**
+     * 유저 계정 정지 해제
+     *
+     * @param id 사용자 ID
+     * @return 계정 정지 해제 결과
+     */
+    @PostMapping("/unsuspend/{id}")
+    @Operation(summary = "유저 계정 정지 해제", description = "특정 유저의 계정 정지를 해제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "계정 정지 해제 성공"),
+            @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
+    })
+    public CustomResponse<String> unsuspendUser(@PathVariable Long id) {
+
+
+        Optional<User> user = userRepository.findById(id); // 아이디를 사용하여 사용자 조회
+
+        if (user.isPresent()) { // 정지 날까가 들어있는 경우 ( 현재 정지 상태 )
+
+            adminService.sendAccountUnblockingEmail(user.get()); // 이메일 보내기
+
+            blackListUserService.unsuspendUser(id);// 유저 계정 정지 해제
+
+            return new CustomResponse<>(HttpStatus.OK, "User 정지가 해제되었습니다.", null);
+        } else {
+            return new CustomResponse<>(HttpStatus.NOT_FOUND, "사용자의 정지 종료 날짜를 찾지 못했습니다.", null);
+        }
+    }
 }
