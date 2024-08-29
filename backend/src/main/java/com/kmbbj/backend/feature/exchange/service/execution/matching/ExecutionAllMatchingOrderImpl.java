@@ -47,7 +47,7 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
      */
     @Override
     @Transactional
-    public void matchOrders(Long coinId, BigDecimal price) {
+    public void matchOrders(Long coinId, Long price) {
         // 매칭 가능한 판매 및 구매 주문을 조회
         List<SellOrder> eligibleSellOrders = findEligibleSellOrders(coinId, price);
         List<BuyOrder> eligibleBuyOrders = findEligibleBuyOrders(coinId, price);
@@ -167,7 +167,7 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
      * @param price 매칭 기준 가격
      * @return 매칭 가능한 판매 주문 리스트
      */
-    private List<SellOrder> findEligibleSellOrders(Long coinId, BigDecimal price) {
+    private List<SellOrder> findEligibleSellOrders(Long coinId, Long price) {
         return sellOrderRepository.findAllByIdCoinIdAndIdPriceLessThanEqual(coinId, price);
     }
 
@@ -178,7 +178,7 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
      * @param price 매칭 기준 가격
      * @return 매칭 가능한 구매 주문 리스트
      */
-    private List<BuyOrder> findEligibleBuyOrders(Long coinId, BigDecimal price) {
+    private List<BuyOrder> findEligibleBuyOrders(Long coinId, Long price) {
         return buyOrderRepository.findAllByIdCoinIdAndIdPriceGreaterThanEqual(coinId, price);
     }
 }

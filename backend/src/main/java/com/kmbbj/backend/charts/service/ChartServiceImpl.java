@@ -75,11 +75,13 @@ public class ChartServiceImpl implements ChartService {
         // 심볼에 USDT를 붙여서 Binance API에서 사용하는 형식으로 만듦
         String symbolWithUSDT = coin.getSymbol() + "USDT";
         // 현재 시간을 밀리초 단위로 Unix 타임스탬프 형식으로 얻음
+        long endTime = System.currentTimeMillis();
 
+        // startTime을 현재 시간에서 2시간 전으로 설정
+        long startTime = endTime - (10 * 60 * 60 * 1000); // 10시간을 밀리초로 변환하여 뺌
 
         // Binance API를 통해 Kline 데이터를 가져옴
-        Mono<String> klineData = binanceApiService.getKlines(symbolWithUSDT, interval, null, null, limit);
-
+        Mono<String> klineData = binanceApiService.getKlines(symbolWithUSDT, interval, startTime, endTime, limit);
         // 데이터를 파싱하여 저장
         klineData.map(JsonParser::parseString)
                 .map(JsonElement::getAsJsonArray)
