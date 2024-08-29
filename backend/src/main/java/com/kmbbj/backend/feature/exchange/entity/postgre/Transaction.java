@@ -18,6 +18,7 @@ import java.util.UUID;
 public class Transaction {
 
     @Id
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name = "transaction_id")
     private Long transactionId; // 거래 ID, 기본 키로 사용됨
 
