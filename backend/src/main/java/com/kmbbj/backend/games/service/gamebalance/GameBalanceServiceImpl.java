@@ -30,7 +30,7 @@ public class GameBalanceServiceImpl implements GameBalanceService {
     @Transactional
     public List<GameBalance> createGameBalance(Game game) {
         // 방의 시작 시드머니 가져옴
-        Long seedMoney = Long.valueOf((String.valueOf(game.getRoom().getStartSeedMoney())));
+        Long seedMoney = Long.valueOf((String.valueOf(game.getRoom().getStartSeedMoney().getAmount())));
 
 
         // 실제로 게임을 플레이한 사용자 리스트 가져오기
