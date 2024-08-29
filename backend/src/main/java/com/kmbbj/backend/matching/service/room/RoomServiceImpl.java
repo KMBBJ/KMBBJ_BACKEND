@@ -13,19 +13,16 @@ import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -40,7 +37,6 @@ public class RoomServiceImpl implements RoomService{
 
 
 
-
     /**
      *
      * @param createRoomDTO     방 생성시 필요한 정보(제목, 시작 시드머니, 마지막 라운드,
@@ -50,9 +46,14 @@ public class RoomServiceImpl implements RoomService{
     @Override
     @Transactional
     public Room createRoom(CreateRoomDTO createRoomDTO,User user) {
-        // 이미 다른 방에 들어가 있는경우
+        // 이미 다른 방에 들어가 있는 경우
         if (userRoomService.findCurrentRoom() != null) {
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
+        }
+
+        // 설정 초기 시드머니가 자신의 자산 1/3 보다 높을경우
+        if (Long.parseLong(String.valueOf(createRoomDTO.getStartSeedMoney())) > (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3)) {
+            throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
         // 방 생성
         Room room = new Room();
@@ -64,13 +65,10 @@ public class RoomServiceImpl implements RoomService{
         room.setIsStarted(false);
         room.setDelay(createRoomDTO.getDelay());
         room.setUserCount(1);
-        Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(()->new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
-        if (room.getUserCount() == 1) {
-            room.setAverageAsset(currentUserAsset);
-        } else {
-            long roomAverageAsset = (room.getAverageAsset() * (room.getUserCount() - 1) + currentUserAsset) / room.getUserCount();
-            room.setAverageAsset(roomAverageAsset);
-        }
+        Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+        // 방 평균 자산 설정
+        room.setAverageAsset(currentUserAsset);
+
 
 
         // 방 정보를 데이터베이스에 저장
@@ -94,11 +92,29 @@ public class RoomServiceImpl implements RoomService{
     public void editRoom(Long roomId, EditRoomDTO editRoomDTO) {
         User user = findUserBySecurity.getCurrentUser();
         Room room = findById(roomId);
-        Optional<UserRoom> userRoom = userRoomService.findByUserAndRoom(user, room);
-        if (userRoom.isPresent()) {
-            if (userRoom.get().getIsManager()) {
+
+        // 현재 들어갈 방의 유저 정보
+        List<UserRoom> userRoomList = userRoomService.findUserRooms(room);
+
+        // 현재 들어가 있는 방에서 자산이 가장 적은 유저
+        UserRoom min = userRoomList.stream()
+                .min(Comparator.comparing(userRoom -> balanceService.totalBalanceFindByUserId(userRoom.getUser().getId()).get().getAsset()))
+                .orElseThrow(() -> new ApiException(ExceptionEnum.ANYONE_IN_ROOM));
+
+        // 현재 유저 정보
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(user, room).orElse(null);
+
+        // 설정한 시작 시드머니가 자산이 가장 적은 유저의 자산 1/3 보다 클 경우
+        if (Long.parseLong(String.valueOf(editRoomDTO.getStartSeedMoney())) > balanceService.totalBalanceFindByUserId(min.getUser().getId()).get().getAsset() / 3) {
+            throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET_USER);
+        }
+
+        // 방장 여부 확인
+        if (userRoom != null) {
+            if (userRoom.getIsManager()) {
                 room.setTitle(editRoomDTO.getTitle());
                 room.setEnd(editRoomDTO.getEnd());
+                room.setStartSeedMoney(editRoomDTO.getStartSeedMoney());
                 roomRepository.save(room);
             } else {
                 throw new ApiException(ExceptionEnum.FORBIDDEN);
@@ -210,15 +226,19 @@ public class RoomServiceImpl implements RoomService{
 
     /**
      *
-     * @param roomId    선택한 방 번호
+     * @param user  현재 유저
+     * @param roomId    들어갈 방 roomId
      */
     @Override
-    public void enterRoom(Long roomId) {
+    @Transactional
+    public void enterRoom(User user,Long roomId) {
         Room room = roomRepository.findById(roomId).orElseThrow(()->new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
-        User currentUser = findUserBySecurity.getCurrentUser();
+
+        // 현재 유저 자산
+        Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
 
         // 방에 들어온 상태 확인
-        if (room.getUserRooms().stream().anyMatch(userRoom -> userRoom.getUser().equals(currentUser) && userRoom.getIsPlayed())) {
+        if (room.getUserRooms().stream().anyMatch(userRoom -> userRoom.getUser().equals(user) && userRoom.getIsPlayed())) {
             return; // 이미 입장함
         }
 
@@ -227,36 +247,52 @@ public class RoomServiceImpl implements RoomService{
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
         }
 
-        Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
+        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND)).getAsset();
         if (room.getUserRooms().size() >= 10) {
             throw new ApiException(ExceptionEnum.ROOM_FULL);
         }
-        if (asset / 3 < room.getStartSeedMoney() * 10000) {
+        if (asset / 3 < Long.parseLong(String.valueOf(room.getStartSeedMoney()))) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
 
-        UserRoom userRoom = userRoomService.findByUserAndRoom(currentUser, room)
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(user, room)
                 .orElse(null);
 
         if (userRoom == null) {
             userRoom = UserRoom.builder()
-                    .user(currentUser)
+                    .user(user)
                     .room(room)
                     .isPlayed(true)  // 처음 생성 시만 설정
                     .isManager(false)
                     .build();
-            userRoomService.save(userRoom);  // 새로 생성된 객체만 저장
-            room.setUserCount(room.getUserCount() + 1);  // 인원 수 업데이트
+
+            // 새로 생성된 객체만 저장
+            userRoomService.save(userRoom);
+
+            // 인원 수 업데이트
+            room.setUserCount(room.getUserCount() + 1);
+
+            // 방 평균 자산 설정
+            Long roomAverageAsset = (room.getAverageAsset() * (room.getUserCount() - 1) + currentUserAsset) / room.getUserCount();
+            room.setAverageAsset(roomAverageAsset);
             roomRepository.save(room);
         } else {
             if (!userRoom.getIsPlayed()) {
                 userRoom.setIsPlayed(true);  // 상태 업데이트
                 userRoomService.save(userRoom);
+                // 방 평균 자산 설정
+                Long roomAverageAsset = (room.getAverageAsset() * (room.getUserCount() - 1) + currentUserAsset) / room.getUserCount();
+                room.setAverageAsset(roomAverageAsset);
                 roomRepository.save(room);
             }
         }
     }
 
+    /**
+     *
+     * @param room  들어갈 방
+     * @return  들어갈 방의 정보
+     */
     @Override
     public EnterRoomDTO getEnterRoomDto(Room room) {
         List<UserRoom> userRooms = room.getUserRooms();
@@ -283,17 +319,28 @@ public class RoomServiceImpl implements RoomService{
      */
     @Override
     @Transactional
-    // 방장 퇴장할 경우 맨 앞사람이 방장
     public void quitRoom(Long roomId) {
-        UserRoom userRoom = userRoomService.deleteUserFromRoom(roomId);
-        Room room = userRoom.getRoom();
+        User currentUser = findUserBySecurity.getCurrentUser();
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(currentUser, findById(roomId)).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+        List<UserRoom> userRoomList = userRoomService.findUserRooms(findById(roomId));
+        // 방장이 나갈 경우 자산 가장 많은 사람으로 방장 바뀜
+        if (userRoom.getIsManager()) {
+            UserRoom max = userRoomList.stream()
+                    .filter(userRoom1 -> !userRoom1.equals(userRoom))
+                    .max(Comparator.comparing(currentUserRoom -> balanceService.totalBalanceFindByUserId(userRoom.getUser().getId()).get().getAsset()))
+                    .orElseThrow(() -> new ApiException(ExceptionEnum.ANYONE_IN_ROOM));
+            max.setIsManager(true);
+            userRoom.setIsManager(false);
+        }
+        userRoomService.deleteUserFromRoom(roomId);
+        Room room = findById(roomId);
         room.setUserCount(room.getUserCount() - 1);
         roomRepository.save(room);
     }
 
     @Override
-    public List<Room> findRoomsWithinAssetRange(Long asset, Long range) {
-        return roomRepository.findRoomsWithinAssetRange(asset, range);
+    public List<Room> findRoomsWithinAssetRange(Long maxAsset) {
+        return roomRepository.findRoomsWithinAssetRange(maxAsset);
     }
 
     @Override

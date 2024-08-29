@@ -61,7 +61,7 @@ CREATE TABLE friends_requests (
 CREATE TABLE rooms (
                        room_id BIGSERIAL PRIMARY KEY,
                        title VARCHAR(50) NOT NULL,
-                       start_seed_money INTEGER NOT NULL,
+                       start_seed_money TEXT NOT NULL,
                        end_round INTEGER NOT NULL,
                        create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                        is_deleted BOOLEAN NOT NULL,

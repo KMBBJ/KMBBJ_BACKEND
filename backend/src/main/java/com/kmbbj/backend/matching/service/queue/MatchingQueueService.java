@@ -5,9 +5,11 @@ import com.kmbbj.backend.auth.entity.User;
 import java.util.List;
 
 public interface MatchingQueueService {
-    void addUserToQueue(User user, boolean isQuickMatch);
+    void addUserToQueue(User user);
 
-    List<User> getUsersInQueue(boolean isQuickMatch);
+    List<User> getUsersInQueue(double min, double max);
 
-    void removeUserFromQueue(User user, boolean isQuickMatch);
+    void removeUserFromQueue(User user);
+
+    boolean isUserAlreadyMatched(User user);
 }

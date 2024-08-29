@@ -47,6 +47,8 @@ public enum ExceptionEnum {
     IN_OTHER_ROOM(HttpStatus.CONFLICT, "IN_OTHER_ROOM", "이미 다른 방에 입장해 있습니다."),
     ROOM_FULL(HttpStatus.CONFLICT,"ROOM_FULL","방이 가득 찼습니다."),
     INSUFFICIENT_ASSET(HttpStatus.FORBIDDEN,"INSUFFICIENT_ASSET","방 조건에 알맞는 자산이 부족합니다."),
+    INSUFFICIENT_ASSET_USER(HttpStatus.CONFLICT,"INSUFFICIENT_ASSET_USER","방 조건에 맞지 않는 유저가 있습니다."),
+    ANYONE_IN_ROOM(HttpStatus.NOT_FOUND,"ANYONE_IN_ROOM","해당 방에 아무도 없습니다."),
 
     // Game Exception
     GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "GAME_NOT_FOUND", "게임을 찾지 못했습니다."),

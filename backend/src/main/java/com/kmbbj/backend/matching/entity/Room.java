@@ -1,7 +1,6 @@
 package com.kmbbj.backend.matching.entity;
 
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,7 +23,8 @@ public class Room {
     private String title;
 
     @Column(name = "start_seed_money", nullable = false)
-    private Integer startSeedMoney;
+    @Enumerated(EnumType.STRING)
+    private StartSeedMoney startSeedMoney;
 
     @Column(name = "end_round", nullable = false)
     private Integer end;
