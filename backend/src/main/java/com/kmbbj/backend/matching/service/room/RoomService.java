@@ -31,4 +31,6 @@ public interface RoomService {
     Room findRoomByLatestCreateDate();
 
     EnterRoomDTO getEnterRoomDto(Room room);
+
+    void beforeStart(Long roomId);
 }

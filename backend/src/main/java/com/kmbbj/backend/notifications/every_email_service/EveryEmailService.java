@@ -5,6 +5,7 @@ import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.notifications.entity.EmailAlarm;
 import com.kmbbj.backend.notifications.repository.EmailAlarmRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,8 @@ import java.sql.Timestamp;
 @Service
 @RequiredArgsConstructor
 public class EveryEmailService {
+    @Value("${MAIL_USERNAME}")
+    private String mailUsername;
 
     // JavaMailSender를 주입받아 이메일 발송 가능
     private final EmailAlarmRepository emailAlarmRepository;
@@ -41,6 +44,7 @@ public class EveryEmailService {
 
         // SimpleMailMessage 객체 생성 및 설정
         SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
         message.setTo(to); // 수신자 설정
         message.setSubject(subject); // 제목 설정
         message.setText(text); // 본문 설정
