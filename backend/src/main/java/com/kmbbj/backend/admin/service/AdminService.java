@@ -3,8 +3,14 @@ package com.kmbbj.backend.admin.service;
 
 import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.repository.AdminAlarmRepository;
+import com.kmbbj.backend.auth.controller.response.UserProfileReponse;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.balance.controller.AssetTransactionresponse;
+import com.kmbbj.backend.balance.entity.AssetTransaction;
+import com.kmbbj.backend.balance.entity.TotalBalance;
+import com.kmbbj.backend.balance.repository.totalbalances.TotalBalancesRepository;
+import com.kmbbj.backend.balance.repository.transaction.AssetTransactionRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.infrastructure.CustomUserDetails;
@@ -21,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -30,6 +37,8 @@ public class AdminService {
     private final UserRepository userRepository;
     private final AdminAlarmRepository adminAlarmRepository;
     private final LoginEmailService emailService;
+    private final TotalBalancesRepository totalBalancesRepository;
+    private final AssetTransactionRepository assetTransactionRepository;
 
     /**
      *
@@ -202,6 +211,8 @@ public class AdminService {
         // 이메일 보내기
         emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
     }
+
+
 
 
 }

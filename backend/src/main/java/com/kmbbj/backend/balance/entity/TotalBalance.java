@@ -7,6 +7,7 @@ import lombok.*;
 //자산
 @ToString
 @Getter
+@Setter
 @Builder
 @RequiredArgsConstructor
 @AllArgsConstructor
@@ -37,4 +38,5 @@ public class TotalBalance {
         this.asset = this.asset + changeAssets;
         return this;
     }
+
 }
