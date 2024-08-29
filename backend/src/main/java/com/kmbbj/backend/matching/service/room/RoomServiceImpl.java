@@ -52,7 +52,7 @@ public class RoomServiceImpl implements RoomService{
         }
 
         // 설정 초기 시드머니가 자신의 자산 1/3 보다 높을경우
-        if (Long.parseLong(String.valueOf(createRoomDTO.getStartSeedMoney())) > (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3)) {
+        if (createRoomDTO.getStartSeedMoney().getAmount() > (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3)) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
         // 방 생성
@@ -105,7 +105,7 @@ public class RoomServiceImpl implements RoomService{
         UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(user, room).orElse(null);
 
         // 설정한 시작 시드머니가 자산이 가장 적은 유저의 자산 1/3 보다 클 경우
-        if (Long.parseLong(String.valueOf(editRoomDTO.getStartSeedMoney())) > balanceService.totalBalanceFindByUserId(min.getUser().getId()).get().getAsset() / 3) {
+        if (editRoomDTO.getStartSeedMoney().getAmount() > balanceService.totalBalanceFindByUserId(min.getUser().getId()).get().getAsset() / 3) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET_USER);
         }
 
@@ -251,7 +251,7 @@ public class RoomServiceImpl implements RoomService{
         if (room.getUserRooms().size() >= 10) {
             throw new ApiException(ExceptionEnum.ROOM_FULL);
         }
-        if (asset / 3 < Long.parseLong(String.valueOf(room.getStartSeedMoney()))) {
+        if (asset / 3 < room.getStartSeedMoney().getAmount()) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
 
@@ -334,6 +334,12 @@ public class RoomServiceImpl implements RoomService{
         }
         userRoomService.deleteUserFromRoom(roomId);
         Room room = findById(roomId);
+
+        // 방을 나갔을때 아무도 없을경우 방 삭제 여부 true
+        if (room.getUserCount() - 1 == 0) {
+            room.setUserCount(0);
+            room.setIsDeleted(true);
+        }
         room.setUserCount(room.getUserCount() - 1);
         roomRepository.save(room);
     }
