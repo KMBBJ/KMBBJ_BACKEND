@@ -257,3 +257,14 @@ CREATE TABLE coin_balances (
                                CONSTRAINT fk_coin FOREIGN KEY (coin_id) REFERENCES coins(coin_id) ON DELETE CASCADE
 );
 
+
+CREATE TABLE email_alarms (
+                              email_alarms_id SERIAL PRIMARY KEY,
+                              subject VARCHAR(100) NOT NULL,
+                              message TEXT NOT NULL,
+                              create_date_alarms TIMESTAMP,
+                              trade_order VARCHAR(10),
+                              user_id BIGINT NOT NULL,
+                              CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
