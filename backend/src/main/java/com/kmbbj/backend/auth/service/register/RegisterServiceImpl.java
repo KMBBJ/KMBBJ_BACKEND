@@ -48,7 +48,7 @@ public class RegisterServiceImpl implements RegisterService {
                 .build();
 
         TotalBalance totalBalance = TotalBalance.builder()
-                .asset(0L)
+                .asset(30000000L)
                 .user(user)
                 .build();
 

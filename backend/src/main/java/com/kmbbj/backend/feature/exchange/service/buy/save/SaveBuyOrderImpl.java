@@ -3,6 +3,7 @@ package com.kmbbj.backend.feature.exchange.service.buy.save;
 import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.feature.exchange.controller.request.OrderRequest;
+import com.kmbbj.backend.feature.exchange.entity.cassandra.BuyOrder;
 import com.kmbbj.backend.feature.exchange.entity.postgre.Transaction;
 import com.kmbbj.backend.feature.exchange.repository.cassandra.buy.BuyOrderRepository;
 import com.kmbbj.backend.feature.exchange.repository.postgre.TransactionRepository;
@@ -65,10 +66,10 @@ public class SaveBuyOrderImpl implements SaveBuyOrder {
         Transaction transaction = exchangeDTOMapper.orderRequestToTransaction(orderRequest, gameBalance.getGameBalancesId());
         transactionRepository.save(transaction);
 
+        BuyOrder buyOrde = exchangeDTOMapper.orderRequestToBuyOrder(orderRequest, transaction.getTransactionId());
         //거래를 카산드라에 등록
         try {
-            buyOrderRepository.save(
-                    exchangeDTOMapper.orderRequestToBuyOrder(orderRequest, transaction.getTransactionId())
+            buyOrderRepository.save(buyOrde
             );
         } catch (DataAccessException e) {
             throw new ApiException(ExceptionEnum.CASSANDRA_SAVE_EXCEPTION);

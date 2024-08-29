@@ -3,7 +3,7 @@ package com.kmbbj.backend.charts.entity.coin;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "coin24h_details")
@@ -14,6 +14,7 @@ import java.sql.Timestamp;
 public class Coin24hDetail {
 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "coin_detail_id")
     @Id
     private Long coinDetailId;
 
@@ -62,10 +63,16 @@ public class Coin24hDetail {
     @Column(name = "trade_count")
     private Long tradeCount;  // 거래 횟수
 
+    @Column(name = "open_time")
+    private Long openTime;  // 개장 시간
+
+    @Column(name = "close_time")
+    private Long closeTime;  // 마감 시간
+
     @Column(name = "timezone")
-    private Timestamp timezone; // 데이터가 저장된 시간대 (기존 필드)
+    private LocalDateTime timezone; // 데이터가 저장된 시간대 (기존 필드)
 
     @ManyToOne
-    @JoinColumn(name = "coin_id", nullable = false)
+    @JoinColumn(name = "coin_id")
     private Coin coin;  // 연관된 코인 엔티티 (기존 필드)
 }

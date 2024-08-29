@@ -61,7 +61,7 @@ CREATE TABLE friends_requests (
 CREATE TABLE rooms (
                        room_id BIGSERIAL PRIMARY KEY,
                        title VARCHAR(50) NOT NULL,
-                       start_seed_money INTEGER NOT NULL,
+                       start_seed_money TEXT NOT NULL,
                        end_round INTEGER NOT NULL,
                        create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                        is_deleted BOOLEAN NOT NULL,
@@ -165,8 +165,7 @@ CREATE TABLE coins (
                        coin_id BIGSERIAL PRIMARY KEY,
                        coin_name VARCHAR(50) NOT NULL,
                        symbol VARCHAR(25) NOT NULL,
-                       status VARCHAR(50),
-                       order_types VARCHAR(25)
+                       status VARCHAR(50)
 );
 
 -- 코인 24시간 기준 정보 coin_details
@@ -187,9 +186,8 @@ CREATE TABLE coin24h_details (
                               volume DOUBLE PRECISION NOT NULL,              -- 거래량 (volume)
                               quote_volume DOUBLE PRECISION NOT NULL,        -- 견적 거래량 (quoteVolume)
                               trade_count INT NOT NULL,                      -- 거래 횟수 (count)
-                              open_time TIMESTAMP NOT NULL,                  -- 개장 시간 (openTime)
-                              close_time TIMESTAMP NOT NULL,                 -- 마감 시간 (closeTime)
-                              voting_amount DOUBLE PRECISION,                -- 투표량 (기존 필드)
+                              open_time BIGINT NOT NULL,                  -- 개장 시간 (openTime)
+                              close_time BIGINT NOT NULL,                 -- 마감 시간 (closeTime)
                               timezone TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 데이터가 저장된 시간대 (기본값: 현재 시간)
                               coin_id BIGINT NOT NULL,                       -- 연관된 코인 엔티티 (외래 키)
                               FOREIGN KEY (coin_id) REFERENCES coins(coin_id) -- 코인 테이블과의 관계 설정
@@ -269,5 +267,15 @@ CREATE TABLE round_rankings (
                                 user_id BIGINT NOT NULL,
                                 CONSTRAINT fk_round FOREIGN KEY (round_id) REFERENCES rounds(round_id) ON DELETE CASCADE,
                                 CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE email_alarms (
+                              email_alarms_id SERIAL PRIMARY KEY,
+                              subject VARCHAR(100) NOT NULL,
+                              message TEXT NOT NULL,
+                              create_date_alarms TIMESTAMP,
+                              trade_order VARCHAR(10),
+                              user_id BIGINT NOT NULL,
+                              CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 

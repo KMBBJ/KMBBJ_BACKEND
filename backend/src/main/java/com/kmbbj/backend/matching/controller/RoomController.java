@@ -1,6 +1,7 @@
 package com.kmbbj.backend.matching.controller;
 
 
+import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
@@ -45,6 +46,21 @@ public class RoomController {
         Room room = roomService.createRoom(createRoomDTO,user);
 
         return new CustomResponse<>(HttpStatus.OK,String.format("%d번방 생성 성공",room.getRoomId()), room);
+    }
+
+    @PostMapping("/edit/{roomId}")
+    @Operation(summary = "방 수정", description = "이미 만들어진 방을 방장이 수정")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "방 수정 성공"),
+            @ApiResponse(responseCode = "404", description = "해당 방에 아무도 없습니다."),
+            @ApiResponse(responseCode = "403", description = "권한이 없습니다."),
+            @ApiResponse(responseCode = "409", description = "방 조건에 맞지 않는 유저가 있습니다."),
+            @ApiResponse(responseCode = "404", description = "해당 방 입장기록이 없습니다.")
+
+    })
+    public CustomResponse<Void> editRoom(@PathVariable(name = "roomId") Long roomId,@RequestBody EditRoomDTO editRoomDTO) {
+        roomService.editRoom(roomId,editRoomDTO);
+        return new CustomResponse<>(HttpStatus.OK, String.format("%d번방 수정 성공", roomId), null);
     }
 
 
@@ -152,7 +168,8 @@ public class RoomController {
             @ApiResponse(responseCode = "409", description = "방이 가득 찼습니다.")
     })
     public CustomResponse<EnterRoomDTO> enterRoom(@PathVariable Long roomId) {
-        roomService.enterRoom(roomId);
+        User currentUser = findUserBySecurity.getCurrentUser();
+        roomService.enterRoom(currentUser,roomId);
         Room room = roomService.findById(roomId);
         EnterRoomDTO enterRoomDto = roomService.getEnterRoomDto(room);
         return new CustomResponse<>(HttpStatus.OK, String.format("%d번 방 입장 성공",roomId), enterRoomDto);

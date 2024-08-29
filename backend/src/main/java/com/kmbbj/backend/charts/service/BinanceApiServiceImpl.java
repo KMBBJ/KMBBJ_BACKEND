@@ -8,13 +8,17 @@ import com.kmbbj.backend.charts.repository.coin.Coin24hDetailRepository;
 import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +38,16 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     public BinanceApiServiceImpl(Coin24hDetailRepository coin24hDetailRepository, CoinRepository coinRepository, WebClient.Builder webClientBuilder) {
         this.coinRepository = coinRepository;
         this.coin24hDetailRepository = coin24hDetailRepository;
-        // WebClient를 Binance API의 기본 URL로 빌드
-        this.webClient = webClientBuilder.baseUrl("https://api.binance.com").build();
+        // WebClient를 Binance API의 기본 URL로 빌드하고, 타임아웃 설정 추가
+        this.webClient = webClientBuilder
+                .baseUrl("https://api.binance.com")
+                .clientConnector(new ReactorClientHttpConnector(HttpClient.create()
+                        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 60000) // 연결 타임아웃 설정
+                        .doOnConnected(conn ->
+                                conn.addHandlerLast(new ReadTimeoutHandler(60))  // 읽기 타임아웃 설정
+                                        .addHandlerLast(new WriteTimeoutHandler(60)))
+                )) // 쓰기 타임아웃 설정
+                .build();
     }
 
     /**
@@ -138,7 +150,9 @@ public class BinanceApiServiceImpl implements BinanceApiService {
                     .volume(Double.parseDouble((String) tickerData.get("volume")))
                     .quoteVolume(Double.parseDouble((String) tickerData.get("quoteVolume")))
                     .tradeCount(((Number) tickerData.get("count")).longValue())
-                    .timezone(Timestamp.valueOf(LocalDateTime.now()))
+                    .openTime(((Number) tickerData.get("openTime")).longValue())
+                    .closeTime(((Number) tickerData.get("closeTime")).longValue())
+                    .timezone(LocalDateTime.now())
                     .build();
 
             coin24hDetails.add(coin24hDetail);
@@ -183,13 +197,11 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     private Mono<JsonArray> getJsonToWebClientForSingleSymbol(String endpoint, StringBuilder queryString) {
         // WebClient를 통해 GET 요청을 보내고, 응답을 JsonArray로 변환하여 반환
         return this.webClient.get()
-                .uri(uriBuilder -> uriBuilder.path(endpoint)
-                        .query(queryString.toString())
-                        .build())
+                .uri(uriBuilder -> uriBuilder.path(endpoint).query(queryString.toString()).build()) // URI 빌드
                 .header("Content-Type", "application/json")
                 .header("X-MBX-APIKEY", accessKey)
-                .retrieve()
-                .bodyToMono(String.class)
+                .retrieve()// 요청 전송
+                .bodyToMono(String.class) // 응답 본문을 비동기적으로 수신
                 .map(response -> JsonParser.parseString(response).getAsJsonArray());
     }
 
@@ -200,13 +212,8 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      * @return            심볼에 해당하는 데이터 리스트를 포함하는 Mono 객체
      */
     public Mono<List<Map<String, Object>>> getJsonToWebClientForMultipleSymbols(String endpoint, StringBuilder queryString) {
-        // WebClient 인스턴스 생성
-        WebClient client = WebClient.builder()
-                .baseUrl("https://api.binance.com") // Binance API의 기본 URL 설정
-                .build();
-
         // WebClient를 통해 GET 요청을 보내고, 응답 본문을 Mono<List<Map<String, Object>>> 타입으로 변환하여 반환
-        return client.get()
+        return this.webClient.get()
                 .uri(uriBuilder -> uriBuilder.path(endpoint).query(queryString.toString()).build()) // URI 빌드
                 .retrieve() // 요청 전송
                 .bodyToMono(new ParameterizedTypeReference<>() {}); // 응답 본문을 비동기적으로 수신

@@ -7,8 +7,6 @@ import java.util.Map;
 
 public interface BinanceApiService {
     void updateCoinData();
-
     Mono<String> getKlines(String symbol, String interval, Long startTime, Long endTime, Integer limit);
-
     Mono<List<Map<String, Object>>> get24hrTickerData(List<String> symbols);
 }

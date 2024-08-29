@@ -10,6 +10,8 @@ import com.kmbbj.backend.matching.repository.UserRoomRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -31,8 +33,8 @@ public class UserRoomServiceImpl implements UserRoomService{
      * @return userRoom
      */
     @Override
-    public Optional<UserRoom> findByUserAndRoom(User user, Room room) {
-        return userRoomRepository.findByUserAndRoom(user, room);
+    public Optional<UserRoom> findByUserAndRoomAndIsPlayed(User user, Room room) {
+        return userRoomRepository.findByUserAndRoomAndIsPlayed(user, room,true);
     }
 
     /**
@@ -58,7 +60,12 @@ public class UserRoomServiceImpl implements UserRoomService{
     @Override
     public UserRoom findCurrentRoom() {
         User user = findUserBySecurity.getCurrentUser();
-        UserRoom userRoom = userRoomRepository.findByUserAndIsPlayed(user, true).orElse(null);
-        return userRoom;
+        return userRoomRepository.findByUserAndIsPlayed(user, true).orElse(null);
+    }
+
+
+    public List<UserRoom> findUserRooms(Room room) {
+        return userRoomRepository.findAllByRoomAndIsPlayed(room, true);
+
     }
 }

@@ -22,11 +22,11 @@ public interface RoomService {
 
     void startGame(Long roomId);
 
-    void enterRoom(Long roomId);
+    void enterRoom(User user,Long roomId);
 
     void quitRoom(Long roomId);
 
-    List<Room> findRoomsWithinAssetRange(Long asset, Long range);
+    List<Room> findRoomsWithinAssetRange(Long maxAsset);
 
     Room findRoomByLatestCreateDate();
 

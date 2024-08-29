@@ -27,10 +27,11 @@ public class ExchangeDTOMapper {
                 .timestamp(Instant.now())
                 .build();
 
-        return BuyOrder.builder()
+        BuyOrder buyOrder = BuyOrder.builder()
                 .id(orderPrimaryKey)
                 .transactionId(transactionId)
                 .build();
+        return buyOrder;
     }
 
     /**

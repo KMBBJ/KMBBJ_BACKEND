@@ -95,7 +95,7 @@ public class GameResultServiceImpl implements GameResultService{
      */
     private GameResult createGameResult(Game game, User user, Long finalBalance, int rank) {
         // 게임 시작할 때의 초기 시드머니를 가져옴
-        Long initialSeed = Long.valueOf(game.getRoom().getStartSeedMoney());
+        Long initialSeed = Long.valueOf((String.valueOf(game.getRoom().getStartSeedMoney())));
 
         // 사용자 최종 잔액과 초기 시드 비교하여 총 수익 ,총 손실 계산
         long totalProfit = finalBalance > initialSeed ? finalBalance - initialSeed : 0;

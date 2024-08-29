@@ -97,7 +97,7 @@ public class RoundServiceImpl implements RoundService {
         List<GameBalance> currentBalances = gameBalanceRepository.findByGame(game);
         List<RoundRanking> rankings = new ArrayList<>();
 
-        long initialSeedMoney = game.getRoom().getStartSeedMoney();
+        long initialSeedMoney = Long.valueOf((String.valueOf(game.getRoom().getStartSeedMoney())));
 
         for (GameBalance balance : currentBalances) {
             RoundRanking ranking = new RoundRanking();
@@ -222,7 +222,7 @@ public class RoundServiceImpl implements RoundService {
         List<GameBalance> currentBalances = gameBalanceRepository.findByGame(game);
         List<RoundRanking> midGameRankings = new ArrayList<>();
         Round currentRound = getCurrentRound(game);
-        long initialSeedMoney = game.getRoom().getStartSeedMoney();
+        long initialSeedMoney = Long.valueOf((String.valueOf(game.getRoom().getStartSeedMoney())));
 
         for (GameBalance balance : currentBalances) {
             RoundRanking midRanking = new RoundRanking();

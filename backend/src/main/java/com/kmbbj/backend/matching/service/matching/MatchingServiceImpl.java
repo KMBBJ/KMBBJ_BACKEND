@@ -7,12 +7,16 @@ import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
+import com.kmbbj.backend.global.config.websocket.MatchWebSocketHandler;
 import com.kmbbj.backend.matching.dto.CreateRoomDTO;
 import com.kmbbj.backend.matching.entity.Room;
+import com.kmbbj.backend.matching.entity.StartSeedMoney;
 import com.kmbbj.backend.matching.service.queue.MatchingQueueService;
 import com.kmbbj.backend.matching.service.room.RoomService;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
+import com.kmbbj.backend.matching.util.AssetRangeCalculator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.core.context.SecurityContext;
@@ -26,34 +30,33 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MatchingServiceImpl implements MatchingService{
 
+    private final MatchWebSocketHandler matchWebSocketHandler;
     private final TaskScheduler taskScheduler;
-    private final Map<Long, ScheduledFuture<?>> assetRangeTasks = new ConcurrentHashMap<>();
     private final Map<Long, ScheduledFuture<?>> matchingTasks = new ConcurrentHashMap<>();
     private final Map<Object, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
     private final RedisTemplate<String, Object> redisTemplate;
     private final RoomService roomService;
-    private final UserService userService;
     private final UserRoomService userRoomService;
     private final MatchingQueueService matchingQueueService;
     private final FindUserBySecurity findUserBySecurity;
     private final BalanceService balanceService;
     volatile boolean isShutdownRequested = false;
-
+    private final AssetRangeCalculator rangeCalculator = new AssetRangeCalculator();
+    private final AtomicInteger time = new AtomicInteger(0);
 
     @Override
     @Transactional
     public void startQuickMatching() {
         User user = findUserBySecurity.getCurrentUser();
         isShutdownRequested = false;
-        matchingQueueService.addUserToQueue(user, true);
-        scheduleMatchingTasks(user, 10, true);
+        scheduleMatchingTasks(user,true);
     }
 
 
@@ -64,66 +67,73 @@ public class MatchingServiceImpl implements MatchingService{
             throw new ApiException(ExceptionEnum.IN_OTHER_ROOM);
         }
 
+        // 현재 유저
         User user = findUserBySecurity.getCurrentUser();
+
+        // 현재 유저의 자산
         TotalBalance totalBalance = balanceService.totalBalanceFindByUserId(user.getId()).orElse(null);
+
+        // 자산을 찾을 수 없는 경우 매칭 취소
         if (totalBalance == null) {
             cancelCurrentUserScheduledTasks();
             throw new ApiException(ExceptionEnum.BALANCE_NOT_FOUND);
         }
+
+        // 종료 플레그 false 설정
         isShutdownRequested = false;
-        matchingQueueService.addUserToQueue(user, false);
-        scheduleMatchingTasks(user, 1, false);
+
+        // 매칭큐에 현재 유저 넣음
+        matchingQueueService.addUserToQueue(user);
+        scheduleMatchingTasks(user,false);
     }
 
     /**
      *
-     * @param user  현재 유저
-     * @param increment     자산 범위 증가량
-     * @param isQuickMatch  빠른 매칭 여부
+     * @param user
      */
     @Override
     @Transactional
-    public void scheduleMatchingTasks(User user, int increment, boolean isQuickMatch) {
+    public void scheduleMatchingTasks(User user,boolean isQuickMatch) {
+        AtomicBoolean isThirtyMinutesPassed = new AtomicBoolean(false);
         AtomicBoolean isFiveMinutesPassed = new AtomicBoolean(false);
-        AtomicBoolean isTenMinutesPassed = new AtomicBoolean(false);
-        AtomicReference<Long> minUser = new AtomicReference<>(4L);
         // 현재 SecurityContext 를 저장
         SecurityContext context = SecurityContextHolder.getContext();
 
-        // 자산 범위 설정
-        ScheduledFuture<?> assetRangeTask = taskScheduler.scheduleAtFixedRate(() -> {
-            // 작업 스레드에 SecurityContext 설정
-            SecurityContextHolder.setContext(context);
-            try {
-                if (isShutdownRequested || Thread.interrupted()) return;
-                updateAssetRange(user, increment);
-            } finally {
-                // SecurityContext 정리
-                SecurityContextHolder.clearContext();
-            }
-        }, Duration.ofMinutes(isQuickMatch ? 5 : 1));
-        scheduledTasks.put(user.getId(), assetRangeTask);
-        assetRangeTasks.put(user.getId(), assetRangeTask);
-
-        // 매칭 실행 스케줄링
+        // 매칭 실행 스케줄링 (3초마다)
         ScheduledFuture<?> matchingTask = taskScheduler.scheduleWithFixedDelay(() -> {
+
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
                 if (isShutdownRequested || Thread.interrupted()) return;
                 if (isQuickMatch) {
-                    handleQuickMatch(user,isQuickMatch,minUser);
+                    handleQuickMatch(user);
                 } else {
-                    handleRandomMatch(user, isQuickMatch, isFiveMinutesPassed, isTenMinutesPassed);
+                    handleRandomMatch(user, isFiveMinutesPassed, isThirtyMinutesPassed);
                 }
 
             } finally {
                 // SecurityContext 정리
                 SecurityContextHolder.clearContext();
             }
-        }, 1000);
+        }, 3000);
         scheduledTasks.put(user.getId(), matchingTask);
         matchingTasks.put(user.getId(), matchingTask);
+
+        // 시간 조건 설정 (30분)
+        ScheduledFuture<?> thirtyMinuteTask = taskScheduler.schedule(() -> {
+            // 작업 스레드에 SecurityContext 설정
+            SecurityContextHolder.setContext(context);
+            try {
+                if (isShutdownRequested || Thread.interrupted()) return;
+                isThirtyMinutesPassed.set(true);
+                if (!isQuickMatch) switchToQuickMatch(user);
+            } finally {
+                // SecurityContext 정리
+                SecurityContextHolder.clearContext();
+            }
+        }, new Date(System.currentTimeMillis() + Duration.ofSeconds(30).toMillis())); // 분으로 바꿔야댐
+        scheduledTasks.put(user.getId(), thirtyMinuteTask);
 
         // 시간 조건 설정 (5분)
         ScheduledFuture<?> fiveMinuteTask = taskScheduler.schedule(() -> {
@@ -136,88 +146,64 @@ public class MatchingServiceImpl implements MatchingService{
                 // SecurityContext 정리
                 SecurityContextHolder.clearContext();
             }
-        }, new Date(System.currentTimeMillis() + Duration.ofMinutes(5).toMillis())); // 분으로 바꿔야댐
+        }, new Date(System.currentTimeMillis() + Duration.ofSeconds(5).toMillis())); // 분으로 바꿔야댐
         scheduledTasks.put(user.getId(), fiveMinuteTask);
-
-        // 시간 조건 설정 (10분)
-        ScheduledFuture<?> tenMinuteTask = taskScheduler.schedule(() -> {
-            // 작업 스레드에 SecurityContext 설정
-            SecurityContextHolder.setContext(context);
-            try {
-                if (isShutdownRequested || Thread.interrupted()) return;
-                isTenMinutesPassed.set(true);
-                if (!isQuickMatch) switchToQuickMatch(user);
-            } finally {
-                // SecurityContext 정리
-                SecurityContextHolder.clearContext();
-            }
-        }, new Date(System.currentTimeMillis() + Duration.ofMinutes(10).toMillis())); // 분으로 바꿔야댐
-        scheduledTasks.put(user.getId(), tenMinuteTask);
-
-        if (isQuickMatch) {
-            // 최소 인원수 설정
-            ScheduledFuture<?> minUserTask = taskScheduler.scheduleAtFixedRate(() -> {
-                SecurityContextHolder.setContext(context);
-                try {
-                    if (isShutdownRequested || Thread.interrupted()) return;
-                    minUser.updateAndGet(v -> Math.max(1, v - 1));
-
-                } finally {
-                    SecurityContextHolder.clearContext();
-                }
-            }, Duration.ofMinutes(10)); // 분으로 바꾸셈
-            scheduledTasks.put(user.getId(), minUserTask);
-        }
     }
 
     /**
      *
      * @param user  현재 유저
-     * @param isQuickMatch  빠른 매칭 여부
      * @param isFiveMinutesPassed   5분 지났는지 확인하는 플레그
-     * @param isTenMinutesPassed    10분 지났는지 확인하는 플레그
+     * @param isThirtyMinutesPassed    30분 지났는지 확인하는 플레그
      */
     @Override
     @Transactional
-    // 랜덤 매칭시 방 만들어주는 로직
-    public void handleRandomMatch(User user, boolean isQuickMatch, AtomicBoolean isFiveMinutesPassed, AtomicBoolean isTenMinutesPassed) {
-        // 10분 후 루프 종료 조건 체크
-        if (isTenMinutesPassed.get()) return;
+    public void handleRandomMatch(User user, AtomicBoolean isFiveMinutesPassed, AtomicBoolean isThirtyMinutesPassed) {
+        double currentRange = rangeCalculator.calculateAssetRange(time.getAndIncrement());
+        synchronized (this) {  // 동기화 블록 추가
+            if (isThirtyMinutesPassed.get()) switchToQuickMatch(user);
 
-        // Redis 에서 사용자의 현재 자산 범위를 가져옴
-        Long currentRange = (Long) redisTemplate.opsForHash().get("userAssetRanges", user.getId().toString());
-        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
-        List<User> potentialMatches = findPotentialMatches(asset, currentRange);
-        // 5분 지났으면 4명 되면 방 생성, 아니면 10명까지 가능
-        int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
+            redisTemplate.execute((RedisCallback<Object>) connection -> {
+                connection.multi();  // 트랜잭션 시작
 
-        if (potentialMatches.size() >= requiredUserCount) {
-            createRoomWithUsers(potentialMatches);
-            potentialMatches.forEach(completeUser -> matchingQueueService.removeUserFromQueue(completeUser, isQuickMatch));
+                Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
+                // 매칭 잡힌 유저들
+                List<User> potentialMatch = findPotentialMatches(asset, currentRange);
+
+                // 5분 전 -> 10명, 5분 후 4명이상
+                int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
+
+                if (potentialMatch.size() >= requiredUserCount) {
+                    createRoomWithUsers(potentialMatch);
+                    potentialMatch.forEach(matchingQueueService::removeUserFromQueue);
+                }
+
+                connection.exec();  // 트랜잭션 커밋
+                return null;
+            });
         }
     }
 
     /**
      *
-     * @param user  현재 유저
-     * @param isQuickMatch  빠른 매칭 여부
-     * @param minUser   최소 인원수
+     * @param user
      */
     @Transactional
-    public void handleQuickMatch(User user, boolean isQuickMatch, AtomicReference<Long> minUser) {
-        Long range = (Long) redisTemplate.opsForHash().get("userAssetRanges", user.getId().toString());
-        List<Room> availableRooms = findAvailableRooms(range, minUser);
+    public void handleQuickMatch(User user) {
+        List<Room> availableRooms = findAvailableRooms();
         if (!availableRooms.isEmpty()) {
             // 가능한 방이 있다면, 첫 번째 방에 유저 입장
             Room room = availableRooms.get(0);
-            roomService.enterRoom(room.getRoomId());
-            matchingQueueService.removeUserFromQueue(user,isQuickMatch);
+            roomService.enterRoom(user,room.getRoomId());
+            matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
-        if (minUser.get() == 0){
-            // 방 생성
+        else { // 가능한 방이 없을 경우 방 생성
+
             Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
+            // 초기 시드머니
+            StartSeedMoney startSeedMoney = getStartSeedMoney(user);
             CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                     .title(String.format("빠른 매칭 %d", latestRoomId))
                     .end(5) // 게임 라운드 수
@@ -225,10 +211,14 @@ public class MatchingServiceImpl implements MatchingService{
                     .isDeleted(false)
                     .isStarted(false)
                     .createDate(LocalDateTime.now())
-                    .startSeedMoney(1000)
+                    .startSeedMoney(startSeedMoney)
                     .build();
-            roomService.createRoom(createRoomDTO, user);
-            matchingQueueService.removeUserFromQueue(user,isQuickMatch);
+
+
+            Room room = roomService.createRoom(createRoomDTO, user);
+
+            // 해당 유저에게 알림
+            matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
@@ -236,20 +226,19 @@ public class MatchingServiceImpl implements MatchingService{
 
     /**
      *
-     * @param range     현재 자산 조건 범위
-     * @param minUser   현재 최소 유저수
-     * @return 자산 범위에 맞고 최소인원수 이상인 방 list
+     * @return
      */
     @Override
     @Transactional
     // 빠른 매칭 시 들어갈만한 방 찾아주기
-    public List<Room> findAvailableRooms(Long range, AtomicReference<Long> minUser) {
+    // 수정 필요
+    // 자기가 들어갈 수 있는 방 중 가장 인원이 많은 방으로
+    public List<Room> findAvailableRooms() {
         User user = findUserBySecurity.getCurrentUser();
         Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
-        return roomService.findRoomsWithinAssetRange(asset, range).stream()
-                .filter(room -> room.getUserCount() >= minUser.get())
+        return roomService.findRoomsWithinAssetRange(asset / 3).stream()
                 .sorted(Comparator.comparing(Room::getUserCount))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -261,12 +250,12 @@ public class MatchingServiceImpl implements MatchingService{
     @Override
     @Transactional
     // 랜덤 매칭시 유저 찾아주는 메서드
-    public List<User> findPotentialMatches(Long currentUserAsset, Long range) {
+    public List<User> findPotentialMatches(Long currentUserAsset, double range) {
         User currentUser = findUserBySecurity.getCurrentUser();
         Long asset = balanceService.totalBalanceFindByUserId(currentUser.getId()).get().getAsset();
-        return matchingQueueService.getUsersInQueue(false).stream()
-                .filter(user -> asset >= (currentUserAsset - (currentUserAsset * range / 100)) && asset <= (currentUserAsset + (currentUserAsset * range / 100)))
-                .collect(Collectors.toList());
+        long min = (long) (asset - (asset * range / 100)); // 자산 범위 중 최소 값
+        long max = (long) (asset + (asset * range / 100)); // 자산 범위 중 최대 값
+        return matchingQueueService.getUsersInQueue(min,max);
     }
 
     /**
@@ -277,11 +266,10 @@ public class MatchingServiceImpl implements MatchingService{
     @Transactional
     // 랜덤 매칭시 잡힌 유저들과 방 들어가기
     public void createRoomWithUsers(List<User> users) {
-        User currentUser = findUserBySecurity.getCurrentUser();
         // 모든 유저 ID를 추출
         List<Long> userIds = users.stream()
                 .map(User::getId)
-                .collect(Collectors.toList());
+                .toList();
 
         // 해당 유저들의 자산 정보만 조회
         List<TotalBalance> balances = userIds.stream()
@@ -293,6 +281,17 @@ public class MatchingServiceImpl implements MatchingService{
                 .max(Comparator.comparing(TotalBalance::getAsset))
                 .map(TotalBalance::getUser)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+
+        // 자산이 가장 적은 사용자 찾기
+        User poor = balances.stream()
+                .min(Comparator.comparing(TotalBalance::getAsset))
+                .map(TotalBalance::getUser)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+
+        // 자산이 가장 적은 사용자 기준으로 시작 시드머니 설정
+        StartSeedMoney startSeedMoney = getStartSeedMoney(poor);
+
+        // 현재 생성되어 있는 방 중 가장 최신 방 roomId
         Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
         CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                 .title(String.format("랜덤 매칭 %d", latestRoomId + 1))
@@ -301,18 +300,18 @@ public class MatchingServiceImpl implements MatchingService{
                 .isDeleted(false)
                 .isStarted(false)
                 .createDate(LocalDateTime.now())
-                .startSeedMoney(1000)
+                .startSeedMoney(startSeedMoney) // 변경
                 .build();
 
-        cancelCurrentUserScheduledTasks();
-        cancelMatching(currentUser);
-        roomService.createRoom(createRoomDTO, richestUser);
-        users.remove(richestUser);
-        while (users.isEmpty()) {
-            roomService.enterRoom(users.getFirst().getId());
-            users.remove(users.getFirst());
-        }
-
+        Room room = roomService.createRoom(createRoomDTO, richestUser);
+        // 각 사용자들 알람 및 방 입장
+        matchWebSocketHandler.notifyAboutMatch(richestUser.getId(),room.getRoomId());
+        users.forEach(user -> {
+            roomService.enterRoom(user,room.getRoomId());
+            matchWebSocketHandler.notifyAboutMatch(user.getId(), room.getRoomId());
+            cancelCurrentUserScheduledTasks();
+            cancelMatching(user);
+        });
     }
 
     /**
@@ -324,30 +323,7 @@ public class MatchingServiceImpl implements MatchingService{
     // 매칭 자동 변경
     public void switchToQuickMatch(User user) {
         cancelMatching(user);
-//        matchingQueueService.addUserToQueue(user,true);
         startQuickMatching();
-    }
-
-    /**
-     *
-     * @param user        현재 유저
-     * @param increment   자산 증가율
-     */
-    @Override
-    @Transactional
-    // 자산 범위 업데이트
-    public void updateAssetRange(User user, int increment) {
-
-        Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
-        // Redis 에서 사용자의 현재 자산 범위를 가져옴
-        Long currentRange = (Long) redisTemplate.opsForHash().get("userAssetRanges", user.getId().toString());
-        if (currentRange == null) {
-            currentRange = asset * 10 / 100; // 초기 10% 설정
-        } else {
-            currentRange += asset * increment / 100;
-        }
-        // 업데이트된 범위를 Redis 에 저장
-        redisTemplate.opsForHash().put("userAssetRanges", user.getId().toString(), currentRange);
     }
 
     /**
@@ -357,38 +333,45 @@ public class MatchingServiceImpl implements MatchingService{
     @Override
     @Transactional
     public void cancelMatching(User user) {
-        ScheduledFuture<?> assetRangeTask = assetRangeTasks.remove(user.getId());
         ScheduledFuture<?> matchingTask = matchingTasks.remove(user.getId());
-        if (assetRangeTask != null) assetRangeTask.cancel(false);
         if (matchingTask != null) matchingTask.cancel(false);
-    }
-
-    @Transactional
-    // 모든 유저의 작업 취소
-    // 관리자 전용
-    public void cancelAllUserScheduledTasks() {
-        for (Long userId : assetRangeTasks.keySet()) {
-            User user = userService.UserfindById(userId).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
-            cancelMatching(user);
-        }
     }
 
     @Override
     @Transactional
     public void cancelCurrentUserScheduledTasks() {
+        User user = findUserBySecurity.getCurrentUser();
         // 모든 작업에 대해 종료 요청
+        matchingQueueService.removeUserFromQueue(user);
+
+        // 종료 플레그 true 설정
         isShutdownRequested = true;
         scheduledTasks.forEach((key, future) -> {
             if (!future.isDone()) {
-                boolean wasCancelled = future.cancel(true);
-                if (wasCancelled) {
-                    System.out.println("종료 성공" + key);
-                } else {
-                    System.out.println("종료 실패 " + key);
-                }
+                future.cancel(false);
             }
         });
         // 참조 제거 전 모든 상태 로깅
         scheduledTasks.clear();
+    }
+
+    // 시작 시드머니 설정
+    public StartSeedMoney getStartSeedMoney(User user) {
+        StartSeedMoney startSeedMoney = null;
+        // 유저의 자산 1/3이상으로 시드머니 설정
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 10000000) {
+            startSeedMoney = StartSeedMoney.TEN_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 20000000) {
+            startSeedMoney = StartSeedMoney.TWENTY_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 30000000) {
+            startSeedMoney = StartSeedMoney.THIRTY_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 40000000) {
+            startSeedMoney = StartSeedMoney.FORTY_MILLION;
+        }
+
+        return startSeedMoney;
     }
 }
