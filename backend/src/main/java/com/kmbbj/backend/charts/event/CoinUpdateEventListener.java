@@ -3,7 +3,6 @@ package com.kmbbj.backend.charts.event;
 import com.kmbbj.backend.charts.dto.CoinResponse;
 import com.kmbbj.backend.feature.exchange.service.execution.matching.ExecutionAllMatchingOrder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

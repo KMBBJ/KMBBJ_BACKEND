@@ -4,6 +4,7 @@ import com.kmbbj.backend.charts.entity.coin.Coin;
 import com.kmbbj.backend.charts.repository.coin.CoinRepository;
 import com.kmbbj.backend.charts.service.ChartService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +16,17 @@ public class KlineScheduler {
     private final CoinRepository coinRepository;
     private final ChartService chartService;
 
+    @Value("${API_RECENTLY_UPDATE_LIMIT}")
+    private Integer limit;
+
+    @Value("${API_INTERVAL}")
+    private String interval;
+
     public void updateKlineDataByInterval(String interval) {
         List<Coin> coins = coinRepository.findAll();
 
         for (Coin coin : coins) {
-            chartService.updateKlineData(coin.getSymbol(), interval, 1);
+            chartService.updateKlineData(coin.getSymbol(), interval, limit);
         }
     }
     /**
@@ -27,6 +34,6 @@ public class KlineScheduler {
      */
     @Scheduled(cron = "0 */5 * * * *") // 매 5분마다 실행
     public void updateKlineDataEvery5Minutes() {
-        updateKlineDataByInterval("5m");
+        updateKlineDataByInterval(interval);
     }
 }

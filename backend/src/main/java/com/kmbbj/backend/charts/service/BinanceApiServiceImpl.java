@@ -32,6 +32,15 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     @Value("${RESTAPI_BINANCE_ACCESSKEY}")
     private String accessKey;
 
+    @Value("${WEB_CLIENT_BASE_URL}")
+    private String webClientBaseURL;
+
+    @Value("${API_ENDPOINT_KLINES}")
+    private String klinesEndPoint;
+
+    @Value("${API_ENDPOINT_24H_TICKER}")
+    private String tickerEndPoint;
+
     private final WebClient webClient;
 
     /* 기본 Url 설정 */
@@ -40,7 +49,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
         this.coin24hDetailRepository = coin24hDetailRepository;
         // WebClient를 Binance API의 기본 URL로 빌드하고, 타임아웃 설정 추가
         this.webClient = webClientBuilder
-                .baseUrl("https://api.binance.com")
+                .baseUrl(webClientBaseURL)
                 .clientConnector(new ReactorClientHttpConnector(HttpClient.create()
                         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 60000) // 연결 타임아웃 설정
                         .doOnConnected(conn ->
@@ -61,7 +70,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      */
     @Override
     public Mono<String> getKlines(String symbol, String interval, Long startTime, Long endTime, Integer limit) {
-        String endpoint = "/api/v3/klines";
+        String endpoint = klinesEndPoint;
         StringBuilder queryString = new StringBuilder();
         // 심볼과 간격을 쿼리 문자열에 추가
         queryString.append("symbol=").append(symbol)
@@ -110,7 +119,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
      * @return 24시간 티커 데이터를 포함하는 Mono<List<Map<String, Object>>>
      */
     public Mono<List<Map<String, Object>>> get24hrTickerData(List<String> symbols) {
-        String endpoint = "/api/v3/ticker/24hr";
+        String endpoint = tickerEndPoint;
         StringBuilder queryString = buildSymbolsQuery(symbols); // 심볼 리스트를 쿼리 문자열로 변환
 
         return getJsonToWebClientForMultipleSymbols(endpoint, queryString);

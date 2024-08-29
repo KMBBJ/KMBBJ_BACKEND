@@ -10,6 +10,7 @@ import com.kmbbj.backend.charts.repository.kline.*;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -23,6 +24,12 @@ public class ChartServiceImpl implements ChartService {
     private final KlineRepository klineRepository;
     private final CoinRepository coinRepository;
     private final BinanceApiService binanceApiService;
+
+    @Value("${API_LIMIT}")
+    private Integer limit;
+
+    @Value("${API_INTERVAL}")
+    private String interval;
 
     /**
      * 코인 심볼과 시간 간격이 일치하는 Kline 데이터를 가져옴
@@ -49,7 +56,7 @@ public class ChartServiceImpl implements ChartService {
         Coin coin = coinRepository.findBySymbol(symbol).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
 
         // 업데이트된 데이터를 바로 가져옴 (가장 최근의 1개 데이터)
-        return klineRepository.findTopByCoinAndIntervalOrderByTimezoneDesc(coin, "5m");
+        return klineRepository.findTopByCoinAndIntervalOrderByTimezoneDesc(coin, interval);
     }
 
     /**
@@ -60,7 +67,7 @@ public class ChartServiceImpl implements ChartService {
         // 업데이트 할 모든 코인 리스트를 가져옴
         List<Coin> coins = coinRepository.findAll();
         // 각 코인에 대해 모든 시간 간격의 Kline 데이터를 업데이트
-        coins.forEach(coin -> updateKlineData(coin.getSymbol(), "5m", 120));
+        coins.forEach(coin -> updateKlineData(coin.getSymbol(), interval, limit));
     }
 
     /**
