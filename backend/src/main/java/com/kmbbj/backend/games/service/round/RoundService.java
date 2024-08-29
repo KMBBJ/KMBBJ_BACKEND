@@ -1,9 +1,11 @@
 package com.kmbbj.backend.games.service.round;
 
-import com.kmbbj.backend.games.entity.Game;
+import com.kmbbj.backend.games.dto.RoundRankingSimpleDTO;
+
+import java.util.List;
 
 public interface RoundService {
-    void startNewRound(Game game);
-    boolean isLastRound(Game game, int endRoundNumber);
 
+    boolean manageRounds(String encryptedGameId);
+    List<List<RoundRankingSimpleDTO>> getRoundRankingsForGame(String encryptedGameId);
 }

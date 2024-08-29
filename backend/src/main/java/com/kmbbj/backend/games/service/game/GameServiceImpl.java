@@ -3,13 +3,17 @@ package com.kmbbj.backend.games.service.game;
 
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
+import com.kmbbj.backend.games.dto.RoundResultDTO;
 import com.kmbbj.backend.games.entity.Game;
+import com.kmbbj.backend.games.entity.GameBalance;
 import com.kmbbj.backend.games.entity.Round;
 import com.kmbbj.backend.games.enums.GameStatus;
 import com.kmbbj.backend.games.repository.GameRepository;
 import com.kmbbj.backend.games.repository.RoundRepository;
-import com.kmbbj.backend.games.service.round.RoundResultService;
+import com.kmbbj.backend.games.service.gamebalance.GameBalanceService;
+import com.kmbbj.backend.games.service.gameresult.GameResultService;
 import com.kmbbj.backend.games.service.round.RoundService;
+import com.kmbbj.backend.games.service.roundresult.RoundResultService;
 import com.kmbbj.backend.games.util.GameEncryptionUtil;
 import com.kmbbj.backend.games.util.GameProperties;
 import com.kmbbj.backend.global.config.exception.ApiException;
@@ -23,6 +27,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 
@@ -35,10 +40,13 @@ public class GameServiceImpl implements GameService {
     private final RoomRepository roomRepository;
     private final UserRoomService userRoomService;
     private final RoundRepository roundRepository;
-    private final RoundResultService roundResultService;
     private final RoundService roundService;
     private final GameEncryptionUtil gameEncryptionUtil;
     private final GameProperties gameProperties;
+    private final GameResultService gameResultService;
+    private final GameBalanceService gameBalanceService;
+    private final RoundResultService roundResultService;
+
 
 
 
@@ -64,6 +72,9 @@ public class GameServiceImpl implements GameService {
         game.setRoom(room); // 방 <-> 게임 연결
         game = gameRepository.save(game); // 데이터 베이스 저장
 
+
+        // 방 속한 플레이한 사용자들에게 게임 잔액 생성
+        List<GameBalance> gameBalances = gameBalanceService.createGameBalance(game);
 
         // 첫 라운드 생성 & 저장
         Round round = new Round();
@@ -104,28 +115,23 @@ public class GameServiceImpl implements GameService {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
-        // 최신 라운드 존재 확인 여부
-        Round latestRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
-
-        Room room = game.getRoom(); // 게임과 연결 된 방을 가져옴
-
-        // 게임 종료 조건 확인
-        if (latestRound.getRoundNumber() >= room.getEnd()) {
+        boolean isGameEnded = roundService.manageRounds(encryptedGameId);
+        if (isGameEnded) {
             game.setGameStatus(GameStatus.COMPLETED); // 게임 완료
             gameRepository.save(game); // 데이터 베이스 저장
 
             // 모든 라운드 결과 가져오기
+            List<RoundResultDTO> allRoundResults = roundResultService.getCompletedRoundResultsForGame(encryptedGameId);
+            // 게임 결과 생성 메서드 호출
+            gameResultService.createGameResults(encryptedGameId);
 
 
-            // 여기에 최종 결과 구현 할것 (미구현)
-
-
-            // 방 상태 업데이트
-            room.setIsStarted(false);
-            room.setIsDeleted(true);
-            roomRepository.save(room);
         }
+        Room room = game.getRoom(); // 게임과 연결 된 방을 가져옴
+
+        // 방 상태 업데이트
+        room.setIsStarted(false);
+        roomRepository.save(room);
     }
 
 
@@ -170,6 +176,7 @@ public class GameServiceImpl implements GameService {
         Round currentRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
 
+
         // 현재 라운드 DTO 생성 & 반환
         CurrentRoundDTO dto = new CurrentRoundDTO();
         dto.setGameId(encryptedGameId);
@@ -211,5 +218,6 @@ public class GameServiceImpl implements GameService {
 
 
 
-    }
+
+}
 

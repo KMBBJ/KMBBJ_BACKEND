@@ -8,9 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+    List<Transaction> findByGameId(UUID gameId);
 
     //코인 symbol을 가져오혀 한번에 응답으로 변환하는 방식의 쿼리
     @Query("SELECT new com.kmbbj.backend.feature.exchange.controller.response.TransactionsResponse(" +
@@ -29,4 +31,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "LEFT JOIN Transaction t ON cb.gameBalanceId = t.balancesId AND cb.coinId = t.coinId " +
             "WHERE cb.gameBalanceId = :gameBalanceId AND t.transactionType = 'BUY' AND t.status = com.kmbbj.backend.feature.exchange.entity.TransactionStatus.COMPLETED")
     List<Object[]> findAllCoinAssets(@Param("gameBalanceId") Long gameBalanceId);
+
 }

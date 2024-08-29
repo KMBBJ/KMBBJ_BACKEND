@@ -38,13 +38,13 @@ public class GameResult {
      * 사용자의 총 수익
      */
     @Column(name = "total_profit")
-    private Integer totalProfit;
+    private Long totalProfit;
 
     /**
      *  사용자의 총 손실
      */
     @Column(name = "total_loss")
-    private Integer totalLoss;
+    private Long totalLoss;
 
     /**
      * 게임에서의 사용자 최종 순위
