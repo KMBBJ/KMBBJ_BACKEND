@@ -2,6 +2,7 @@ package com.kmbbj.backend.games.service.game;
 
 
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
+import com.kmbbj.backend.games.dto.GameStartDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
 import com.kmbbj.backend.games.dto.RoundResultDTO;
 import com.kmbbj.backend.games.entity.Game;
@@ -27,6 +28,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,20 +52,21 @@ public class GameServiceImpl implements GameService {
 
 
 
-    /** 방 ID를 통해 게임 시작
-     *
+    /**
+     * 방 ID를 통해 게임 시작
+     * <p>
      * 방 정보 조회 -> 방 시작 확인여부
      * 새 게임 객체 생성 후 데이터베이스 저장
      * 첫 번째 라운드 생성 후 데이터베이스 저장
      * 게임 ID를 암호화 반환
      *
      * @param roomId 게임 시작 할 ID
-     * @return 시작된 게임 상태 정보 DTO 객체
+     * @return
      * @throws ExceptionEnum 공통 예외
      */
     @Override
     @Transactional
-    public GameStatusDTO startGame(Long roomId) {
+    public GameStartDTO startGame(Long roomId) {
         Room room = roomService.findById(roomId); // 방 ID 조회함
 
         // 새 게임 생성 & 저장
@@ -87,12 +90,15 @@ public class GameServiceImpl implements GameService {
         // 게임 UUID 값을 암호화
         String encryptedGameId = gameEncryptionUtil.encryptUUID(game.getGameId());
 
+        //
+        GameStartDTO gameStartDTO = new GameStartDTO();
+        gameStartDTO.setGameId(encryptedGameId);
+
         // 게임 상태 정보 DTO
         GameStatusDTO status = new GameStatusDTO();
-        status.setGameId(encryptedGameId); // UUID -> 암호화 ID 변경
-        status.setStatus(GameStatus.ACTIVE);
+        status.setResults(new ArrayList<>()); // 게임 시작 시 결과가 없음
 
-        return status;
+        return gameStartDTO;
     }
 
 
@@ -149,9 +155,16 @@ public class GameServiceImpl implements GameService {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
+        Round currentRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
+
+        int durationMinutes = getDurationMinutes();
+        List<RoundResultDTO> roundResults = roundResultService.getCompletedRoundResultsForGame(encryptedGameId);
+
         GameStatusDTO statusDTO = new GameStatusDTO();
-        statusDTO.setGameId(encryptedGameId);
         statusDTO.setStatus(game.getGameStatus());
+        statusDTO.setDurationMinutes(durationMinutes);
+        statusDTO.setResults(roundResults);
 
         return statusDTO;
     }
