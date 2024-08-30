@@ -34,7 +34,12 @@ public class UserRoomServiceImpl implements UserRoomService{
      */
     @Override
     public Optional<UserRoom> findByUserAndRoomAndIsPlayed(User user, Room room) {
-        return userRoomRepository.findByUserAndRoomAndIsPlayed(user, room,true);
+        return userRoomRepository.findByUserAndRoomAndIsPlayed(user, room, true);
+    }
+
+    @Override
+    public Optional<UserRoom> findByUserAndRoom(User user, Room room) {
+        return userRoomRepository.findByUserAndRoom(user, room);
     }
 
     /**

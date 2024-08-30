@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface UserRoomService {
     void save(UserRoom userRoom);
 
+    Optional<UserRoom> findByUserAndRoom(User user, Room room);
+
     Optional<UserRoom> findByUserAndRoomAndIsPlayed(User user, Room room);
 
     UserRoom deleteUserFromRoom(Long roomId);

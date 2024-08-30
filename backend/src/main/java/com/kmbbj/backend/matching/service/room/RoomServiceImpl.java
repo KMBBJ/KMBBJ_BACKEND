@@ -9,6 +9,7 @@ import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import com.kmbbj.backend.matching.dto.*;
 import com.kmbbj.backend.matching.entity.Room;
+import com.kmbbj.backend.matching.entity.StartSeedMoney;
 import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
@@ -24,10 +25,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 
 @Service
@@ -283,7 +281,7 @@ public class RoomServiceImpl implements RoomService{
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
 
-        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(user, room)
+        UserRoom userRoom = userRoomService.findByUserAndRoom(user, room)
                 .orElse(null);
 
         if (userRoom == null) {
@@ -374,7 +372,20 @@ public class RoomServiceImpl implements RoomService{
 
     @Override
     public List<Room> findRoomsWithinAssetRange(Long maxAsset) {
-        return roomRepository.findRoomsWithinAssetRange(maxAsset);
+        List<Room> rooms = new ArrayList<>();
+        if (maxAsset >= 10000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.TEN_MILLION,false));
+        }
+        if (maxAsset >= 20000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.TWENTY_MILLION,false));
+        }
+        if (maxAsset >= 30000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.THIRTY_MILLION,false));
+        }
+        if (maxAsset >= 40000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.FORTY_MILLION,false));
+        }
+        return rooms;
     }
 
     @Override
