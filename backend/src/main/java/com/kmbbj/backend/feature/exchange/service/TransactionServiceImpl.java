@@ -66,7 +66,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public void matchOrders(Long coinId, BigDecimal price) {
+    public void matchOrders(Long coinId, Long price) {
         executionAllMatchingOrder.matchOrders(coinId, price);
     }
 

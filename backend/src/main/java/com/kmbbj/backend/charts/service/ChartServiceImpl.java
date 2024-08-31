@@ -10,6 +10,7 @@ import com.kmbbj.backend.charts.repository.kline.*;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -23,6 +24,12 @@ public class ChartServiceImpl implements ChartService {
     private final KlineRepository klineRepository;
     private final CoinRepository coinRepository;
     private final BinanceApiService binanceApiService;
+
+    @Value("${API_LIMIT}")
+    private Integer limit;
+
+    @Value("${API_INTERVAL}")
+    private String interval;
 
     /**
      * 코인 심볼과 시간 간격이 일치하는 Kline 데이터를 가져옴
@@ -49,7 +56,7 @@ public class ChartServiceImpl implements ChartService {
         Coin coin = coinRepository.findBySymbol(symbol).orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
 
         // 업데이트된 데이터를 바로 가져옴 (가장 최근의 1개 데이터)
-        return klineRepository.findTopByCoinAndIntervalOrderByTimezoneDesc(coin, "5m");
+        return klineRepository.findTopByCoinAndIntervalOrderByTimezoneDesc(coin, interval);
     }
 
     /**
@@ -60,7 +67,7 @@ public class ChartServiceImpl implements ChartService {
         // 업데이트 할 모든 코인 리스트를 가져옴
         List<Coin> coins = coinRepository.findAll();
         // 각 코인에 대해 모든 시간 간격의 Kline 데이터를 업데이트
-        coins.forEach(coin -> updateKlineData(coin.getSymbol(), "5m", 120));
+        coins.forEach(coin -> updateKlineData(coin.getSymbol(), interval, limit));
     }
 
     /**
@@ -75,11 +82,13 @@ public class ChartServiceImpl implements ChartService {
         // 심볼에 USDT를 붙여서 Binance API에서 사용하는 형식으로 만듦
         String symbolWithUSDT = coin.getSymbol() + "USDT";
         // 현재 시간을 밀리초 단위로 Unix 타임스탬프 형식으로 얻음
+        long endTime = System.currentTimeMillis();
 
+        // startTime을 현재 시간에서 2시간 전으로 설정
+        long startTime = endTime - (10 * 60 * 60 * 1000); // 10시간을 밀리초로 변환하여 뺌
 
         // Binance API를 통해 Kline 데이터를 가져옴
-        Mono<String> klineData = binanceApiService.getKlines(symbolWithUSDT, interval, null, null, limit);
-
+        Mono<String> klineData = binanceApiService.getKlines(symbolWithUSDT, interval, startTime, endTime, limit);
         // 데이터를 파싱하여 저장
         klineData.map(JsonParser::parseString)
                 .map(JsonElement::getAsJsonArray)
