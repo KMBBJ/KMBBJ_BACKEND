@@ -257,6 +257,17 @@ CREATE TABLE coin_balances (
                                CONSTRAINT fk_coin FOREIGN KEY (coin_id) REFERENCES coins(coin_id) ON DELETE CASCADE
 );
 
+-- 중간 순위 table
+CREATE TABLE round_rankings (
+                                round_ranking_id BIGSERIAL PRIMARY KEY,
+                                rank INTEGER,
+                                profit VARCHAR(50),
+                                loss VARCHAR(50),
+                                round_id BIGINT NOT NULL,
+                                user_id BIGINT NOT NULL,
+                                CONSTRAINT fk_round FOREIGN KEY (round_id) REFERENCES rounds(round_id) ON DELETE CASCADE,
+                                CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
 CREATE TABLE email_alarms (
                               email_alarms_id SERIAL PRIMARY KEY,
