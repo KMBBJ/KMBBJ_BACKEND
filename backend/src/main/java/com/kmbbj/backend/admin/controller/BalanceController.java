@@ -40,7 +40,7 @@ public class BalanceController {
      * @param size   페이지당 거래 내역 수, 기본값 10
      * @return 자산 정보와 거래 내역 조회 결과
      */
-    @GetMapping("/{userId}")
+    @GetMapping("/balance/{userId}")
     @Operation(summary = "특정 사용자의 자산 정보 및 거래 내역 조회", description = "특정 사용자의 자산 정보와 거래 내역을 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "자산 정보 및 거래 내역 조회 성공"),
