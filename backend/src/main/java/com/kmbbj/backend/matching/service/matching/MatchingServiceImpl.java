@@ -1,13 +1,13 @@
 package com.kmbbj.backend.matching.service.matching;
 
 import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.balance.entity.TotalBalance;
 import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import com.kmbbj.backend.global.config.websocket.MatchWebSocketHandler;
+import com.kmbbj.backend.global.sse.SseService;
 import com.kmbbj.backend.matching.dto.CreateRoomDTO;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.entity.StartSeedMoney;
@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +46,7 @@ public class MatchingServiceImpl implements MatchingService{
     private final MatchingQueueService matchingQueueService;
     private final FindUserBySecurity findUserBySecurity;
     private final BalanceService balanceService;
+    private final SseService sseService;
     volatile boolean isShutdownRequested = false;
     private final AssetRangeCalculator rangeCalculator = new AssetRangeCalculator();
     private final AtomicInteger time = new AtomicInteger(0);
@@ -107,8 +107,10 @@ public class MatchingServiceImpl implements MatchingService{
             try {
                 if (isShutdownRequested || Thread.interrupted()) return;
                 if (isQuickMatch) {
+                    System.out.println("빠른 매칭");
                     handleQuickMatch(user);
                 } else {
+                    System.out.println("랜덤 매칭");
                     handleRandomMatch(user, isFiveMinutesPassed, isThirtyMinutesPassed);
                 }
 
@@ -174,8 +176,12 @@ public class MatchingServiceImpl implements MatchingService{
                 int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
 
                 if (potentialMatch.size() >= requiredUserCount) {
-                    createRoomWithUsers(potentialMatch);
-                    potentialMatch.forEach(matchingQueueService::removeUserFromQueue);
+                    Long roomId = createRoomWithUsers(potentialMatch);
+                    potentialMatch.forEach(potentialMatchUser -> {
+                        matchingQueueService.removeUserFromQueue(potentialMatchUser);
+                        notifyUser(potentialMatchUser,roomId);
+                    });
+                    // 알림 보내주기
                 }
 
                 connection.exec();  // 트랜잭션 커밋
@@ -195,7 +201,8 @@ public class MatchingServiceImpl implements MatchingService{
             // 가능한 방이 있다면, 첫 번째 방에 유저 입장
             Room room = availableRooms.get(0);
             roomService.enterRoom(user,room.getRoomId());
-            matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
+            notifyUser(user,room.getRoomId());
+//            matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
@@ -218,7 +225,9 @@ public class MatchingServiceImpl implements MatchingService{
             Room room = roomService.createRoom(createRoomDTO, user);
 
             // 해당 유저에게 알림
-            matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
+            System.out.println("알림전");
+            notifyUser(user,room.getRoomId());
+            System.out.println("알림후");
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
@@ -265,7 +274,7 @@ public class MatchingServiceImpl implements MatchingService{
     @Override
     @Transactional
     // 랜덤 매칭시 잡힌 유저들과 방 들어가기
-    public void createRoomWithUsers(List<User> users) {
+    public Long createRoomWithUsers(List<User> users) {
         // 모든 유저 ID를 추출
         List<Long> userIds = users.stream()
                 .map(User::getId)
@@ -312,6 +321,8 @@ public class MatchingServiceImpl implements MatchingService{
             cancelCurrentUserScheduledTasks();
             cancelMatching(user);
         });
+
+        return room.getRoomId();
     }
 
     /**
@@ -359,19 +370,25 @@ public class MatchingServiceImpl implements MatchingService{
     public StartSeedMoney getStartSeedMoney(User user) {
         StartSeedMoney startSeedMoney = null;
         // 유저의 자산 1/3이상으로 시드머니 설정
-        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 10000000) {
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 10000000) {
             startSeedMoney = StartSeedMoney.TEN_MILLION;
         }
-        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 20000000) {
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 20000000) {
             startSeedMoney = StartSeedMoney.TWENTY_MILLION;
         }
-        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 30000000) {
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 30000000) {
             startSeedMoney = StartSeedMoney.THIRTY_MILLION;
         }
-        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 > 40000000) {
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 40000000) {
             startSeedMoney = StartSeedMoney.FORTY_MILLION;
         }
 
         return startSeedMoney;
+    }
+
+    // 각 사용자에게 방 정보를 전송하는 메서드
+    @Transactional
+    public void notifyUser(User user, Long roomId) {
+        sseService.sendRoomNotification(user.getId(), roomId);
     }
 }
