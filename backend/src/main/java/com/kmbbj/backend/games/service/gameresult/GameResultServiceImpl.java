@@ -1,10 +1,12 @@
 package com.kmbbj.backend.games.service.gameresult;
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.balance.entity.AssetTransaction;
 import com.kmbbj.backend.balance.entity.ChangeType;
 import com.kmbbj.backend.balance.entity.TotalBalance;
 import com.kmbbj.backend.balance.repository.totalbalances.TotalBalancesRepository;
 import com.kmbbj.backend.balance.repository.transaction.AssetTransactionRepository;
+import com.kmbbj.backend.games.dto.GameResultDTO;
 import com.kmbbj.backend.games.entity.Game;
 import com.kmbbj.backend.games.entity.GameBalance;
 import com.kmbbj.backend.games.entity.GameResult;
@@ -17,6 +19,7 @@ import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.entity.UserRoom;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GameResultServiceImpl implements GameResultService{
 
+    private final UserRepository userRepository;
     private final GameRepository gameRepository;
     private final GameBalanceRepository gameBalanceRepository;
     private final GameResultRepository gameResultRepository;
@@ -43,6 +47,7 @@ public class GameResultServiceImpl implements GameResultService{
      * @return 생성된 GameResult 객체 리스트
      */
     @Override
+    @Transactional
     public List<GameResult> createGameResults(String encryptedGameId) {
         // 암호화된 ID -> 게임 ID를 복호화
         UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
@@ -113,6 +118,37 @@ public class GameResultServiceImpl implements GameResultService{
         return gameResultRepository.save(gameResult);
     }
 
+    public List<GameResultDTO> getGameResults(String encryptedGameId) {
+        // 암호화된 게임 ID를 복호화
+        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+
+        // 게임 결과 조회
+        List<GameResult> gameResults = gameResultRepository.findByGame_GameId(gameId);
+
+        // GameResult 엔티티를 GameResultDTO로 변환
+        return gameResults.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * GameResult 엔티티를 GameResultDTO로 변환합니다.
+     *
+     * @param gameResult 변환할 GameResult 엔티티
+     * @return 변환된 GameResultDTO 객체
+     */
+    private GameResultDTO convertToDTO(GameResult gameResult) {
+        // 유저 아이디 통해서 이름 가져옴
+        User user = userRepository.findById(gameResult.getUserId())
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+
+        return GameResultDTO.builder()
+                .username(user.getNickname())
+                .totalProfit(gameResult.getTotalProfit())
+                .totalLoss(gameResult.getTotalLoss())
+                .userRank(gameResult.getUserRank())
+                .build();
+    }
     /** 사용자 자산 업데이트 (순위에 따른 보상 지급)
      *
      * @param userId 사용자 ID
@@ -136,6 +172,7 @@ public class GameResultServiceImpl implements GameResultService{
         // 변경된 자산 정보 저장
         totalBalancesRepository.save(totalBalance);
     }
+
 
 
     /** 순위에 따른 고정 보상 계산
