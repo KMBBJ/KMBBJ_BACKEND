@@ -1,5 +1,7 @@
 package com.kmbbj.backend.global.sse;
 
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -12,7 +14,7 @@ public class SseServiceImpl implements SseService{
 
     @Override
     public SseEmitter createEmitter(Long userId) {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); // 타임아웃 설정 30분으로
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         emitters.put(userId, emitter);
 
         emitter.onCompletion(() -> emitters.remove(userId));
@@ -28,12 +30,21 @@ public class SseServiceImpl implements SseService{
         if (emitter != null) {
             try {
                 emitter.send(SseEmitter.event().name("roomNotification").data(roomId));
-                System.out.println(String.format("매칭 완료 : %d", roomId));
             } catch (Exception e) {
-                emitter.completeWithError(e);
+                throw new ApiException(ExceptionEnum.MISSING_SSE_EMITTER);
             }
-        } else {
-            System.out.println("emitter = null");
+        }
+    }
+
+    @Override
+    public void sendGameStartNotification(Long userId, Long roomId) {
+        SseEmitter emitter = emitters.get(userId);
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event().name("gameNotification").data(roomId));
+            } catch (Exception e) {
+                throw new ApiException(ExceptionEnum.MISSING_SSE_EMITTER);
+            }
         }
     }
 }
