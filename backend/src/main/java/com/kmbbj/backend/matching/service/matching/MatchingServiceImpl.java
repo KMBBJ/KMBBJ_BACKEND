@@ -47,7 +47,6 @@ public class MatchingServiceImpl implements MatchingService{
     private final FindUserBySecurity findUserBySecurity;
     private final BalanceService balanceService;
     private final SseService sseService;
-    volatile boolean isShutdownRequested = false;
     private final AssetRangeCalculator rangeCalculator = new AssetRangeCalculator();
     private final AtomicInteger time = new AtomicInteger(0);
 
@@ -55,7 +54,6 @@ public class MatchingServiceImpl implements MatchingService{
     @Transactional
     public void startQuickMatching() {
         User user = findUserBySecurity.getCurrentUser();
-        isShutdownRequested = false;
         scheduleMatchingTasks(user,true);
     }
 
@@ -79,8 +77,6 @@ public class MatchingServiceImpl implements MatchingService{
             throw new ApiException(ExceptionEnum.BALANCE_NOT_FOUND);
         }
 
-        // 종료 플레그 false 설정
-        isShutdownRequested = false;
 
         // 매칭큐에 현재 유저 넣음
         matchingQueueService.addUserToQueue(user);
@@ -105,7 +101,6 @@ public class MatchingServiceImpl implements MatchingService{
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
-                if (isShutdownRequested || Thread.interrupted()) return;
                 if (isQuickMatch) {
                     System.out.println("빠른 매칭");
                     handleQuickMatch(user);
@@ -127,7 +122,6 @@ public class MatchingServiceImpl implements MatchingService{
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
-                if (isShutdownRequested || Thread.interrupted()) return;
                 isThirtyMinutesPassed.set(true);
                 if (!isQuickMatch) switchToQuickMatch(user);
             } finally {
@@ -142,7 +136,6 @@ public class MatchingServiceImpl implements MatchingService{
             // 작업 스레드에 SecurityContext 설정
             SecurityContextHolder.setContext(context);
             try {
-                if (isShutdownRequested || Thread.interrupted()) return;
                 isFiveMinutesPassed.set(true);
             } finally {
                 // SecurityContext 정리
@@ -352,11 +345,10 @@ public class MatchingServiceImpl implements MatchingService{
     @Transactional
     public void cancelCurrentUserScheduledTasks() {
         User user = findUserBySecurity.getCurrentUser();
-        // 모든 작업에 대해 종료 요청
+        // 매칭 큐에서 해당 유저 삭제
         matchingQueueService.removeUserFromQueue(user);
 
-        // 종료 플레그 true 설정
-        isShutdownRequested = true;
+        // 모든 작업에 대해 종료 요청
         scheduledTasks.forEach((key, future) -> {
             if (!future.isDone()) {
                 future.cancel(false);
