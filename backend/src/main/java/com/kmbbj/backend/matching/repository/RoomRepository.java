@@ -1,6 +1,7 @@
 package com.kmbbj.backend.matching.repository;
 
 import com.kmbbj.backend.matching.entity.Room;
+import com.kmbbj.backend.matching.entity.StartSeedMoney;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,9 +19,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Page<Room> findAllByIsDeletedAndIsStarted(boolean isDeleted, boolean isStarted, Pageable pageable);
 
-    @Query("SELECT r FROM Room r WHERE NOT r.isDeleted AND NOT r.isStarted AND r.startSeedMoney <= :maxAsset")
-    List<Room> findRoomsWithinAssetRange(
-            @Param("maxAsset") Long maxAsset);
+
+    List<Room> findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney startSeedMoney,boolean isStarted);
 
 
     List<Room> findAllByOrderByCreateDateDesc();

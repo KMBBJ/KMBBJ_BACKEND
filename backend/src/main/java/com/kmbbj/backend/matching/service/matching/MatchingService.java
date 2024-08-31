@@ -16,7 +16,7 @@ public interface MatchingService {
 
     List<User> findPotentialMatches(Long currentUserAsset, double range);
 
-    void createRoomWithUsers(List<User> users);
+    Long createRoomWithUsers(List<User> users);
 
     List<Room> findAvailableRooms();
 
