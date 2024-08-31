@@ -1,8 +1,11 @@
 package com.kmbbj.backend.games.controller;
 
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
+import com.kmbbj.backend.games.dto.GameBalanceDTO;
+import com.kmbbj.backend.games.dto.GameStartDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
 import com.kmbbj.backend.games.service.game.GameService;
+import com.kmbbj.backend.games.service.gamebalance.GameBalanceService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -16,12 +19,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/games")
+@RequestMapping("/games")
 @RequiredArgsConstructor
 @Tag(name = "Game", description = "게임 API")
 public class GameController {
 
     private final GameService gameService;
+    private final GameBalanceService gameBalanceService;
 
     /** 방 ID 가져와서 게임 시작
      *
@@ -36,9 +40,9 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
     })
-    public CustomResponse<GameStatusDTO> startGame(@PathVariable Long roomId, Authentication authentication) {
-        GameStatusDTO gameStatus = gameService.startGame(roomId);
-        return new CustomResponse<>(HttpStatus.OK, "게임 시작 성공", gameStatus);
+    public CustomResponse<GameStartDTO> startGame(@PathVariable Long roomId, Authentication authentication) {
+        GameStartDTO gameStart = gameService.startGame(roomId);
+        return new CustomResponse<>(HttpStatus.OK, "게임 시작 성공", gameStart);
     }
 
     /** 게임 ID 가져와서 게임의 현재 상태 조회
@@ -94,5 +98,22 @@ public class GameController {
         CurrentRoundDTO currentRound = gameService.getCurrentRound(encryptedGameId);
         return new CustomResponse<>(HttpStatus.OK, "현재 라운드 조회 성공", currentRound);
     }
+
+    /** 사용자 게임 잔액 조회
+     *
+     * @param userId 사용자의 ID
+     * @return 사용자의 게임 잔액 정보
+     */
+    @GetMapping("/balance/{userId}")
+    @Operation(summary = "사용자 게임 잔액 조회", description = "사용자 ID를 받아 해당 사용자의 게임 잔액 정보를 조회")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게임 잔액 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "게임 잔액을 찾을 수 없음")
+    })
+    public CustomResponse<GameBalanceDTO> getGameBalance(@PathVariable Long userId) {
+        GameBalanceDTO gameBalanceDTO = gameBalanceService.getGameBalance(userId);
+        return new CustomResponse<>(HttpStatus.OK, "게임 잔액 조회 성공", gameBalanceDTO);
+    }
+
 
 }

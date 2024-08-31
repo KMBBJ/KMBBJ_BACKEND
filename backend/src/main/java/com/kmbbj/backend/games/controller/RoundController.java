@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/rounds")
+@RequestMapping("/rounds")
 @RequiredArgsConstructor
 @Tag(name = "Round", description = "라운드 API")
 public class RoundController {

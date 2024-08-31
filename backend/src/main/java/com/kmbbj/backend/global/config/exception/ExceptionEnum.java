@@ -66,6 +66,7 @@ public enum ExceptionEnum {
     BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "자산을 찾지 못했습니다."),
     COIN_BALANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "BALANCE_NOT_FOUND", "코인을 가지고 있지 않습니다."),
     INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "INVALID_AMOUNT", "보상 금액이 0보다 작습니다."),
+    TRANSACTION_NOT_FOUND(HttpStatus.NOT_FOUND, "TRANSACTION_NOT_FOUND", "거래 기록을 찾을 수 없습니다."),
 
     // Coin
     COIN_NOT_FOUND(HttpStatus.BAD_REQUEST, "COIN_NOT_FOUND", "존재하지 않는 코인입니다."),
