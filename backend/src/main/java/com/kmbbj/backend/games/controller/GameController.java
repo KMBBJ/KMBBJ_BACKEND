@@ -1,11 +1,9 @@
 package com.kmbbj.backend.games.controller;
 
-import com.kmbbj.backend.games.dto.CurrentRoundDTO;
-import com.kmbbj.backend.games.dto.GameBalanceDTO;
-import com.kmbbj.backend.games.dto.GameStartDTO;
-import com.kmbbj.backend.games.dto.GameStatusDTO;
+import com.kmbbj.backend.games.dto.*;
 import com.kmbbj.backend.games.service.game.GameService;
 import com.kmbbj.backend.games.service.gamebalance.GameBalanceService;
+import com.kmbbj.backend.games.service.gameresult.GameResultService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,6 +24,7 @@ public class GameController {
 
     private final GameService gameService;
     private final GameBalanceService gameBalanceService;
+    private final GameResultService gameResultService;
 
     /** 방 ID 가져와서 게임 시작
      *
@@ -81,24 +80,6 @@ public class GameController {
         return new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", null);
     }
 
-    /** 게임 현재 라운드 조회
-     *
-     * @param encryptedGameId 라운드 조회
-     * @return 현재 라운드 정보 조회
-     */
-
-    @GetMapping("/{encryptedGameId}/current-round")
-    @Operation(summary = "현재 라운드 조회", description = "게임 ID를 받아 현재 라운드 정보를 조회함")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "현재 라운드 조회 성공"),
-            @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
-    })
-    public CustomResponse<CurrentRoundDTO> getCurrentRound(@PathVariable String encryptedGameId) {
-        gameService.isUserAuthorizedForGame(encryptedGameId);
-        CurrentRoundDTO currentRound = gameService.getCurrentRound(encryptedGameId);
-        return new CustomResponse<>(HttpStatus.OK, "현재 라운드 조회 성공", currentRound);
-    }
-
     /** 사용자 게임 잔액 조회
      *
      * @param userId 사용자의 ID
@@ -113,6 +94,22 @@ public class GameController {
     public CustomResponse<GameBalanceDTO> getGameBalance(@PathVariable Long userId) {
         GameBalanceDTO gameBalanceDTO = gameBalanceService.getGameBalance(userId);
         return new CustomResponse<>(HttpStatus.OK, "게임 잔액 조회 성공", gameBalanceDTO);
+    }
+
+    /** 특정 게임의 결과 조회
+     *
+     * @param encryptedGameId 암호화된 게임 ID
+     * @return 게임 결과
+     */
+    @GetMapping("/{encryptedGameId}/results")
+    @Operation(summary = "게임 결과 조회", description = "암호화된 게임 ID를 통해 해당 게임의 결과를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게임 결과 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
+    })
+    public CustomResponse<List<GameResultDTO>> getGameResults(@PathVariable String encryptedGameId) {
+        List<GameResultDTO> gameResults = gameResultService.getGameResults(encryptedGameId);
+        return new CustomResponse<>(HttpStatus.OK, "게임 결과 조회 성공", gameResults);
     }
 
 

@@ -72,44 +72,56 @@ public class GameBalanceServiceImpl implements GameBalanceService {
         return gameBalances;
     }
 
-
+    /** 사용자 계좌 변동 내역
+     *
+     * @param userId 유저 ID
+     * @return 사용자 계좌 변동
+     */
     @Override
     @Transactional
     public GameBalanceDTO getGameBalance(Long userId) {
+        // UserID에 GameBalance 조회
         GameBalance gameBalance = gameBalanceRepository.findByUserId(userId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
 
+        // 조회된 초기 자본 가져오고
         Long initialBalance = gameBalance.getSeed();
 
+        // 해당 TransactionsResponse 의 ID 가져와서 모든 거래 내역 조회
         List<TransactionsResponse> transactions = transactionRepository.findAllByBalancesIdWithCoinSymbol(gameBalance.getGameBalancesId());
 
-        Long currentBalance = calculateCurrentBalance(initialBalance, transactions);
-        Long orderAmount = calculateTotalOrderAmount(transactions);
-        Long profitAmount = Math.max(currentBalance - initialBalance, 0L);
-        Long lossAmount = Math.max(initialBalance - currentBalance, 0L);
 
+        Long currentBalance = calculateCurrentBalance(initialBalance, transactions); // 초기 자본과 거래 통해서 현재 잔액 계산
+        Long orderAmount = calculateTotalOrderAmount(transactions); // 거래 내역 통해서 총 주문 금액 계산
+        Long profitAmount = Math.max(currentBalance - initialBalance, 0L); // 초기 자본 대비 현재 잔액 차이 (이익)
+        Long lossAmount = Math.max(initialBalance - currentBalance, 0L); //// 초기 자본 대비 현재 잔액 차이 (손실)
+
+        // 마지막 거래 심볼 가져옴 없으면  "" 처리
         String lastSymbol = transactions.isEmpty() ? "" : transactions.get(transactions.size() - 1).getSymbol();
+        // 마지막 거래 가격 가져옴 없으면 0
         Long lastPrice = transactions.isEmpty() ? 0L : transactions.get(transactions.size() - 1).getPrice();
 
         GameBalanceDTO gameBalanceDTO = new GameBalanceDTO();
-        gameBalanceDTO.setInitialBalance(initialBalance);
-        gameBalanceDTO.setCurrentBalance(currentBalance);
-        gameBalanceDTO.setOrderAmount(orderAmount);
-        gameBalanceDTO.setProfitAmount(profitAmount);
-        gameBalanceDTO.setLossAmount(lossAmount);
-        gameBalanceDTO.setSymbol(lastSymbol);
-        gameBalanceDTO.setPrice(lastPrice);
+        gameBalanceDTO.setInitialBalance(initialBalance); // 초기 자본
+        gameBalanceDTO.setCurrentBalance(currentBalance); // 현재 잔액
+        gameBalanceDTO.setOrderAmount(orderAmount); // 총 주문 금액
+        gameBalanceDTO.setProfitAmount(profitAmount); // 이익 금액
+        gameBalanceDTO.setLossAmount(lossAmount); // 손실 금액
+        gameBalanceDTO.setSymbol(lastSymbol); // 마지막 거래 코인 이름
+        gameBalanceDTO.setPrice(lastPrice); // 마지막 거래의 가격 설정
 
         return gameBalanceDTO;
     }
 
     private Long calculateCurrentBalance(Long initialBalance, List<TransactionsResponse> transactions) {
-        Long balance = initialBalance;
+        Long balance = initialBalance; // 초기 자본 -> 현재 잔액 설정
+
+        // 모든 거래 내역 반복
         for (TransactionsResponse transaction : transactions) {
-            if (transaction.getTransactionType() == TransactionType.BUY) {
-                balance -= transaction.getTotalPrice();
-            } else if (transaction.getTransactionType() == TransactionType.SELL) {
-                balance += transaction.getTotalPrice();
+            if (transaction.getTransactionType() == TransactionType.BUY) { // 구매인 경우
+                balance -= transaction.getTotalPrice(); // 구매 금액만큼 차감
+            } else if (transaction.getTransactionType() == TransactionType.SELL) { // 판매인 경우
+                balance += transaction.getTotalPrice(); // 판매 금액만큼 추가
             }
         }
         return balance;
@@ -120,6 +132,7 @@ public class GameBalanceServiceImpl implements GameBalanceService {
                 .mapToLong(TransactionsResponse::getTotalPrice)
                 .sum();
     }
+
 
 }
 

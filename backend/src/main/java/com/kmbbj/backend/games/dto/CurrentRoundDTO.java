@@ -8,7 +8,7 @@ import java.util.UUID;
 @Getter
 @Setter
 public class CurrentRoundDTO {
-    private String gameId; // 게임 ID
-    private int currentRoundNumber; // 라운드 번호
+    private int roundNumber; // 라운드 번호
+    private int durationMinutes; // 라운드 지속 시간
     private String gameStatus; // 게임 상태
 }

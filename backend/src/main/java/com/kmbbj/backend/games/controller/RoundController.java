@@ -2,6 +2,7 @@ package com.kmbbj.backend.games.controller;
 
 
 
+import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.RoundRankingSimpleDTO;
 import com.kmbbj.backend.games.dto.RoundResultDTO;
 import com.kmbbj.backend.games.service.round.RoundService;
@@ -60,4 +61,22 @@ public class RoundController {
         List<RoundResultDTO> results = roundResultService.getCompletedRoundResultsForGame(encryptedGameId);
         return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "라운드 결과 조회 성공", results));
     }
+
+    /**
+     * 현재 라운드를 종료하고 다음 라운드를 시작
+     *
+     * @param encryptedGameId 암호화된 게임 ID
+     * @return 새로운 라운드 정보
+     */
+    @PostMapping("/{encryptedGameId}/end-newRound")
+    @Operation(summary = "라운드 종료 및 새로운 라운드 시작", description = "현재 라운드를 종료하고 새로운 라운드를 시작함")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "새로운 라운드 시작 성공"),
+            @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
+    })
+    public ResponseEntity<CustomResponse<CurrentRoundDTO>> endCurrentRoundAndStartNew(@PathVariable String encryptedGameId) {
+        CurrentRoundDTO currentRoundDTO = roundService.endCurrentAndStartNextRound(encryptedGameId);
+        return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "새로운 라운드 시작 성공", currentRoundDTO));
+    }
+
 }
