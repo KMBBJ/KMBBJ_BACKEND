@@ -7,6 +7,7 @@ import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
+import com.kmbbj.backend.global.sse.SseService;
 import com.kmbbj.backend.matching.dto.*;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.entity.StartSeedMoney;
@@ -38,6 +39,7 @@ public class RoomServiceImpl implements RoomService{
     private final BalanceService balanceService;
     private final EveryEmailService everyEmailService;
     private final TaskScheduler taskScheduler;
+    private final SseService sseService;
 
 
 
@@ -232,7 +234,8 @@ public class RoomServiceImpl implements RoomService{
 
     // delay 시간 뒤 게임 시작 메서드 실행
     public void scheduleStartGame(Long roomId, long delayMillis) {
-        taskScheduler.schedule(() -> startGame(roomId), new Date(System.currentTimeMillis() + delayMillis));
+        taskScheduler.schedule(() -> startGame(roomId)
+                , new Date(System.currentTimeMillis() + delayMillis));
     }
 
     /** TODO
@@ -246,6 +249,8 @@ public class RoomServiceImpl implements RoomService{
         Room room = findById(roomId);
         room.setIsStarted(true);
         roomRepository.save(room);
+        List<UserRoom> userRooms = userRoomService.findUserRooms(room);
+        userRooms.forEach(userRoom -> sseService.sendGameStartNotification(userRoom.getUser().getId(),roomId));
 
         // 웹소켓으로 알림 띄워주는 부분 구현
     }

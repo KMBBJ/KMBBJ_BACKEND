@@ -45,6 +45,7 @@ public enum ExceptionEnum {
     NOT_CURRENT_ROOM(HttpStatus.NOT_FOUND, "NOT_CURRENT_ROOM", "해당 방에 참가해있지 않습니다."),
     NOT_IN_ROOM(HttpStatus.NOT_FOUND, "NOT_IN_ROOM", "방에 참가해있지 않습니다."),
     IN_OTHER_ROOM(HttpStatus.CONFLICT, "IN_OTHER_ROOM", "이미 다른 방에 입장해 있습니다."),
+    MISSING_SSE_EMITTER(HttpStatus.BAD_REQUEST,"MISSING_SSE_EMITTER","SSE Emitter 컴포넌트가 존재하지 않습니다."),
     ROOM_FULL(HttpStatus.CONFLICT,"ROOM_FULL","방이 가득 찼습니다."),
     INSUFFICIENT_ASSET(HttpStatus.FORBIDDEN,"INSUFFICIENT_ASSET","방 조건에 알맞는 자산이 부족합니다."),
     INSUFFICIENT_ASSET_USER(HttpStatus.CONFLICT,"INSUFFICIENT_ASSET_USER","방 조건에 맞지 않는 유저가 있습니다."),
@@ -80,6 +81,8 @@ public enum ExceptionEnum {
     NOT_FOUND_TRANSACTION(HttpStatus.NOT_FOUND,"NOT_FOUND_TRANSACTION","거래 내역이 없습니다."),
     NOT_ENOUGH_COIN(HttpStatus.BAD_REQUEST, "NOT_ENOUGH_COIN", "코인이 충분하지 않습니다."),
     NOT_ENOUGH_MONEY(HttpStatus.BAD_REQUEST,"NOT_ENOUGH_MONEY", "자금이 충분하지 않습니다.");
+
+
 
     private final HttpStatus status;
     private final String code;

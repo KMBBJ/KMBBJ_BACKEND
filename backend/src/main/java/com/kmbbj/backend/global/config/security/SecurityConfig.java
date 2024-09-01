@@ -46,7 +46,8 @@ public class SecurityConfig {
             "/auth/login", // 로그인 페이지
             "/auth/join", // 회원가입 페이지
             "/coin/**",
-            "/chart/**"
+            "/chart/**",
+            "/api/sse/subscribe/**"
     };
 
     // 관리자 유저 허용 페이지
