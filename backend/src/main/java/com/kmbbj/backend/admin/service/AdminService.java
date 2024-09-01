@@ -3,12 +3,8 @@ package com.kmbbj.backend.admin.service;
 
 import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.repository.AdminAlarmRepository;
-import com.kmbbj.backend.auth.controller.response.UserProfileReponse;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
-import com.kmbbj.backend.balance.controller.AssetTransactionresponse;
-import com.kmbbj.backend.balance.entity.AssetTransaction;
-import com.kmbbj.backend.balance.entity.TotalBalance;
 import com.kmbbj.backend.balance.repository.totalbalances.TotalBalancesRepository;
 import com.kmbbj.backend.balance.repository.transaction.AssetTransactionRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
@@ -27,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 
 @Service
@@ -157,8 +153,8 @@ public class AdminService {
     /**
      * 회원 정보 (타입, 이메일, 이름) ("/user/{id}")
      *
-     * @param id
-     * @return
+     * @param id 유저 id
+     * @return User의 (name / email / type / suspensionEndDate)추출 후 리턴
      */
     @Transactional(readOnly = true)
     public Map<String, String> getUser(Long id) {
@@ -176,9 +172,11 @@ public class AdminService {
 
 
     /**
+     * 유저가 게임을 정지를 당했을 경우 알람 이메일을 보내는 메서드
      *
-     * @param user
+     * @param user 계정 정지를 당한 유저
      */
+    @Transactional
     public void sendSuspensionEmail(User user) {
         if (user == null) { // User 가 없을 경우
             throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
@@ -195,9 +193,11 @@ public class AdminService {
 
 
     /**
+     * 계정 정지 해제를 받은 유저에게 알람 이메일을 보내는 메서드
      *
-     * @param user
+     * @param user 정지 해제를 받은 유저
      */
+    @Transactional
     public void sendAccountUnblockingEmail(User user) {
         if (user == null) { // User 가 없을 경우
             throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
@@ -212,6 +212,21 @@ public class AdminService {
         emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
     }
 
+
+    /**
+     * 특정 유저의 이메일를 이용하여 id를 가져오는 메서드
+     *
+     * @param email 특정 유저의 이메일
+     * @return email 를 이용하여 가져온 특정 유저의 id값
+     */
+    @Transactional
+    public Long findIdByEmail(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isPresent()) {
+            throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
+        }
+        return user.get().getId();
+    }
 
 
 
