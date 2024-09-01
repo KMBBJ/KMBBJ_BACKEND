@@ -47,4 +47,16 @@ public class SseServiceImpl implements SseService{
             }
         }
     }
+
+    @Override
+    public void sendAdminNotification(Long userId,AdminDTO adminDTO) {
+        SseEmitter emitter = emitters.get(userId);
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event().name("adminNotification").data(adminDTO));
+            } catch (Exception e) {
+                throw new ApiException(ExceptionEnum.MISSING_SSE_EMITTER);
+            }
+        }
+    }
 }

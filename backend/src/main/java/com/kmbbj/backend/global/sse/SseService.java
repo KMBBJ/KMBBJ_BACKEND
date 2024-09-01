@@ -6,4 +6,5 @@ public interface SseService {
     void sendRoomNotification(Long userId, Long roomId);
     SseEmitter createEmitter(Long userId);
     void sendGameStartNotification(Long userId, Long roomId);
+    void sendAdminNotification(Long userId,AdminDTO adminDTO);
 }
