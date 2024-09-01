@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -49,8 +48,6 @@ public class SseController {
         adminDTO.setContent(adminAlarm.getContent()); // AdminAlarm에서 내용 추출
 
         sseService.sendAdminNotification(id, adminDTO); // 공지사항 전송
-        // 실시간 알림 전송 (오류로 인한 임시 주석 처리)
-//        notificationService.sendNotification("/topic", savedAlarm);
 
         return new CustomResponse<>(HttpStatus.OK, "알림 추가 성공", savedAlarm);
     }
