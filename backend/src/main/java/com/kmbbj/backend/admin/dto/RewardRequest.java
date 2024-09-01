@@ -9,6 +9,4 @@ import lombok.Setter;
 public class RewardRequest {
     private Long amount;
     private ChangeType changeType;
-
-    // Getters and Setters
 }

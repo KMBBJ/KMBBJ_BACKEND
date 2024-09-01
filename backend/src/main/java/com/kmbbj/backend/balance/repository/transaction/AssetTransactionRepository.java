@@ -15,5 +15,6 @@ import java.util.Optional;
 public interface AssetTransactionRepository extends JpaRepository<AssetTransaction, Long>, CustomAssetTransactionRepository {
     Optional<AssetTransaction> findByAssetTransactionId(Long assetTransactionId);
     List<AssetTransaction> findAllByTotalBalance_TotalBalanceId(Long totalBalanceId);
+    Page<AssetTransaction> findAllByTotalBalance_TotalBalanceId(Long totalBalanceId, Pageable pageable);
 
 }

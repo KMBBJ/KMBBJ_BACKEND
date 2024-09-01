@@ -256,4 +256,26 @@ public class AdminController {
             return new CustomResponse<>(HttpStatus.NOT_FOUND, "사용자의 정지 종료 날짜를 찾지 못했습니다.", null);
         }
     }
+
+    /**
+     * 유저 메인 페이지에서 유저를 정지 / 보상 기능 구현을 위한 메서드 (특정 유저의 email 값을 id로 변환)
+     *
+     * @param email 이메일 값으로 id를 가져온다.
+     * @return 가져온 id값
+     */
+    @Operation(summary = "email을 id로 변환", description = "특정 유저의 이메일을 이용하여 id 값을 가져옵니다.")
+    @ApiResponses(value ={
+            @ApiResponse(responseCode = "200", description = "id값 가져오기 성공"),
+            @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없음"),
+            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
+    })
+    @GetMapping("/email/{email}")
+    public CustomResponse<Long> changeEmail(@PathVariable String email) {
+        try {
+            Long id = adminService.findIdByEmail(email);
+            return new CustomResponse<>(HttpStatus.OK, "이메일을 가져왔습니다", id);
+        } catch (Exception e) {
+            return new CustomResponse<>(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.", null);
+        }
+    }
 }
