@@ -1,5 +1,6 @@
 package com.kmbbj.backend.games.service.round;
 
+import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.RoundRankingSimpleDTO;
 import com.kmbbj.backend.games.dto.RoundResultDTO;
 import com.kmbbj.backend.games.entity.Game;
@@ -148,7 +149,9 @@ public class RoundServiceImpl implements RoundService {
      *
      * @param game 새 라운드를 시작할 Game 객체
      */
-    private void startNewRound(Game game) {
+    @Override
+    @Transactional
+    public CurrentRoundDTO startNewRound(Game game) {
         Round currentRound = getCurrentRound(game); // 현재 라운드 정보 가져옴
         int newRoundNumber = currentRound.getRoundNumber() + 1; // 라운드 + 1 추가
 
@@ -162,6 +165,38 @@ public class RoundServiceImpl implements RoundService {
 
         game.setGameStatus(GameStatus.ACTIVE); // 게임 상태 ACTIVE 저장
         gameRepository.save(game);
+
+        // 새로운 라운드 정보 반환을 위한 DTO 생성
+        CurrentRoundDTO currentRoundDTO = new CurrentRoundDTO();
+        currentRoundDTO.setRoundNumber(newRound.getRoundNumber());
+        currentRoundDTO.setDurationMinutes(newRound.getDurationMinutes());
+        currentRoundDTO.setGameStatus(game.getGameStatus().toString());
+
+        return currentRoundDTO;
+    }
+    @Override
+    @Transactional
+    public CurrentRoundDTO endCurrentAndStartNextRound(String encryptedGameId) {
+        boolean isGameEnded = manageRounds(encryptedGameId);
+
+        if (isGameEnded) {
+            throw new ApiException(ExceptionEnum.GAME_ALREADY_ENDED); // 게임이 이미 종료된 경우 예외 발생
+        }
+
+        // 게임 객체를 가져옵니다.
+        Game game = getGameByEncryptedId(encryptedGameId);
+
+        // 현재 라운드 정보를 가져옵니다.
+        Round currentRound = getCurrentRound(game);
+
+        // 새로운 라운드 정보를 반환합니다.
+        CurrentRoundDTO currentRoundDTO = new CurrentRoundDTO();
+        currentRoundDTO.setRoundNumber(currentRound.getRoundNumber());
+        currentRoundDTO.setTotalRounds(game.getRoom().getEnd());
+        currentRoundDTO.setDurationMinutes(currentRound.getDurationMinutes());
+        currentRoundDTO.setGameStatus(game.getGameStatus().toString());
+
+        return currentRoundDTO;
     }
 
     /** 게임 종료
@@ -290,7 +325,6 @@ public class RoundServiceImpl implements RoundService {
 
         return allRoundRankings;
     }
-
 
 
     // 게임 라운드의 지속시간 (24시간)

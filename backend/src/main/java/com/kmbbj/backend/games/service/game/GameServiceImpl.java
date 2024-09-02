@@ -169,35 +169,6 @@ public class GameServiceImpl implements GameService {
         return statusDTO;
     }
 
-    /** 현재 진행 중인 라운드 정보 조회
-     *
-     * 게임 객체 조회
-     * 최신 라운드 정보 조회
-     * 현재 라운드 정보를 담은 DTO 객체 반환
-     *
-     * @param encryptedGameId 조회할 암호화된 ID
-     * @return 현재 진행 중인 라운드 정보 DTO 객체 반환
-     */
-    @Override
-    public CurrentRoundDTO getCurrentRound(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
-        // 게임 정보 조회
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
-
-        // 현재 라운드 정보 조회
-        Round currentRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
-
-
-        // 현재 라운드 DTO 생성 & 반환
-        CurrentRoundDTO dto = new CurrentRoundDTO();
-        dto.setGameId(encryptedGameId);
-        dto.setCurrentRoundNumber(currentRound.getRoundNumber());
-        dto.setGameStatus(game.getGameStatus().toString());
-
-        return dto;
-    }
 
     // 게임 라운드의 지속시간 (24시간)
     private int getDurationMinutes() {
