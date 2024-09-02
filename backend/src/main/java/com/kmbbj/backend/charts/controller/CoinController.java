@@ -66,7 +66,7 @@ public class CoinController {
      * @param searchQuery 검색할 코인 명
      * @return 코인 리스트를 정렬 기준대로 정렬해서 페이지 모델로 반환
      */
-    @GetMapping("/list")
+    @GetMapping("/listPage")
     @Operation(summary = "코인, 코인 정보 리스트 가져옴", description = "코인, 코인 정보 리스트를 페이지 형식으로 가져옴")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "코인 리스트 반환 성공"),
@@ -76,7 +76,7 @@ public class CoinController {
     public CustomResponse<PagedModel<EntityModel<CoinResponse>>> getCoinList(@RequestParam int pageNo, @RequestParam int size,
                                                           @RequestParam String orderBy, @RequestParam String sort,
                                                                              @RequestParam(required = false) String searchQuery) {
-        Page<CoinResponse> coinPage = coinService.getAllCoins(pageNo, size, orderBy, sort, searchQuery);
+        Page<CoinResponse> coinPage = coinService.getPageCoins(pageNo, size, orderBy, sort, searchQuery);
         PagedModel<EntityModel<CoinResponse>> pagedModel = pagedResourcesAssembler.toModel(coinPage);
         return new CustomResponse<>(HttpStatus.OK, "페이지 반환 성공", pagedModel);
     }

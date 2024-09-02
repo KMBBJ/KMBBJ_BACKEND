@@ -88,7 +88,7 @@ public class CoinServiceImpl implements CoinService {
      * @param searchQuery 검색할 단어
      * @return 페이지네이션된 코인, 코인 상세 정보를 CoinResponse에 담아서 보냄
      */
-    public Page<CoinResponse> getAllCoins(int pageNo, int size, String orderBy, String sort, String searchQuery) {
+    public Page<CoinResponse> getPageCoins(int pageNo, int size, String orderBy, String sort, String searchQuery) {
         // 모든 코인 데이터를 가져옴
         List<Coin> coins = coinRepository.findAllByStatus(CoinStatus.TRADING);
 
@@ -108,10 +108,8 @@ public class CoinServiceImpl implements CoinService {
                     Comparator.comparing(coinResponse -> coinResponse.getCoin24hDetail().getPrice(), Comparator.nullsLast(Double::compareTo));
             case "volume" ->
                     Comparator.comparing(coinResponse -> coinResponse.getCoin24hDetail().getVolume(), Comparator.nullsLast(Double::compareTo));
-            case "highPrice" ->
-                    Comparator.comparing(coinResponse -> coinResponse.getCoin24hDetail().getHighPrice(), Comparator.nullsLast(Double::compareTo));
-            case "lowPrice" ->
-                    Comparator.comparing(coinResponse -> coinResponse.getCoin24hDetail().getLowPrice(), Comparator.nullsLast(Double::compareTo));
+            case "totalValue" ->
+                    Comparator.comparing(coinResponse -> coinResponse.getCoin24hDetail().getTotalValue(), Comparator.nullsLast(Double::compareTo));
             case "priceChange" ->
                     Comparator.comparing(coinResponse -> coinResponse.getCoin24hDetail().getPriceChange(), Comparator.nullsLast(Double::compareTo));
             default -> Comparator.comparing(coinResponse -> coinResponse.getCoin().getCoinName());

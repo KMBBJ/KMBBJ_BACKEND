@@ -144,10 +144,16 @@ public class BinanceApiServiceImpl implements BinanceApiService {
             Coin coin = coinRepository.findBySymbol(symbolWithoutUSDT)
                     .orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
 
+            double price = Double.parseDouble((String) tickerData.get("lastPrice"));
+            double volume = Double.parseDouble((String) tickerData.get("volume"));
+
+            // 총 시가 계산
+            double totalValue = price * volume;
+
             // Builder 패턴을 사용해 CoinDetail 객체 생성
             Coin24hDetail coin24hDetail = Coin24hDetail.builder()
                     .coin(coin)
-                    .price(Double.parseDouble((String) tickerData.get("lastPrice")))
+                    .price(price)
                     .bidPrice(Double.parseDouble((String) tickerData.get("bidPrice")))
                     .bidQty(Double.parseDouble((String) tickerData.get("bidQty")))
                     .askPrice(Double.parseDouble((String) tickerData.get("askPrice")))
@@ -159,12 +165,13 @@ public class BinanceApiServiceImpl implements BinanceApiService {
                     .openPrice(Double.parseDouble((String) tickerData.get("openPrice")))
                     .highPrice(Double.parseDouble((String) tickerData.get("highPrice")))
                     .lowPrice(Double.parseDouble((String) tickerData.get("lowPrice")))
-                    .volume(Double.parseDouble((String) tickerData.get("volume")))
+                    .volume(volume)
                     .quoteVolume(Double.parseDouble((String) tickerData.get("quoteVolume")))
                     .tradeCount(((Number) tickerData.get("count")).longValue())
                     .openTime(((Number) tickerData.get("openTime")).longValue())
                     .closeTime(((Number) tickerData.get("closeTime")).longValue())
                     .timezone(LocalDateTime.now())
+                    .totalValue(totalValue)  // 총 시가 설정
                     .build();
 
             coin24hDetails.add(coin24hDetail);
