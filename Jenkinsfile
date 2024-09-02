@@ -6,10 +6,10 @@ pipeline {
     }
 
     environment {
-        JAVA_HOME = "/var/jenkins_home/tools/hudson.model.JDK/jdk21/jdk-21.0.4"
+        JAVA_HOME = "/usr/lib/jvm/java-21-openjdk-amd64"
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
-    
+
     stages {
         stage('Checkout') { // 첫 번째 단계: 코드 체크아웃
             steps {
@@ -25,6 +25,8 @@ pipeline {
             steps {
                 // 빌드 단계 로그 메시지 출력
                 echo 'Building...'
+                sh 'echo $JAVA_HOME'
+                sh 'java -version'
                 sh 'chmod 755 backend/gradlew'
                 sh 'cd backend && ./gradlew build'
                 // 여기에 실제 빌드 작업을 추가
