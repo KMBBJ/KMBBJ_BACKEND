@@ -58,6 +58,7 @@ public class SecurityConfig {
             "/auth/refreshToken", // 토큰 재발급 페이지
             "/coin/**", // 코인 관리 페이지
             "/chart/**", // 차트
+            "/admin/**" // 관리자 페이지
     };
 
     // 비로그인 유저 허용 페이지

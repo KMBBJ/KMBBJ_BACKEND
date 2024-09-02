@@ -6,7 +6,7 @@ CREATE TABLE users (
                        password VARCHAR(255) NULL,
                        create_date TIMESTAMP NULL,
                        modify_date TIMESTAMP NULL,
-                       authority VARCHAR(5) NULL DEFAULT 'USER',
+                       authority VARCHAR(20) NULL DEFAULT 'ROLE_USER',
                        is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
                        suspension_end_date TIMESTAMP NULL DEFAULT NULL
 );

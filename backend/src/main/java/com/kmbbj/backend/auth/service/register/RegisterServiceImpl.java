@@ -43,7 +43,7 @@ public class RegisterServiceImpl implements RegisterService {
                 .email(userJoinRequest.getEmail())
                 .nickname(getNickname())
                 .password(encodedPassword)
-                .authority(Authority.USER)
+                .authority(Authority.ROLE_USER)
                 .isDeleted(false)
                 .build();
 

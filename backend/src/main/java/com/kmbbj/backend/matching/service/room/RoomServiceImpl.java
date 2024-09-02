@@ -2,7 +2,6 @@ package com.kmbbj.backend.matching.service.room;
 
 import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
@@ -15,9 +14,7 @@ import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import com.kmbbj.backend.notifications.every_email_service.EveryEmailService;
-import com.kmbbj.backend.notifications.loginemail.LoginEmailService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -143,7 +140,7 @@ public class RoomServiceImpl implements RoomService{
     public void deleteRoom(Long roomId) {
         // 관리자 일때 방 삭제
         User user = findUserBySecurity.getCurrentUser();
-        if (!user.getAuthority().equals(Authority.USER)) {
+        if (!user.getAuthority().equals(Authority.ROLE_USER)) {
             Room room = findById(roomId);
             room.setIsDeleted(true);
             roomRepository.save(room);

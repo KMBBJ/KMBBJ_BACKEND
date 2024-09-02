@@ -51,7 +51,7 @@ class UserControllerLogoutTest {
                 .email("user@example.com")
                 .nickname("nickname")
                 .password("password")
-                .authority(Authority.USER)
+                .authority(Authority.ROLE_USER)
                 .build();
         // 필요한 필드 설정
         when(findUserBySecurity.getCurrentUser()).thenReturn(mockUser);
@@ -79,7 +79,7 @@ class UserControllerLogoutTest {
                 .email("user@example.com")
                 .nickname("nickname")
                 .password("password")
-                .authority(Authority.USER)
+                .authority(Authority.ROLE_USER)
                 .build();
 
         when(findUserBySecurity.getCurrentUser()).thenReturn(mockUser);
