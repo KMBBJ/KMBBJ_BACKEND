@@ -32,8 +32,8 @@ public class KlineScheduler {
     /**
      * 매 5분 간격으로 Kline 데이터를 자동으로 가져오는 메서드
      */
-    @Scheduled(cron = "0 */5 * * * *") // 매 5분마다 실행
-    public void updateKlineDataEvery5Minutes() {
-        updateKlineDataByInterval(interval);
-    }
+//    @Scheduled(cron = "0 */5 * * * *") // 매 5분마다 실행
+//    public void updateKlineDataEvery5Minutes() {
+//        updateKlineDataByInterval(interval);
+//    }
 }
