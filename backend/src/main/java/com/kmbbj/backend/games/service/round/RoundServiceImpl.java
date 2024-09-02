@@ -192,6 +192,7 @@ public class RoundServiceImpl implements RoundService {
         // 새로운 라운드 정보를 반환합니다.
         CurrentRoundDTO currentRoundDTO = new CurrentRoundDTO();
         currentRoundDTO.setRoundNumber(currentRound.getRoundNumber());
+        currentRoundDTO.setTotalRounds(game.getRoom().getEnd());
         currentRoundDTO.setDurationMinutes(currentRound.getDurationMinutes());
         currentRoundDTO.setGameStatus(game.getGameStatus().toString());
 

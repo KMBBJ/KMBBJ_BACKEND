@@ -108,6 +108,7 @@ public class GameController {
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
     public CustomResponse<List<GameResultDTO>> getGameResults(@PathVariable String encryptedGameId) {
+        gameService.isUserAuthorizedForGame(encryptedGameId);
         List<GameResultDTO> gameResults = gameResultService.getGameResults(encryptedGameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 결과 조회 성공", gameResults);
     }
