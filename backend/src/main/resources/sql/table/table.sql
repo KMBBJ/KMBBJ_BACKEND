@@ -188,6 +188,7 @@ CREATE TABLE coin24h_details (
                               trade_count INT NOT NULL,                      -- 거래 횟수 (count)
                               open_time BIGINT NOT NULL,                  -- 개장 시간 (openTime)
                               close_time BIGINT NOT NULL,                 -- 마감 시간 (closeTime)
+                              total_value Double Precision NOT NULL,
                               timezone TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 데이터가 저장된 시간대 (기본값: 현재 시간)
                               coin_id BIGINT NOT NULL,                       -- 연관된 코인 엔티티 (외래 키)
                               FOREIGN KEY (coin_id) REFERENCES coins(coin_id) -- 코인 테이블과의 관계 설정

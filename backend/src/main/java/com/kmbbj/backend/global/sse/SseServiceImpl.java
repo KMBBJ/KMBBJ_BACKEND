@@ -49,14 +49,16 @@ public class SseServiceImpl implements SseService{
     }
 
     @Override
-    public void sendAdminNotification(Long userId,AdminDTO adminDTO) {
-        SseEmitter emitter = emitters.get(userId);
-        if (emitter != null) {
+    public void sendAdminNotification(Long userId, AdminDTO adminDTO) {
+        // emitters 맵에 있는 모든 사용자에게 알림을 전송
+        emitters.forEach((id, emitter) -> {
             try {
                 emitter.send(SseEmitter.event().name("adminNotification").data(adminDTO));
             } catch (Exception e) {
+                emitters.remove(id);
                 throw new ApiException(ExceptionEnum.MISSING_SSE_EMITTER);
             }
-        }
+        });
     }
+
 }
