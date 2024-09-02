@@ -25,7 +25,7 @@ pipeline {
         stage('Test') { // 세 번째 단계: 테스트
             steps {
                 // 테스트 단계 로그 메시지 출력
-                echo 'Testing...'clear
+                echo 'Testing...'
                 // 여기에 실제 테스트 작업을 추가
             }
         }
