@@ -1,6 +1,8 @@
 pipeline {
     agent any // 모든 사용 가능한 에이전트(또는 노드)에서 파이프라인을 실행
-
+    environment {
+        GITHUB_TOKEN = credentials('github-token') // 설정한 Credential ID 사용
+    }
     stages {
         stage('Checkout') { // 첫 번째 단계: 코드 체크아웃
             steps {
@@ -11,14 +13,19 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/KMBBJ/KMBBJ_BACKEND.git', credentialsId: 'parkswon1'
             }
         }
-
+        stage('Fetch and Create .env') {
+            steps {
+                script {
+                    sh 'mkdir -p backend/src/main/resources/properties'
+                    def envContent = sh(script: "curl -H 'Authorization: token ${GITHUB_TOKEN}' https://api.github.com/repos/your-repo/your-repo-name/actions/secrets/ENV", returnStdout: true).trim()
+                    writeFile file: 'backend/src/main/resources/properties/.env', text: envContent
+                }
+            }
+        }
         stage('Build') { // 두 번째 단계: 코드 빌드
             steps {
                 // 빌드 단계 로그 메시지 출력
                 echo 'Building...'
-                sh 'pwd'
-                sh 'ls -la /home/ubuntu/jenkins/.env'
-                sh 'cp /home/ubuntu/jenkins/.env /var/jenkins_home/workspace/backend-pipe/backend/src/main/resources/properties/.env'
                 sh 'echo $JAVA_HOME'
                 sh 'java -version'
                 sh 'chmod 755 backend/gradlew'
