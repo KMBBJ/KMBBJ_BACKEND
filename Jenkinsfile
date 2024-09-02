@@ -6,9 +6,10 @@ pipeline {
     }
 
     environment {
-        JAVA_HOME = "${tool 'jdk21'}/jdk-21"
+        JAVA_HOME = "/var/jenkins_home/tools/hudson.model.JDK/jdk21/jdk-21.0.4"
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
+    
     stages {
         stage('Checkout') { // 첫 번째 단계: 코드 체크아웃
             steps {
