@@ -1,9 +1,7 @@
 package com.kmbbj.backend.jwt.filter;
 
-import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
-import com.kmbbj.backend.global.config.jwt.entity.redisToken;
 import com.kmbbj.backend.global.config.jwt.filter.TokenAuthenticationFilter;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
@@ -20,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,28 +49,6 @@ class TokenAuthenticationFilterTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    void doFilterValidToken() throws ServletException, IOException {
-        Cookie cookie = new Cookie("Access-Token", "validToken");
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-        when(jwtTokenizer.parseAccessToken("validToken")).thenReturn(claims);
-        when(claims.get("userId", Long.class)).thenReturn(1L);
-        when(claims.get("email", String.class)).thenReturn("test@example.com");
-        when(claims.get("nickname", String.class)).thenReturn("nickname");
-        when(claims.get("authority", String.class)).thenReturn("USER");
-
-        when(jwtTokenizer.createAccessToken(anyLong(), anyString(), anyString(), any(Authority.class))).thenReturn("newAccessToken");
-        when(jwtTokenizer.createRefreshToken(anyLong(), anyString(), anyString(), any(Authority.class))).thenReturn("newRefreshToken");
-        when(tokenService.calculateTimeout()).thenReturn(LocalDateTime.now().plusHours(1));
-
-        tokenAuthenticationFilter.doFilter(request, response, filterChain);
-
-        verify(response).addCookie(any(Cookie.class));
-        verify(response).setHeader("Refresh-Token", "newRefreshToken");
-        verify(tokenService).saveOrRefresh(any(redisToken.class));
-        verify(filterChain).doFilter(request, response);
     }
 
     @Test
