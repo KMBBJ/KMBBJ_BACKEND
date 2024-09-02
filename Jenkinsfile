@@ -16,6 +16,7 @@ pipeline {
             steps {
                 // 빌드 단계 로그 메시지 출력
                 echo 'Building...'
+                sh 'cp /home/ubuntu/jenkins/.env backend/src/main/resources/properties/.env'
                 sh 'echo $JAVA_HOME'
                 sh 'java -version'
                 sh 'chmod 755 backend/gradlew'
