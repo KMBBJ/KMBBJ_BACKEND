@@ -69,6 +69,9 @@ public class Coin24hDetail {
     @Column(name = "close_time")
     private Long closeTime;  // 마감 시간
 
+    @Column(name = "total_value")
+    private double totalValue; // 총 시가
+
     @Column(name = "timezone")
     private LocalDateTime timezone; // 데이터가 저장된 시간대 (기존 필드)
 
