@@ -1,15 +1,6 @@
 pipeline {
     agent any // 모든 사용 가능한 에이전트(또는 노드)에서 파이프라인을 실행
 
-    tools {
-        jdk 'jdk21' // Jenkins 관리 페이지에서 설정한 JDK 이름
-    }
-
-    environment {
-        JAVA_HOME = "/usr/lib/jvm/java-21-openjdk-amd64"
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
-    }
-
     stages {
         stage('Checkout') { // 첫 번째 단계: 코드 체크아웃
             steps {
