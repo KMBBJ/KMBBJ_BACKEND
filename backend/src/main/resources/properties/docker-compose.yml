@@ -24,32 +24,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: always
 
-  kafka:
-    image: confluentinc/cp-kafka:latest
-    container_name: kafka
-    ports:
-      - "${KAFKA_PORT}:${KAFKA_PORT_OUTPORT}"
-    environment:
-      - KAFKA_BROKER_ID=${KAFKA_BROKER_ID}
-      - KAFKA_ZOOKEEPER_CONNECT=${KAFKA_ZOOKEEPER_CONNECT}
-      - KAFKA_ADVERTISED_LISTENERS=${KAFKA_ADVERTISED_LISTENERS}
-      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=${KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR}
-    volumes:
-      - kafka_data:/var/lib/kafka/data
-    restart: always
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:latest
-    container_name: zookeeper
-    ports:
-      - "${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT_OUTPORT}"
-    environment:
-      - ZOOKEEPER_CLIENT_PORT=${ZOOKEEPER_PORT}
-      - ZOOKEEPER_TICK_TIME=${ZOOKEEPER_TICK_TIME}
-    volumes:
-      - zookeeper_data:/var/lib/zookeeper/data
-    restart: always
-
   cassandra:
     image: cassandra:latest
     container_name: cassandra
