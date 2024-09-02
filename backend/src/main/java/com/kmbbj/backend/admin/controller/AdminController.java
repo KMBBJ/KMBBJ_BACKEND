@@ -4,14 +4,11 @@ package com.kmbbj.backend.admin.controller;
 import com.kmbbj.backend.admin.dto.ExampleRequestDTO;
 import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.service.AdminService;
-//import com.kmbbj.backend.admin.service.NotificationService;
 import com.kmbbj.backend.admin.service.BlackListUserService;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
-import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
-import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -37,11 +34,10 @@ public class AdminController {
 
     private final AdminService adminService;
     private final UserRepository userRepository;
-    private final TokenService tokenService;
     private final BlackListUserService blackListUserService;
-    private final UserService userService;
 
-//    private final NotificationService notificationService;
+
+
 
     /**
      * 유저 검색 / 리스트 조회
@@ -134,31 +130,6 @@ public class AdminController {
         return new CustomResponse<>(HttpStatus.OK, "알림 및 로그인된 사용자 정보 조회 성공", responseData);
     }
 
-    /**
-     * 알림 추가 및 전송 메서드
-     *
-     * @param adminAlarm 알람 관련
-     * @return 알림 추가 결과
-     */
-    @PostMapping("/add")
-    @Operation(summary = "알림 추가", description = "새로운 알림을 추가합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "알림 추가 성공"),
-            @ApiResponse(responseCode = "404", description = "알림 또는 사용자 정보를 찾지 못했습니다."),
-            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
-    })
-    public CustomResponse<AdminAlarm> addAlarm(
-            @RequestBody AdminAlarm adminAlarm) {
-
-        Long id = adminService.getAuthenticatedUser().getId();// 로그인된 사용자 정보 가져오기
-
-        AdminAlarm savedAlarm = adminService.saveAlarm(id, adminAlarm);// 알람 저장
-
-        // 실시간 알림 전송 (오류로 인한 임시 주석 처리)
-//        notificationService.sendNotification("/topic", savedAlarm);
-
-        return new CustomResponse<>(HttpStatus.OK, "알림 추가 성공", savedAlarm);
-    }
 
 
 

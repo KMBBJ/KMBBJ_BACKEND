@@ -10,7 +10,4 @@ import java.util.List;
 
 @Repository
 public interface AdminAlarmRepository extends JpaRepository<AdminAlarm, Long> {
-
-    @Query(value = "SELECT a FROM AdminAlarm a ORDER BY a.createDatePosted DESC")
-    List<AdminAlarm> findLatestAlarm(Pageable pageable);
 }
