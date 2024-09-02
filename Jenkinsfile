@@ -18,7 +18,7 @@ pipeline {
                 echo 'Building...'
                 sh 'pwd'
                 sh 'ls -la /home/ubuntu/jenkins/.env'
-                sh 'cp /home/ubuntu/jenkins/.env backend/src/main/resources/properties/.env'
+                sh 'cp /home/ubuntu/jenkins/.env /var/jenkins_home/workspace/backend-pipe/backend/src/main/resources/properties/.env'
                 sh 'echo $JAVA_HOME'
                 sh 'java -version'
                 sh 'chmod 755 backend/gradlew'
