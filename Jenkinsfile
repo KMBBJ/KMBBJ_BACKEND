@@ -51,12 +51,31 @@ pipeline {
             }
         }
 
-        stage('Deploy') { // 네 번째 단계: 배포
+        stage('Docker Build and Deploy') {
             steps {
-                // 배포 단계 로그 메시지 출력
-                echo 'Deploying...'
-                // 여기에 실제 배포 작업을 추가
+                echo 'Building Docker image...'
+                sh '''
+                docker build -t my-backend-app:latest backend/
+                echo 'Stopping and removing old container if exists...'
+                docker stop my-backend-app || true
+                docker rm my-backend-app || true
+                echo 'Running new Docker container...'
+                docker run -d -p 8080:8080 --name my-backend-app my-backend-app:latest
+                '''
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            sh 'docker system prune -f'
+        }
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed!'
         }
     }
 }
