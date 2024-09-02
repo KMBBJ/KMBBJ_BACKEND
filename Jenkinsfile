@@ -17,7 +17,7 @@ pipeline {
             steps {
                 script {
                     sh 'mkdir -p backend/src/main/resources/properties'
-                    def envContent = sh(script: "curl -H 'Authorization: token ${GITHUB_TOKEN}' https://api.github.com/repos/your-repo/your-repo-name/actions/secrets/ENV", returnStdout: true).trim()
+                    def envContent = sh(script: "curl -H 'Authorization: token ${GITHUB_TOKEN}' https://github.com/KMBBJ/KMBBJ_BACKEND.git/actions/secrets/ENV", returnStdout: true).trim()
                     writeFile file: 'backend/src/main/resources/properties/.env', text: envContent
                 }
             }
