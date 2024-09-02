@@ -1,8 +1,7 @@
 pipeline {
     agent any // 모든 사용 가능한 에이전트(또는 노드)에서 파이프라인을 실행
-    environment {
-        GITHUB_TOKEN = credentials('github-token') // 설정한 Credential ID 사용
-    }
+
+    // environment 블록에서 불필요한 자격 증명 설정 제거
     stages {
         stage('Checkout') { // 첫 번째 단계: 코드 체크아웃
             steps {
