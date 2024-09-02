@@ -16,9 +16,19 @@ pipeline {
         stage('Fetch and Create .env') {
             steps {
                 script {
-                    sh 'mkdir -p backend/src/main/resources/properties'
-                    def envContent = sh(script: "curl -H 'Authorization: token ${GITHUB_TOKEN}' https://github.com/KMBBJ/KMBBJ_BACKEND.git/actions/secrets/ENV", returnStdout: true).trim()
-                    writeFile file: 'backend/src/main/resources/properties/.env', text: envContent
+                    withCredentials([file(credentialsId: 'env', variable: 'ENV_FILE')]){
+                        sh 'mkdir -p backend/src/main/resources/properties'
+                        def envContent = readFile(ENV_FILE)
+                        echo "envContent: ${envContent}"
+                        writeFile file: 'backend/src/main/resources/properties/.env', text: envContent
+                    }
+                }
+            }
+        }
+        stage('Read .env') {
+            steps {
+                script {
+                    sh 'cat backend/src/main/resources/properties/.env'
                 }
             }
         }
