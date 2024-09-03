@@ -294,6 +294,11 @@ public class RoomServiceImpl implements RoomService{
         // 현재 유저 자산
         Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
 
+        // 시작 또는 삭제 여부 판단
+        if (room.getIsStarted() || room.getIsDeleted()) {
+            throw new ApiException(ExceptionEnum.ENTER_DENY);
+        }
+
         // 방에 들어온 상태 확인
         if (room.getUserRooms().stream().anyMatch(userRoom -> userRoom.getUser().equals(user) && userRoom.getIsPlayed())) {
             return; // 이미 입장함
