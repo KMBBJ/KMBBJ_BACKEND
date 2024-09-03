@@ -3,6 +3,7 @@ package com.kmbbj.backend.admin.service;
 
 import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.repository.AdminAlarmRepository;
+import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
@@ -255,5 +256,16 @@ public class AdminService {
         emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
     }
 
+
+    /**
+     * ROLE_USER 권한을 가진 사용자 목록 조회
+     *
+     * @param pageable 페이징 정보
+     * @return 페이징 처리된 사용자 목록
+     */
+    @Transactional(readOnly = true)
+    public Page<User> findUsersByRoleAdmin(Pageable pageable) {
+        return userRepository.findByAuthority(Authority.ROLE_ADMIN, pageable);
+    }
 
 }
