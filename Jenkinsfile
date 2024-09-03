@@ -62,35 +62,37 @@ pipeline {
     }
     post {
         success {
-            withCredentials([string(credentialsId: 'kmbbj_jenkins_build_alarm', variable: 'DISCORD')]) {
-                def changeLog = ""
-                for (changeSet in currentBuild.changeSets) {
-                    for (entry in changeSet.items) {
-                        def shortMsg = entry.msg.take(50) // 메시지를 50자 이내로 자름
-                        changeLog += "* ${shortMsg} [${entry.author}]\n"
+            script {
+                withCredentials([string(credentialsId: 'kmbbj_jenkins_build_alarm', variable: 'DISCORD')]) {
+                    def changeLog = ""
+                    for (changeSet in currentBuild.changeSets) {
+                        for (entry in changeSet.items) {
+                            def shortMsg = entry.msg.take(50) // 메시지를 50자 이내로 자름
+                            changeLog += "* ${shortMsg} [${entry.author}]\n"
+                        }
                     }
+                    if (!changeLog) {
+                        changeLog = "No changes in this build."
+                    }
+                    discordSend description: "SUCCESS",
+                    footer: "내 코드가 돌아 간다고? 거짓말 하지마",
+                    link: env.BUILD_URL, result: currentBuild.currentResult,
+                    title: "KMBBJ_CI/CD",
+                    webhookURL: "$DISCORD"
                 }
-                if (!changeLog) {
-                    changeLog = "No changes in this build."
-                }
-                discordSend description: "SUCCESS",
-                footer: "내 코드가 돌아 간다고? 거짓말 하지마",
-                link: env.BUILD_URL, result: currentBuild.currentResult,
-                title: "KMBBJ_CI/CD",
-                webhookURL: "$DISCORD"
             }
         }
 
         failure {
             withCredentials([string(credentialsId: 'kmbbj_jenkins_build_alarm', variable: 'DISCORD')]) {
-                        discordSend description: """
-                        제목 : ${currentBuild.displayName}
-                        결과 : ${currentBuild.result}
-                        실행 시간 : ${currentBuild.duration / 1000}s
-                        """,
-                        link: env.BUILD_URL, result: currentBuild.currentResult,
-                        title: "${env.JOB_NAME} : ${currentBuild.displayName} 실패",
-                        webhookURL: "$DISCORD"
+                discordSend description: """
+                제목 : ${currentBuild.displayName}
+                결과 : ${currentBuild.result}
+                실행 시간 : ${currentBuild.duration / 1000}s
+                 """,
+                 link: env.BUILD_URL, result: currentBuild.currentResult,
+                 title: "${env.JOB_NAME} : ${currentBuild.displayName} 실패",
+                 webhookURL: "$DISCORD"
             }
         }
     }
