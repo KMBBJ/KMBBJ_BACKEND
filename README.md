@@ -37,3 +37,5 @@ KMBBJ_BACKEND/
 ├── Dockerfile           # Docker 이미지 빌드 설정 파일
 ├── Jenkinsfile          # Jenkins 파이프라인 설정 파일
 └── README.md            # 리포지토리 개요 (현재 파일)
+
+![시스템 아키텍처](https://github.com/user-attachments/assets/d84be2b4-a545-4c36-b989-dd44d8f50515)
