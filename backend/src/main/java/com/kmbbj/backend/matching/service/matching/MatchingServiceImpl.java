@@ -206,6 +206,9 @@ public class MatchingServiceImpl implements MatchingService{
             } else { // 가능한 방이 없을 경우 방 생성
 
                 Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
+                if (latestRoomId == null) {
+                    latestRoomId = 0L;
+                }
                 // 초기 시드머니
                 StartSeedMoney startSeedMoney = getStartSeedMoney(user);
                 CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
@@ -301,6 +304,9 @@ public class MatchingServiceImpl implements MatchingService{
 
         // 현재 생성되어 있는 방 중 가장 최신 방 roomId
         Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
+        if (latestRoomId == null) {
+            latestRoomId = 0L;
+        }
         CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                 .title(String.format("랜덤 매칭 %d", latestRoomId + 1))
                 .end(5)
