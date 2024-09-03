@@ -12,4 +12,6 @@ public interface MatchingQueueService {
     void removeUserFromQueue(User user);
 
     boolean isUserAlreadyMatched(User user);
+
+    void changeStatus(Long userId);
 }

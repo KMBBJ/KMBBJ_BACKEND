@@ -5,7 +5,7 @@ import com.kmbbj.backend.matching.entity.Room;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 public interface MatchingService {
     void startQuickMatching();
