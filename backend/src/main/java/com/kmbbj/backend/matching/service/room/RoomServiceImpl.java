@@ -62,11 +62,11 @@ public class RoomServiceImpl implements RoomService{
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
 
-        if (createRoomDTO.getDelay() <= 0) {
+        if (createRoomDTO.getDelay() < 1 || createRoomDTO.getDelay() > 60) {
             throw new ApiException(ExceptionEnum.NOT_ALLOW_DELAY);
         }
 
-        if (createRoomDTO.getEnd() <= 0) {
+        if (createRoomDTO.getEnd() < 1 || createRoomDTO.getEnd() > 15) {
             throw new ApiException(ExceptionEnum.NOT_ALLOW_END);
         }
         // 방 생성
@@ -122,6 +122,11 @@ public class RoomServiceImpl implements RoomService{
         if (editRoomDTO.getStartSeedMoney().getAmount() > balanceService.totalBalanceFindByUserId(min.getUser().getId()).get().getAsset() / 3) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET_USER);
         }
+
+        if (editRoomDTO.getEnd() > 15 || editRoomDTO.getEnd() < 1) {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_END);
+        }
+
 
         // 방장 여부 확인
         if (userRoom != null) {
@@ -352,6 +357,9 @@ public class RoomServiceImpl implements RoomService{
         return EnterRoomDTO.builder()
                 .roomTitle(room.getTitle())
                 .averageAsset(room.getAverageAsset())
+                .delay(room.getDelay())
+                .end(room.getEnd())
+                .startSeedMoney(room.getStartSeedMoney())
                 .userCount(room.getUserCount())
                 .roomUser(roomUserList)
                 .build();
@@ -385,11 +393,15 @@ public class RoomServiceImpl implements RoomService{
         userRoomService.deleteUserFromRoom(roomId);
         Room room = findById(roomId);
 
+
         // 방을 나갔을때 아무도 없을경우 방 삭제 여부 true
         if (room.getUserCount() - 1 == 0) {
             room.setUserCount(0);
             room.setIsDeleted(true);
+            room.setAverageAsset(0L);
         }
+        long l = ((room.getAverageAsset() * room.getUserCount()) - balanceService.totalBalanceFindByUserId(findUserBySecurity.getCurrentUser().getId()).get().getAsset())/(room.getUserCount()-1);
+        room.setAverageAsset(l);
         room.setUserCount(room.getUserCount() - 1);
         userRoomService.save(userRoom);
         roomRepository.save(room);
