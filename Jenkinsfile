@@ -61,7 +61,6 @@ pipeline {
         }
     }
     post {
-    echo "빌드 알림 전송 시작" // 디버깅을 위한 메시지
         success {
         echo "빌드 성공 후 알림 전송 시작" // 디버깅을 위한 메시지
             script {
