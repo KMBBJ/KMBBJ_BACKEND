@@ -1,15 +1,7 @@
 pipeline {
     agent any // 모든 사용 가능한 에이전트(또는 노드)에서 파이프라인을 실행
 
-    tools {
-        jdk 'jdk21' // Jenkins 관리 페이지에서 설정한 JDK 이름
-    }
-
-    environment {
-        JAVA_HOME = "/usr/lib/jvm/java-21-openjdk-amd64"
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
-    }
-
+    // environment 블록에서 불필요한 자격 증명 설정 제거
     stages {
         stage('Checkout') { // 첫 번째 단계: 코드 체크아웃
             steps {
@@ -20,32 +12,53 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/KMBBJ/KMBBJ_BACKEND.git', credentialsId: 'parkswon1'
             }
         }
-
-        stage('Build') { // 두 번째 단계: 코드 빌드
+        stage('Fetch and Create .env') {
             steps {
-                // 빌드 단계 로그 메시지 출력
-                echo 'Building...'
-                sh 'echo $JAVA_HOME'
-                sh 'java -version'
-                sh 'chmod 755 backend/gradlew'
-                sh 'cd backend && ./gradlew build'
-                // 여기에 실제 빌드 작업을 추가
+                script {
+                    withCredentials([file(credentialsId: 'env', variable: 'ENV_FILE')]){
+                        sh 'mkdir -p backend/src/main/resources/properties'
+                        def envContent = readFile(ENV_FILE)
+                        echo "envContent: ${envContent}"
+                        writeFile file: 'backend/src/main/resources/properties/.env', text: envContent
+                    }
+                }
             }
         }
-
-        stage('Test') { // 세 번째 단계: 테스트
+        stage('Read .env') {
             steps {
-                // 테스트 단계 로그 메시지 출력
-                echo 'Testing...'
-                // 여기에 실제 테스트 작업을 추가
+                script {
+                    sh 'cat backend/src/main/resources/properties/.env'
+                }
             }
         }
-
-        stage('Deploy') { // 네 번째 단계: 배포
+        stage('Build Docker Image') {
             steps {
-                // 배포 단계 로그 메시지 출력
-                echo 'Deploying...'
-                // 여기에 실제 배포 작업을 추가
+                script {
+                    sh 'chmod 755 backend/gradlew'
+                    sh 'cd backend && ./gradlew build'
+                }
+            }
+        }
+        stage('Deploy to EC2') {
+            steps {
+                script {
+                    // Jenkins에서 EC2 IP 주소를 가져옵니다.
+                    withCredentials([string(credentialsId: 'EC2_IP', variable: 'EC2_IP')]) {
+                        sshagent (credentials: ['ssh']) {
+                            sh '''
+                                ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP 'mkdir -p /home/ubuntu/app/'
+                                scp -o StrictHostKeyChecking=no -r backend/ ubuntu@$EC2_IP:/home/ubuntu/app/
+                                ssh ubuntu@$EC2_IP << 'EOF'
+                                    cd /home/ubuntu/app/backend
+                                    docker build -t my-spring-app .
+                                    docker stop spring-app || true
+                                    docker rm spring-app || true
+                                    docker run -d --name spring-app -p 8080:8080 my-spring-app
+                                EOF
+                            '''
+                        }
+                    }
+                }
             }
         }
     }

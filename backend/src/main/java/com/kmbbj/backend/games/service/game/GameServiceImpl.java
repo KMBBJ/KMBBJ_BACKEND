@@ -1,6 +1,7 @@
 package com.kmbbj.backend.games.service.game;
 
 
+import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.GameStartDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
@@ -22,6 +23,7 @@ import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
+import com.kmbbj.backend.matching.repository.UserRoomRepository;
 import com.kmbbj.backend.matching.service.room.RoomService;
 import com.kmbbj.backend.matching.service.userroom.UserRoomService;
 import jakarta.transaction.Transactional;
@@ -31,6 +33,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -48,6 +51,7 @@ public class GameServiceImpl implements GameService {
     private final GameResultService gameResultService;
     private final GameBalanceService gameBalanceService;
     private final RoundResultService roundResultService;
+    private final UserRoomRepository userRoomRepository;
 
 
 
@@ -68,6 +72,12 @@ public class GameServiceImpl implements GameService {
     @Transactional
     public GameStartDTO startGame(Long roomId) {
         Room room = roomService.findById(roomId); // 방 ID 조회함
+
+        List<UserRoom> userRooms = userRoomRepository.findAllByRoomAndIsPlayed(room ,true);
+
+        List<String> userIds = userRooms.stream()
+                .map(userRoom -> userRoom.getUser().getId().toString())
+                .collect(Collectors.toList());
 
         // 새 게임 생성 & 저장
         Game game = new Game();
@@ -93,6 +103,7 @@ public class GameServiceImpl implements GameService {
         //
         GameStartDTO gameStartDTO = new GameStartDTO();
         gameStartDTO.setGameId(encryptedGameId);
+        gameStartDTO.setUserId(userIds);
 
         // 게임 상태 정보 DTO
         GameStatusDTO status = new GameStatusDTO();
