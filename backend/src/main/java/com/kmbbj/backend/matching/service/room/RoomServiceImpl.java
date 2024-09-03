@@ -294,9 +294,9 @@ public class RoomServiceImpl implements RoomService{
         // 현재 유저 자산
         Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
 
-        // 시작 또는 삭제 여부 판단
-        if (room.getIsStarted() || room.getIsDeleted()) {
-            throw new ApiException(ExceptionEnum.ENTER_DENY);
+        // 삭제 여부 판단
+        if (room.getIsDeleted()) {
+            throw new ApiException(ExceptionEnum.ALREADY_DELETED);
         }
 
         // 방에 들어온 상태 확인
@@ -321,6 +321,9 @@ public class RoomServiceImpl implements RoomService{
                 .orElse(null);
 
         if (userRoom == null) {
+            if (room.getIsStarted()) {
+                throw new ApiException(ExceptionEnum.ALREADY_STARTED);
+            }
             userRoom = UserRoom.builder()
                     .user(user)
                     .room(room)
