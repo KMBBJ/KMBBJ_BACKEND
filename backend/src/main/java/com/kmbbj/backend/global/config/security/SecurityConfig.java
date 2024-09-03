@@ -163,6 +163,7 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
         config.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
+        config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*"); // 모든 헤더 허용
         config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         config.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
@@ -181,6 +182,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
         configuration.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
+        configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
