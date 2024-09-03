@@ -1,5 +1,6 @@
 package com.kmbbj.backend.auth.service.register;
 
+
 import com.kmbbj.backend.auth.controller.request.UserJoinRequest;
 import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
@@ -16,22 +17,22 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class RegisterServiceImpl implements RegisterService {
-    private final UserRepository userRepostiory;
+public class AdminRegisterServiceImpl implements AdminRegisterService {
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RandomNickname randomNickname;
     private final BalanceService balanceService;
 
     /**
-     * 사용자 등록 처리
+     * 어드민 등록 처리
      *
-     * @param userJoinRequest 회원가입 요청 데이터
+     * @param userJoinRequest 회원가입 요청 데이터 (어드민 전용)
      */
     @Transactional
     @Override
-    public void registerUser(UserJoinRequest userJoinRequest) {
+    public void registerAdmin(UserJoinRequest userJoinRequest) {
         // 이메일 중복 확인
-        if (userRepostiory.findByEmail(userJoinRequest.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(userJoinRequest.getEmail()).isPresent()) {
             throw new ApiException(ExceptionEnum.EXIST_EMAIL);
         }
 
@@ -39,20 +40,20 @@ public class RegisterServiceImpl implements RegisterService {
         String encodedPassword = passwordEncoder.encode(userJoinRequest.getPassword());
 
         // User 엔티티로 변환 및 저장
-        User user = User.builder()
+        User admin = User.builder()
                 .email(userJoinRequest.getEmail())
                 .nickname(getNickname())
                 .password(encodedPassword)
-                .authority(Authority.ROLE_USER)
+                .authority(Authority.ROLE_ADMIN)  // 어드민 권한 설정
                 .isDeleted(false)
                 .build();
 
         TotalBalance totalBalance = TotalBalance.builder()
                 .asset(30000000L)
-                .user(user)
+                .user(admin)
                 .build();
 
-        userRepostiory.save(user);
+        userRepository.save(admin);
         balanceService.makeTotalBalance(totalBalance);
     }
 

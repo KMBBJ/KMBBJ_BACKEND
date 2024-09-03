@@ -7,8 +7,8 @@ import org.springframework.security.core.GrantedAuthority;
 @Getter
 @AllArgsConstructor
 public enum Authority implements GrantedAuthority {
-    ADMIN,
-    USER;
+    ROLE_ADMIN,
+    ROLE_USER;
 
     /**
      * 유저의 권한을 String으로 반환하는 메소드
