@@ -9,7 +9,7 @@ RUN apt-get update && \
     apt-get install -y \
     curl \
     wget \
-    zip \
+    zip
 
 # 4. Oracle JDK 21 다운로드 URL 설정
 ENV JDK_URL=https://download.oracle.com/java/21/latest/jdk-21_linux-x64_bin.tar.gz
