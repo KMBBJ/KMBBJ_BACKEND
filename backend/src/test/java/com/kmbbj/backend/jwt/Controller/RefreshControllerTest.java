@@ -85,7 +85,7 @@ class RefreshControllerTest {
         when(claims.get("userId", Long.class)).thenReturn(1L);
         when(claims.get("email", String.class)).thenReturn("test@example.com");
         when(claims.get("nickname", String.class)).thenReturn("testNickname");
-        when(claims.get("authority", String.class)).thenReturn("USER");
+        when(claims.get("authority", String.class)).thenReturn("ROLE_USER");
 
         when(jwtTokenizer.createAccessToken(anyLong(), anyString(), anyString(), any(Authority.class))).thenReturn("newAccessToken");
         when(jwtTokenizer.createRefreshToken(anyLong(), anyString(), anyString(), any(Authority.class))).thenReturn("newRefreshToken");

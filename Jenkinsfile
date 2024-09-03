@@ -61,7 +61,9 @@ pipeline {
         }
     }
     post {
+    echo "빌드 알림 전송 시작" // 디버깅을 위한 메시지
         success {
+        echo "빌드 성공 후 알림 전송 시작" // 디버깅을 위한 메시지
             script {
                 withCredentials([string(credentialsId: 'kmbbj_jenkins_build_alarm', variable: 'DISCORD')]) {
                     def changeLog = ""
@@ -84,6 +86,7 @@ pipeline {
         }
 
         failure {
+        echo "빌드 실패 후 알림 전송 시작" // 디버깅을 위한 메시지
             withCredentials([string(credentialsId: 'kmbbj_jenkins_build_alarm', variable: 'DISCORD')]) {
                 discordSend description: """
                 제목 : ${currentBuild.displayName}
