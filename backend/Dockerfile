@@ -20,7 +20,7 @@ ENV APP_HOME=/app
 WORKDIR $APP_HOME
 
 # 6. 빌드된 JAR 파일을 Docker 이미지에 복사
-COPY build/libs/myapp.jar $APP_HOME/myapp.jar
+COPY build/libs/*.jar /app/myapp.jar
 
 # 7. 애플리케이션 실행
 ENTRYPOINT ["java", "-jar", "myapp.jar"]
