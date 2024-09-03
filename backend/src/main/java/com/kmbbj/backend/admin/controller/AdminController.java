@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -287,5 +288,29 @@ public class AdminController {
         adminService.joinAdmin(user.get(),password); // 이메일 보내기
 
         return new CustomResponse<>(HttpStatus.CREATED, "회원가입 성공", "어드민 회원가입이 완료되었습니다.");
+    }
+
+    /**
+     * ROLE_ADMIN 권한을 가진 사용자 목록 조회
+     *
+     * @param page 첫 페이지 0 기본값
+     * @param size 페이지당 보여지는 사용자 수
+     * @return 페이징 처리된 사용자 정보 목록
+     */
+    @GetMapping("/role_admin")
+    @Operation(summary = "ROLE_ADMIN 권한을 가진 사용자 조회", description = "ROLE_ADMIN 권한을 가진 사용자 목록을 페이징하여 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "사용자 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾지 못했습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
+    })
+    public CustomResponse<Page<User>> getUsersByRoleUser(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Page<User> users = adminService.findUsersByRoleAdmin(pageRequest);
+
+        return new CustomResponse<>(HttpStatus.OK, "ROLE_ADMIN 권한을 가진 사용자 조회 성공", users);
     }
 }
