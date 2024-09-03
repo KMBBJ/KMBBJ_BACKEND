@@ -61,6 +61,14 @@ public class RoomServiceImpl implements RoomService{
         if (createRoomDTO.getStartSeedMoney().getAmount() > (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3)) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
+
+        if (createRoomDTO.getDelay() <= 0) {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_DELAY);
+        }
+
+        if (createRoomDTO.getEnd() <= 0) {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_END);
+        }
         // 방 생성
         Room room = new Room();
         room.setTitle(createRoomDTO.getTitle());
