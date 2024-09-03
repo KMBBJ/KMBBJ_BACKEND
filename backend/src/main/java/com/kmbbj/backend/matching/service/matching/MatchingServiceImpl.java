@@ -372,8 +372,20 @@ public class MatchingServiceImpl implements MatchingService{
     public StartSeedMoney getStartSeedMoney(User user) {
         StartSeedMoney startSeedMoney = null;
         // 유저의 자산 1/3이상으로 시드머니 설정
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 3000000) {
+            startSeedMoney = StartSeedMoney.THREE_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 5000000) {
+            startSeedMoney = StartSeedMoney.FIVE_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 7000000) {
+            startSeedMoney = StartSeedMoney.SEVEN_MILLION;
+        }
         if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 10000000) {
             startSeedMoney = StartSeedMoney.TEN_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 15000000) {
+            startSeedMoney = StartSeedMoney.FIFTEEN_MILLION;
         }
         if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 20000000) {
             startSeedMoney = StartSeedMoney.TWENTY_MILLION;
