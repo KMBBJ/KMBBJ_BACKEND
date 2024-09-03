@@ -228,6 +228,7 @@ public class RoomServiceImpl implements RoomService{
     // 게임 시작 전 delay 시간을 이메일로 알려주는 beforeStart 메서드 추가
     public void beforeStart(Long roomId) {
         Room room = findById(roomId);
+        if (room.getIsStarted()) return;
         userRoomService.findUserRooms(room).forEach(userRoom ->
                 everyEmailService.sendSimpleMessage(userRoom.getUser(),
                         userRoom.getUser().getEmail(),
@@ -235,7 +236,9 @@ public class RoomServiceImpl implements RoomService{
                         String.format("%s 방 게임이 %d 시간 후에 시작합니다.",userRoom.getRoom().getTitle(),userRoom.getRoom().getDelay()),
                         "START")
         );
-        scheduleStartGame(roomId, room.getDelay() * 60 * 60 * 1000);
+        room.setIsStarted(true);
+        roomRepository.save(room);
+        scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
 
 
     }
@@ -246,17 +249,14 @@ public class RoomServiceImpl implements RoomService{
                 , new Date(System.currentTimeMillis() + delayMillis));
     }
 
-    /** TODO
+    /**
      *
      * @param roomId    현재 방 번호
      */
     @Override
     @Transactional
     public void startGame(Long roomId) {
-
         Room room = findById(roomId);
-        room.setIsStarted(true);
-        roomRepository.save(room);
         List<UserRoom> userRooms = userRoomService.findUserRooms(room);
         userRooms.forEach(userRoom -> sseService.sendGameStartNotification(userRoom.getUser().getId(),roomId));
 
