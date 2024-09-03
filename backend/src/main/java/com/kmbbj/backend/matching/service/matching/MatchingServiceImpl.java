@@ -6,7 +6,6 @@ import com.kmbbj.backend.balance.service.BalanceService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
-import com.kmbbj.backend.global.config.websocket.MatchWebSocketHandler;
 import com.kmbbj.backend.global.sse.SseService;
 import com.kmbbj.backend.matching.dto.CreateRoomDTO;
 import com.kmbbj.backend.matching.entity.Room;
@@ -36,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class MatchingServiceImpl implements MatchingService{
 
-    private final MatchWebSocketHandler matchWebSocketHandler;
     private final TaskScheduler taskScheduler;
     private final Map<Long, ScheduledFuture<?>> matchingTasks = new ConcurrentHashMap<>();
     private final Map<Object, ScheduledFuture<?>> scheduledTasks = new ConcurrentHashMap<>();
@@ -47,7 +45,7 @@ public class MatchingServiceImpl implements MatchingService{
     private final FindUserBySecurity findUserBySecurity;
     private final BalanceService balanceService;
     private final SseService sseService;
-    private final AssetRangeCalculator rangeCalculator = new AssetRangeCalculator();
+    private final AssetRangeCalculator rangeCalculator;
     private final AtomicInteger time = new AtomicInteger(0);
 
     @Override
@@ -155,32 +153,42 @@ public class MatchingServiceImpl implements MatchingService{
     @Transactional
     public void handleRandomMatch(User user, AtomicBoolean isFiveMinutesPassed, AtomicBoolean isThirtyMinutesPassed) {
         double currentRange = rangeCalculator.calculateAssetRange(time.getAndIncrement());
-        synchronized (this) {  // 동기화 블록 추가
             if (isThirtyMinutesPassed.get()) switchToQuickMatch(user);
 
             redisTemplate.execute((RedisCallback<Object>) connection -> {
-                connection.multi();  // 트랜잭션 시작
+                try {
+                    connection.multi();  // 트랜잭션 시작
 
-                Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
-                // 매칭 잡힌 유저들
-                List<User> potentialMatch = findPotentialMatches(asset, currentRange);
+                    Long asset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
 
-                // 5분 전 -> 10명, 5분 후 4명이상
-                int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
 
-                if (potentialMatch.size() >= requiredUserCount) {
-                    Long roomId = createRoomWithUsers(potentialMatch);
-                    potentialMatch.forEach(potentialMatchUser -> {
-                        matchingQueueService.removeUserFromQueue(potentialMatchUser);
-                        notifyUser(potentialMatchUser,roomId);
-                    });
-                    // 알림 보내주기
+                    // 5분 전 -> 10명, 5분 후 4명이상
+                    int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
+
+
+                        // 매칭 잡힌 유저들
+                    List<User> potentialMatch = findPotentialMatches(asset, currentRange);
+                    potentialMatch.forEach(user11 -> System.out.println(user11.getNickname()));
+                    synchronized (this) {
+                        if (potentialMatch.size() >= requiredUserCount) {
+                            if (userRoomService.findCurrentRoom() == null) {
+                                // 방에 들어가 있지 않은지 다시 확인
+                                Long roomId = createRoomWithUsers(potentialMatch);
+                                potentialMatch.forEach(potentialMatchUser -> {
+                                    matchingQueueService.removeUserFromQueue(potentialMatchUser);
+                                    notifyUser(potentialMatchUser, roomId);
+                                });
+
+                            }
+                        } potentialMatch.forEach(user1 -> matchingQueueService.changeStatus(user1.getId()));
+                    }
+                    connection.exec();  // 트랜잭션 커밋
+                } catch (Exception e) {
+                    connection.discard();  // 롤백
                 }
-
-                connection.exec();  // 트랜잭션 커밋
                 return null;
             });
-        }
+
     }
 
     /**
@@ -189,41 +197,43 @@ public class MatchingServiceImpl implements MatchingService{
      */
     @Transactional
     public void handleQuickMatch(User user) {
-        List<Room> availableRooms = findAvailableRooms();
-        if (!availableRooms.isEmpty()) {
-            // 가능한 방이 있다면, 첫 번째 방에 유저 입장
-            Room room = availableRooms.get(0);
-            roomService.enterRoom(user,room.getRoomId());
-            notifyUser(user,room.getRoomId());
-//            matchWebSocketHandler.notifyAboutMatch(user.getId(),room.getRoomId());
+        try {
+            List<Room> availableRooms = findAvailableRooms();
+            if (!availableRooms.isEmpty()) {
+                // 가능한 방이 있다면, 첫 번째 방에 유저 입장
+                Room room = availableRooms.get(0);
+                roomService.enterRoom(user, room.getRoomId());
+                notifyUser(user, room.getRoomId());
+                cancelMatching(user);
+                cancelCurrentUserScheduledTasks();
+            } else { // 가능한 방이 없을 경우 방 생성
+
+                Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
+                // 초기 시드머니
+                StartSeedMoney startSeedMoney = getStartSeedMoney(user);
+                CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
+                        .title(String.format("빠른 매칭 %d", latestRoomId))
+                        .end(5) // 게임 라운드 수
+                        .delay(1) // 시작 딜레이
+                        .isDeleted(false)
+                        .isStarted(false)
+                        .createDate(LocalDateTime.now())
+                        .startSeedMoney(startSeedMoney)
+                        .build();
+
+
+                Room room = roomService.createRoom(createRoomDTO, user);
+
+                // 해당 유저에게 알림
+                notifyUser(user, room.getRoomId());
+                cancelMatching(user);
+                cancelCurrentUserScheduledTasks();
+            }
+        } catch (Exception e) {
             cancelMatching(user);
             cancelCurrentUserScheduledTasks();
         }
-        else { // 가능한 방이 없을 경우 방 생성
 
-            Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
-            // 초기 시드머니
-            StartSeedMoney startSeedMoney = getStartSeedMoney(user);
-            CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
-                    .title(String.format("빠른 매칭 %d", latestRoomId))
-                    .end(5) // 게임 라운드 수
-                    .delay(1) // 시작 딜레이
-                    .isDeleted(false)
-                    .isStarted(false)
-                    .createDate(LocalDateTime.now())
-                    .startSeedMoney(startSeedMoney)
-                    .build();
-
-
-            Room room = roomService.createRoom(createRoomDTO, user);
-
-            // 해당 유저에게 알림
-            System.out.println("알림전");
-            notifyUser(user,room.getRoomId());
-            System.out.println("알림후");
-            cancelMatching(user);
-            cancelCurrentUserScheduledTasks();
-        }
     }
 
     /**
@@ -261,8 +271,7 @@ public class MatchingServiceImpl implements MatchingService{
     }
 
     /**
-     *
-     * @param users     매칭이 잡힌 유저들
+     * @param users 매칭이 잡힌 유저들
      */
     @Override
     @Transactional
@@ -307,10 +316,8 @@ public class MatchingServiceImpl implements MatchingService{
 
         Room room = roomService.createRoom(createRoomDTO, richestUser);
         // 각 사용자들 알람 및 방 입장
-        matchWebSocketHandler.notifyAboutMatch(richestUser.getId(),room.getRoomId());
         users.forEach(user -> {
             roomService.enterRoom(user,room.getRoomId());
-            matchWebSocketHandler.notifyAboutMatch(user.getId(), room.getRoomId());
             cancelCurrentUserScheduledTasks();
             cancelMatching(user);
         });

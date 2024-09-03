@@ -252,7 +252,12 @@ public class RoomServiceImpl implements RoomService{
         List<UserRoom> userRooms = userRoomService.findUserRooms(room);
         userRooms.forEach(userRoom -> sseService.sendGameStartNotification(userRoom.getUser().getId(),roomId));
 
-        // 웹소켓으로 알림 띄워주는 부분 구현
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Room findRoomById(Long roomId) {
+        return roomRepository.findById(roomId).orElseThrow(()->new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
     }
 
     /**
@@ -263,7 +268,7 @@ public class RoomServiceImpl implements RoomService{
     @Override
     @Transactional
     public void enterRoom(User user,Long roomId) {
-        Room room = roomRepository.findById(roomId).orElseThrow(()->new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
+        Room room = findRoomById(roomId);
 
         // 현재 유저 자산
         Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
