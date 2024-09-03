@@ -187,9 +187,9 @@ public class RoomController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
             @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
     })
-    public CustomResponse<Void> startGame(@PathVariable Long roomId) {
-        roomService.beforeStart(roomId);
-        return new CustomResponse<>(HttpStatus.OK,String.format("%d번방 게임 시작 성공",roomId),null);
+    public CustomResponse<Integer> startGame(@PathVariable Long roomId) {
+        int delay = roomService.beforeStart(roomId);
+        return new CustomResponse<>(HttpStatus.OK,String.format("%d번방 게임 시작 성공",roomId),delay);
     }
 
 }
