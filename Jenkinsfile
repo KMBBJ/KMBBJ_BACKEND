@@ -48,7 +48,7 @@ pipeline {
                             sh '''
                                 ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP 'mkdir -p /home/ubuntu/app/'
                                 scp -o StrictHostKeyChecking=no -r backend/ ubuntu@$EC2_IP:/home/ubuntu/app/
-                                ssh ubuntu@$EC2_IP << EOF
+                                ssh ubuntu@$EC2_IP << 'EOF'
                                     cd /home/ubuntu/app/backend
                                     docker build -t my-spring-app .
                                     docker stop spring-app || true
