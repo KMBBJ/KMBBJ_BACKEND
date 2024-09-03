@@ -36,23 +36,22 @@ pipeline {
                 script {
                     sh 'chmod 755 backend/gradlew'
                     sh 'cd backend && ./gradlew build'
-
-                    // Dockerfile 빌드
-                    sh 'cd backend && docker build -t my-spring-app .'
                 }
             }
         }
         stage('Deploy to EC2') {
             steps {
                 script {
-                    // SSH를 통해 EC2에 Docker 이미지 전송 및 컨테이너 실행
+                    // Jenkins에서 EC2로 파일 전송 및 Docker 빌드/컨테이너 실행
                     sshagent (credentials: ['ssh']) {
                         sh '''
-                            scp -o StrictHostKeyChecking=no -r backend/build/libs/myapp.jar ubuntu@<EC2_IP>:/home/ubuntu/app/
-                            ssh ubuntu@<EC2_IP> << EOF
+                            scp -o StrictHostKeyChecking=no -r backend/ ubuntu@${EC2_IP}:/home/ubuntu/app/
+                            ssh ubuntu@${EC2_IP} << EOF
+                                cd /home/ubuntu/app/backend
+                                docker build -t my-spring-app .
                                 docker stop spring-app || true
                                 docker rm spring-app || true
-                                docker run -d --name spring-app -p 8080:8080 -v /home/ubuntu/app/myapp.jar:/app/myapp.jar my-spring-app
+                                docker run -d --name spring-app -p 8080:8080 my-spring-app
                             EOF
                         '''
                     }
