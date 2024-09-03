@@ -46,15 +46,13 @@ pipeline {
                     withCredentials([string(credentialsId: 'EC2_IP', variable: 'EC2_IP')]) {
                         sshagent (credentials: ['ssh']) {
                             sh '''
-                                ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP 'mkdir -p /home/ubuntu/app/'
-                                scp -o StrictHostKeyChecking=no -r backend/ ubuntu@$EC2_IP:/home/ubuntu/app/
-                                ssh -T ubuntu@$EC2_IP << EOF
-                                    cd /home/ubuntu/app/backend
-                                    docker build -t my-spring-app .
-                                    docker stop spring-app || true
-                                    docker rm spring-app || true
+                                ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP '
+                                    cd /home/ubuntu/app/backend &&
+                                    docker build -t my-spring-app . &&
+                                    docker stop spring-app || true &&
+                                    docker rm spring-app || true &&
                                     docker run -d --name spring-app -p 8080:8080 my-spring-app
-                                EOF
+                                '
                             '''
                         }
                     }
