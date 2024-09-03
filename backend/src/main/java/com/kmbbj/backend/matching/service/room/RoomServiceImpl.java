@@ -231,32 +231,34 @@ public class RoomServiceImpl implements RoomService{
     @Transactional
     @Override
     // 게임 시작 전 delay 시간을 이메일로 알려주는 beforeStart 메서드 추가
-    public void beforeStart(Long roomId) {
+    public int beforeStart(Long roomId) {
         Room room = findById(roomId);
-        if (room.getIsStarted()) return;
-        userRoomService.findUserRooms(room).forEach(userRoom ->
-                everyEmailService.sendSimpleMessage(userRoom.getUser(),
-                        userRoom.getUser().getEmail(),
-                        String.format("%s 방 게임 시작 알림",userRoom.getRoom().getTitle()),
-                        String.format("%s 방 게임이 %d 시간 후에 시작합니다.",userRoom.getRoom().getTitle(),userRoom.getRoom().getDelay()),
-                        "START")
-        );
-        room.setIsStarted(true);
-        roomRepository.save(room);
-        scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
+        if (room.getUserCount() >= 4 && room.getUserCount() <= 10) {
+            if (room.getIsStarted()) return 0;
+            else {
+                userRoomService.findUserRooms(room).forEach(userRoom ->
+                        everyEmailService.sendSimpleMessage(userRoom.getUser(),
+                                userRoom.getUser().getEmail(),
+                                String.format("%s 방 게임 시작 알림", userRoom.getRoom().getTitle()),
+                                String.format("%s 방 게임이 %d 시간 후에 시작합니다.", userRoom.getRoom().getTitle(), userRoom.getRoom().getDelay()),
+                                "START")
+                );
+                room.setIsStarted(true);
+                roomRepository.save(room);
+                scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
+            }
+        }else {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_START);
+        }
+        return room.getDelay();
 
 
     }
 
     // delay 시간 뒤 게임 시작 메서드 실행
     public void scheduleStartGame(Long roomId, long delayMillis) {
-        Room room = findById(roomId);
-        if (room.getUserCount() >= 4 && room.getUserCount() <= 10) {
-            taskScheduler.schedule(() -> startGame(roomId)
-                    , new Date(System.currentTimeMillis() + delayMillis));
-        } else {
-            throw new ApiException(ExceptionEnum.NOT_ALLOW_START);
-        }
+        taskScheduler.schedule(() -> startGame(roomId)
+                , new Date(System.currentTimeMillis() + delayMillis));
 
     }
 
@@ -405,10 +407,13 @@ public class RoomServiceImpl implements RoomService{
             room.setUserCount(0);
             room.setIsDeleted(true);
             room.setAverageAsset(0L);
+        } else {
+            long l = ((room.getAverageAsset() * room.getUserCount()) - balanceService.totalBalanceFindByUserId(findUserBySecurity.getCurrentUser().getId()).get().getAsset())/(room.getUserCount()-1);
+            room.setAverageAsset(l);
+            room.setUserCount(room.getUserCount() - 1);
         }
-        long l = ((room.getAverageAsset() * room.getUserCount()) - balanceService.totalBalanceFindByUserId(findUserBySecurity.getCurrentUser().getId()).get().getAsset())/(room.getUserCount()-1);
-        room.setAverageAsset(l);
-        room.setUserCount(room.getUserCount() - 1);
+
+
         userRoomService.save(userRoom);
         roomRepository.save(room);
     }
