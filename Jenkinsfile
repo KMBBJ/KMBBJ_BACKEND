@@ -31,51 +31,33 @@ pipeline {
                 }
             }
         }
-        stage('Build') { // 두 번째 단계: 코드 빌드
+        stage('Build Docker Image') {
             steps {
-                // 빌드 단계 로그 메시지 출력
-                echo 'Building...'
-                sh 'echo $JAVA_HOME'
-                sh 'java -version'
-                sh 'chmod 755 backend/gradlew'
-                sh 'cd backend && ./gradlew build'
-                // 여기에 실제 빌드 작업을 추가
+                script {
+                    sh 'chmod 755 backend/gradlew'
+                    sh 'cd backend && ./gradlew build'
+
+                    // Dockerfile 빌드
+                    sh 'cd backend && docker build -t my-spring-app .'
+                }
             }
         }
-
-        stage('Test') { // 세 번째 단계: 테스트
+        stage('Deploy to EC2') {
             steps {
-                // 테스트 단계 로그 메시지 출력
-                echo 'Testing...'
-                // 여기에 실제 테스트 작업을 추가
+                script {
+                    // SSH를 통해 EC2에 Docker 이미지 전송 및 컨테이너 실행
+                    sshagent (credentials: ['ssh']) {
+                        sh '''
+                            scp -o StrictHostKeyChecking=no -r backend/build/libs/myapp.jar ubuntu@<EC2_IP>:/home/ubuntu/app/
+                            ssh ubuntu@<EC2_IP> << EOF
+                                docker stop spring-app || true
+                                docker rm spring-app || true
+                                docker run -d --name spring-app -p 8080:8080 -v /home/ubuntu/app/myapp.jar:/app/myapp.jar my-spring-app
+                            EOF
+                        '''
+                    }
+                }
             }
-        }
-
-        stage('Docker Build and Deploy') {
-            steps {
-                echo 'Building Docker image...'
-                sh '''
-                docker build -t my-backend-app:latest backend/
-                echo 'Stopping and removing old container if exists...'
-                docker stop my-backend-app || true
-                docker rm my-backend-app || true
-                echo 'Running new Docker container...'
-                docker run -d -p 8080:8080 --name my-backend-app my-backend-app:latest
-                '''
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Cleaning up...'
-            sh 'docker system prune -f'
-        }
-        success {
-            echo 'Deployment successful!'
-        }
-        failure {
-            echo 'Deployment failed!'
         }
     }
 }
