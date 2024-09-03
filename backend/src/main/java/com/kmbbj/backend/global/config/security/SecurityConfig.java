@@ -40,6 +40,9 @@ public class SecurityConfig {
     @Value("${REACT_SERVER_URL}")
     private String reactServerUrl;
 
+    @Value("${REACT_SERVER_URL_NO_PORT}")
+    private String reactServerUrlNoPort;
+
 
     // 모든 유저 허용 페이지
     String[] allAllowPage = new String[]{
@@ -164,7 +167,7 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
         config.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
-        config.addAllowedOriginPattern("*");
+        config.addAllowedOrigin(reactServerUrlNoPort);
         config.addAllowedHeader("*"); // 모든 헤더 허용
         config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         config.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
@@ -183,6 +186,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
         configuration.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
+        configuration.addAllowedOrigin(reactServerUrlNoPort);
         configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
