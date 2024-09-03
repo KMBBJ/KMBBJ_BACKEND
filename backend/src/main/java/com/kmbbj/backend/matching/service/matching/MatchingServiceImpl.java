@@ -100,10 +100,8 @@ public class MatchingServiceImpl implements MatchingService{
             SecurityContextHolder.setContext(context);
             try {
                 if (isQuickMatch) {
-                    System.out.println("빠른 매칭");
                     handleQuickMatch(user);
                 } else {
-                    System.out.println("랜덤 매칭");
                     handleRandomMatch(user, isFiveMinutesPassed, isThirtyMinutesPassed);
                 }
 
@@ -166,9 +164,8 @@ public class MatchingServiceImpl implements MatchingService{
                     int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
 
 
-                        // 매칭 잡힌 유저들
+                    // 매칭 잡힌 유저들
                     List<User> potentialMatch = findPotentialMatches(asset, currentRange);
-                    potentialMatch.forEach(user11 -> System.out.println(user11.getNickname()));
                     synchronized (this) {
                         if (potentialMatch.size() >= requiredUserCount) {
                             if (userRoomService.findCurrentRoom() == null) {
@@ -209,6 +206,9 @@ public class MatchingServiceImpl implements MatchingService{
             } else { // 가능한 방이 없을 경우 방 생성
 
                 Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
+                if (latestRoomId == null) {
+                    latestRoomId = 0L;
+                }
                 // 초기 시드머니
                 StartSeedMoney startSeedMoney = getStartSeedMoney(user);
                 CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
@@ -304,6 +304,9 @@ public class MatchingServiceImpl implements MatchingService{
 
         // 현재 생성되어 있는 방 중 가장 최신 방 roomId
         Long latestRoomId = roomService.findRoomByLatestCreateDate().getRoomId();
+        if (latestRoomId == null) {
+            latestRoomId = 0L;
+        }
         CreateRoomDTO createRoomDTO = CreateRoomDTO.builder()
                 .title(String.format("랜덤 매칭 %d", latestRoomId + 1))
                 .end(5)
@@ -369,8 +372,20 @@ public class MatchingServiceImpl implements MatchingService{
     public StartSeedMoney getStartSeedMoney(User user) {
         StartSeedMoney startSeedMoney = null;
         // 유저의 자산 1/3이상으로 시드머니 설정
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 3000000) {
+            startSeedMoney = StartSeedMoney.THREE_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 5000000) {
+            startSeedMoney = StartSeedMoney.FIVE_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 7000000) {
+            startSeedMoney = StartSeedMoney.SEVEN_MILLION;
+        }
         if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 10000000) {
             startSeedMoney = StartSeedMoney.TEN_MILLION;
+        }
+        if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 15000000) {
+            startSeedMoney = StartSeedMoney.FIFTEEN_MILLION;
         }
         if (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3 >= 20000000) {
             startSeedMoney = StartSeedMoney.TWENTY_MILLION;

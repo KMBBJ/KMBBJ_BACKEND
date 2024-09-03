@@ -61,6 +61,14 @@ public class RoomServiceImpl implements RoomService{
         if (createRoomDTO.getStartSeedMoney().getAmount() > (balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset() / 3)) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
+
+        if (createRoomDTO.getDelay() <= 0) {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_DELAY);
+        }
+
+        if (createRoomDTO.getEnd() <= 0) {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_END);
+        }
         // 방 생성
         Room room = new Room();
         room.setTitle(createRoomDTO.getTitle());
@@ -220,6 +228,7 @@ public class RoomServiceImpl implements RoomService{
     // 게임 시작 전 delay 시간을 이메일로 알려주는 beforeStart 메서드 추가
     public void beforeStart(Long roomId) {
         Room room = findById(roomId);
+        if (room.getIsStarted()) return;
         userRoomService.findUserRooms(room).forEach(userRoom ->
                 everyEmailService.sendSimpleMessage(userRoom.getUser(),
                         userRoom.getUser().getEmail(),
@@ -227,7 +236,9 @@ public class RoomServiceImpl implements RoomService{
                         String.format("%s 방 게임이 %d 시간 후에 시작합니다.",userRoom.getRoom().getTitle(),userRoom.getRoom().getDelay()),
                         "START")
         );
-        scheduleStartGame(roomId, room.getDelay() * 60 * 60 * 1000);
+        room.setIsStarted(true);
+        roomRepository.save(room);
+        scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
 
 
     }
@@ -238,17 +249,14 @@ public class RoomServiceImpl implements RoomService{
                 , new Date(System.currentTimeMillis() + delayMillis));
     }
 
-    /** TODO
+    /**
      *
      * @param roomId    현재 방 번호
      */
     @Override
     @Transactional
     public void startGame(Long roomId) {
-
         Room room = findById(roomId);
-        room.setIsStarted(true);
-        roomRepository.save(room);
         List<UserRoom> userRooms = userRoomService.findUserRooms(room);
         userRooms.forEach(userRoom -> sseService.sendGameStartNotification(userRoom.getUser().getId(),roomId));
 
@@ -357,16 +365,22 @@ public class RoomServiceImpl implements RoomService{
     @Transactional
     public void quitRoom(Long roomId) {
         User currentUser = findUserBySecurity.getCurrentUser();
-        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(currentUser, findById(roomId)).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(currentUser, findById(roomId)).orElseThrow(() -> new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
         List<UserRoom> userRoomList = userRoomService.findUserRooms(findById(roomId));
+
         // 방장이 나갈 경우 자산 가장 많은 사람으로 방장 바뀜
         if (userRoom.getIsManager()) {
+            userRoom.setIsManager(false);
             UserRoom max = userRoomList.stream()
                     .filter(userRoom1 -> !userRoom1.equals(userRoom))
                     .max(Comparator.comparing(currentUserRoom -> balanceService.totalBalanceFindByUserId(userRoom.getUser().getId()).get().getAsset()))
-                    .orElseThrow(() -> new ApiException(ExceptionEnum.ANYONE_IN_ROOM));
-            max.setIsManager(true);
-            userRoom.setIsManager(false);
+                    .orElse(null);
+            if (max != null) {
+                max.setIsManager(true);
+                userRoomService.save(max);
+            }
+
+
         }
         userRoomService.deleteUserFromRoom(roomId);
         Room room = findById(roomId);
@@ -377,23 +391,36 @@ public class RoomServiceImpl implements RoomService{
             room.setIsDeleted(true);
         }
         room.setUserCount(room.getUserCount() - 1);
+        userRoomService.save(userRoom);
         roomRepository.save(room);
     }
 
     @Override
     public List<Room> findRoomsWithinAssetRange(Long maxAsset) {
         List<Room> rooms = new ArrayList<>();
+        if (maxAsset >= 3000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.THREE_MILLION,false,false));
+        }
+        if (maxAsset >= 5000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.FIVE_MILLION,false,false));
+        }
+        if (maxAsset >= 7000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.SEVEN_MILLION,false,false));
+        }
         if (maxAsset >= 10000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.TEN_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.TEN_MILLION,false,false));
+        }
+        if (maxAsset >= 15000000L) {
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.FIFTEEN_MILLION,false,false));
         }
         if (maxAsset >= 20000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.TWENTY_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.TWENTY_MILLION,false,false));
         }
         if (maxAsset >= 30000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.THIRTY_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.THIRTY_MILLION,false,false));
         }
         if (maxAsset >= 40000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.FORTY_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.FORTY_MILLION,false,false));
         }
         return rooms;
     }
