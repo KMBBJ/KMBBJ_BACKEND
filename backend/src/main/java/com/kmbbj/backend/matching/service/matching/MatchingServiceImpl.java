@@ -100,10 +100,8 @@ public class MatchingServiceImpl implements MatchingService{
             SecurityContextHolder.setContext(context);
             try {
                 if (isQuickMatch) {
-                    System.out.println("빠른 매칭");
                     handleQuickMatch(user);
                 } else {
-                    System.out.println("랜덤 매칭");
                     handleRandomMatch(user, isFiveMinutesPassed, isThirtyMinutesPassed);
                 }
 
