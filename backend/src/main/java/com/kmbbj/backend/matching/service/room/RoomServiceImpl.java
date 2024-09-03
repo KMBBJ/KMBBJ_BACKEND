@@ -391,16 +391,16 @@ public class RoomServiceImpl implements RoomService{
     public List<Room> findRoomsWithinAssetRange(Long maxAsset) {
         List<Room> rooms = new ArrayList<>();
         if (maxAsset >= 10000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.TEN_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.TEN_MILLION,false,false));
         }
         if (maxAsset >= 20000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.TWENTY_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.TWENTY_MILLION,false,false));
         }
         if (maxAsset >= 30000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.THIRTY_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.THIRTY_MILLION,false,false));
         }
         if (maxAsset >= 40000000L) {
-            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney.FORTY_MILLION,false));
+            rooms.addAll(roomRepository.findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney.FORTY_MILLION,false,false));
         }
         return rooms;
     }

@@ -20,7 +20,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Page<Room> findAllByIsDeletedAndIsStarted(boolean isDeleted, boolean isStarted, Pageable pageable);
 
 
-    List<Room> findRoomsByStartSeedMoneyAndIsStarted(StartSeedMoney startSeedMoney,boolean isStarted);
+    List<Room> findRoomsByStartSeedMoneyAndIsStartedAndIsDeleted(StartSeedMoney startSeedMoney,boolean isStarted,boolean isDeleted);
 
 
     List<Room> findAllByOrderByCreateDateDesc();

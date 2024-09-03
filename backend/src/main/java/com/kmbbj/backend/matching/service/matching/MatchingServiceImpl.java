@@ -164,9 +164,8 @@ public class MatchingServiceImpl implements MatchingService{
                     int requiredUserCount = isFiveMinutesPassed.get() ? 4 : 10;
 
 
-                        // 매칭 잡힌 유저들
+                    // 매칭 잡힌 유저들
                     List<User> potentialMatch = findPotentialMatches(asset, currentRange);
-                    potentialMatch.forEach(user11 -> System.out.println(user11.getNickname()));
                     synchronized (this) {
                         if (potentialMatch.size() >= requiredUserCount) {
                             if (userRoomService.findCurrentRoom() == null) {
