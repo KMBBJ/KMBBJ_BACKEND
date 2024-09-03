@@ -357,16 +357,22 @@ public class RoomServiceImpl implements RoomService{
     @Transactional
     public void quitRoom(Long roomId) {
         User currentUser = findUserBySecurity.getCurrentUser();
-        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(currentUser, findById(roomId)).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+        UserRoom userRoom = userRoomService.findByUserAndRoomAndIsPlayed(currentUser, findById(roomId)).orElseThrow(() -> new ApiException(ExceptionEnum.ROOM_NOT_FOUND));
         List<UserRoom> userRoomList = userRoomService.findUserRooms(findById(roomId));
+
         // 방장이 나갈 경우 자산 가장 많은 사람으로 방장 바뀜
         if (userRoom.getIsManager()) {
+            userRoom.setIsManager(false);
             UserRoom max = userRoomList.stream()
                     .filter(userRoom1 -> !userRoom1.equals(userRoom))
                     .max(Comparator.comparing(currentUserRoom -> balanceService.totalBalanceFindByUserId(userRoom.getUser().getId()).get().getAsset()))
-                    .orElseThrow(() -> new ApiException(ExceptionEnum.ANYONE_IN_ROOM));
-            max.setIsManager(true);
-            userRoom.setIsManager(false);
+                    .orElse(null);
+            if (max != null) {
+                max.setIsManager(true);
+                userRoomService.save(max);
+            }
+
+
         }
         userRoomService.deleteUserFromRoom(roomId);
         Room room = findById(roomId);
@@ -377,6 +383,7 @@ public class RoomServiceImpl implements RoomService{
             room.setIsDeleted(true);
         }
         room.setUserCount(room.getUserCount() - 1);
+        userRoomService.save(userRoom);
         roomRepository.save(room);
     }
 
