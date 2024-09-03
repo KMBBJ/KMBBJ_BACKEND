@@ -250,8 +250,14 @@ public class RoomServiceImpl implements RoomService{
 
     // delay 시간 뒤 게임 시작 메서드 실행
     public void scheduleStartGame(Long roomId, long delayMillis) {
-        taskScheduler.schedule(() -> startGame(roomId)
-                , new Date(System.currentTimeMillis() + delayMillis));
+        Room room = findById(roomId);
+        if (room.getUserCount() >= 4 && room.getUserCount() <= 10) {
+            taskScheduler.schedule(() -> startGame(roomId)
+                    , new Date(System.currentTimeMillis() + delayMillis));
+        } else {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_START);
+        }
+
     }
 
     /**
