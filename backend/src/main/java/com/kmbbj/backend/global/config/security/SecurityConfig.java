@@ -37,7 +37,7 @@ public class SecurityConfig {
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final UserRepository userRepository;
 
-    @Value("REACT_SERVER_URL")
+    @Value("${REACT_SERVER_URL}")
     private String reactServerUrl;
 
 
