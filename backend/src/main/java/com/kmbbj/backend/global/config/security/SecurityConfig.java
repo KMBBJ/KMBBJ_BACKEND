@@ -8,6 +8,7 @@ import com.kmbbj.backend.global.config.jwt.filter.TokenAuthenticationFilter;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -36,6 +37,12 @@ public class SecurityConfig {
     private final TokenBlacklistRepository tokenBlacklistRepository;
     private final UserRepository userRepository;
 
+    @Value("${REACT_SERVER_URL}")
+    private String reactServerUrl;
+
+    @Value("${REACT_SERVER_URL_NO_PORT}")
+    private String reactServerUrlNoPort;
+
 
     // 모든 유저 허용 페이지
     String[] allAllowPage = new String[]{
@@ -58,6 +65,7 @@ public class SecurityConfig {
             "/auth/refreshToken", // 토큰 재발급 페이지
             "/coin/**", // 코인 관리 페이지
             "/chart/**", // 차트
+            "/admin/**" // 관리자 페이지
     };
 
     // 비로그인 유저 허용 페이지
@@ -158,6 +166,8 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
+        config.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
+        config.addAllowedOrigin(reactServerUrlNoPort);
         config.addAllowedHeader("*"); // 모든 헤더 허용
         config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         config.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
@@ -175,6 +185,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
+        configuration.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
+        configuration.addAllowedOrigin(reactServerUrlNoPort);
+        configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가

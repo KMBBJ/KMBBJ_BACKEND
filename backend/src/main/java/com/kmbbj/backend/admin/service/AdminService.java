@@ -3,6 +3,7 @@ package com.kmbbj.backend.admin.service;
 
 import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.repository.AdminAlarmRepository;
+import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
@@ -222,12 +223,49 @@ public class AdminService {
     @Transactional
     public Long findIdByEmail(String email) {
         Optional<User> user = userRepository.findByEmail(email);
+
         if (user.isPresent()) {
+            Long id = user.get().getId();
+            return id;
+        }
+        throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
+    }
+
+    /**
+     * 관리자 유저로 가입을 한 이메일에 해당 계정의 정보를 전달하는 메서드
+     *
+     * @param user 회원가입을 한 관리자 유저
+     * @param password 회원가입을 한 관리자 유저의 비밀번호
+     */
+    @Transactional
+    @Async
+    public void joinAdmin(User user, String password) {
+        if (user == null) { // User 가 없을 경우
             throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
         }
-        return user.get().getId();
+
+        // 이메일 관련 정보 설정
+        String recipientEmail = user.getEmail();
+        String emailSubject = "관리자 계정 생성 완료";
+        String emailText = "관리자 전용 계정이 생성되었습니다\n" +
+                "이메일 : " + recipientEmail + "\n" +
+                "비밀번호 : " + password;
+
+
+        // 이메일 보내기
+        emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
     }
 
 
+    /**
+     * ROLE_USER 권한을 가진 사용자 목록 조회
+     *
+     * @param pageable 페이징 정보
+     * @return 페이징 처리된 사용자 목록
+     */
+    @Transactional(readOnly = true)
+    public Page<User> findUsersByRoleAdmin(Pageable pageable) {
+        return userRepository.findByAuthority(Authority.ROLE_ADMIN, pageable);
+    }
 
 }

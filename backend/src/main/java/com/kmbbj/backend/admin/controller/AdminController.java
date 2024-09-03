@@ -5,19 +5,24 @@ import com.kmbbj.backend.admin.dto.ExampleRequestDTO;
 import com.kmbbj.backend.admin.entity.AdminAlarm;
 import com.kmbbj.backend.admin.service.AdminService;
 import com.kmbbj.backend.admin.service.BlackListUserService;
+import com.kmbbj.backend.auth.controller.request.UserJoinRequest;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.auth.service.register.AdminRegisterService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -35,6 +40,7 @@ public class AdminController {
     private final AdminService adminService;
     private final UserRepository userRepository;
     private final BlackListUserService blackListUserService;
+    private final AdminRegisterService adminRegisterService;
 
 
 
@@ -248,5 +254,63 @@ public class AdminController {
         } catch (Exception e) {
             return new CustomResponse<>(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.", null);
         }
+    }
+
+    /**
+     * 어드민 회원가입 처리
+     *
+     * @param userJoinRequest 회원가입 요청 데이터 (어드민 전용)
+     * @param bindingResult    요청 데이터 검증 결과
+     * @return 회원가입 결과
+     */
+    @PostMapping("/join")
+    @Operation(summary = "관리자 회원가입", description = "새로운 관리자을 등록")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "회원가입 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "409", description = "이미 존재하는 관리자")
+    })
+    public CustomResponse<String> join(@RequestBody @Valid UserJoinRequest userJoinRequest, BindingResult bindingResult) {
+        // 필드 에러 확인
+        if (bindingResult.hasErrors()) {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_FILED);
+        }
+
+
+        adminRegisterService.registerAdmin(userJoinRequest); // 관리자 회원가입 서비스 호출
+
+        String email = userJoinRequest.getEmail();
+
+        String password = userJoinRequest.getPassword(); // 이메일에 유저의 비밀번호를 담아 보내기 위해 비밀번호 추출
+
+        Optional<User> user = userRepository.findByEmail(email);
+
+        adminService.joinAdmin(user.get(),password); // 이메일 보내기
+
+        return new CustomResponse<>(HttpStatus.CREATED, "회원가입 성공", "어드민 회원가입이 완료되었습니다.");
+    }
+
+    /**
+     * ROLE_ADMIN 권한을 가진 사용자 목록 조회
+     *
+     * @param page 첫 페이지 0 기본값
+     * @param size 페이지당 보여지는 사용자 수
+     * @return 페이징 처리된 사용자 정보 목록
+     */
+    @GetMapping("/role_admin")
+    @Operation(summary = "ROLE_ADMIN 권한을 가진 사용자 조회", description = "ROLE_ADMIN 권한을 가진 사용자 목록을 페이징하여 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "사용자 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "사용자를 찾지 못했습니다."),
+            @ApiResponse(responseCode = "500", description = "서버 오류 발생")
+    })
+    public CustomResponse<Page<User>> getUsersByRoleUser(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Page<User> users = adminService.findUsersByRoleAdmin(pageRequest);
+
+        return new CustomResponse<>(HttpStatus.OK, "ROLE_ADMIN 권한을 가진 사용자 조회 성공", users);
     }
 }
