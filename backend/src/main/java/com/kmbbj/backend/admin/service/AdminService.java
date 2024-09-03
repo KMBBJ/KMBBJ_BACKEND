@@ -222,12 +222,38 @@ public class AdminService {
     @Transactional
     public Long findIdByEmail(String email) {
         Optional<User> user = userRepository.findByEmail(email);
+
         if (user.isPresent()) {
-            throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
+            Long id = user.get().getId();
+            return id;
         }
-        return user.get().getId();
+        throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
     }
 
+    /**
+     * 관리자 유저로 가입을 한 이메일에 해당 계정의 정보를 전달하는 메서드
+     *
+     * @param user 회원가입을 한 관리자 유저
+     * @param password 회원가입을 한 관리자 유저의 비밀번호
+     */
+    @Transactional
+    @Async
+    public void joinAdmin(User user, String password) {
+        if (user == null) { // User 가 없을 경우
+            throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
+        }
+
+        // 이메일 관련 정보 설정
+        String recipientEmail = user.getEmail();
+        String emailSubject = "관리자 계정 생성 완료";
+        String emailText = "관리자 전용 계정이 생성되었습니다\n" +
+                "이메일 : " + recipientEmail + "\n" +
+                "비밀번호 : " + password;
+
+
+        // 이메일 보내기
+        emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
+    }
 
 
 }
