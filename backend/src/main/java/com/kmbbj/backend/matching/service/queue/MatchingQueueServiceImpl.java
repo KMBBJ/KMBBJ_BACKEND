@@ -34,21 +34,30 @@ public class MatchingQueueServiceImpl implements MatchingQueueService {
         Set<String> userIds = redisTemplate.opsForZSet().rangeByScore("matchingQueue", min, max);
         List<User> users = new ArrayList<>();
         for (String userId : userIds) {
-            User user = userService.UserfindById(Long.parseLong(userId)).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
-            users.add(user);
+            String status = redisTemplate.opsForValue().get("userStatus:" + userId);
+            if (status == null && users.size() < 10) {  // 상태가 설정되지 않았다면 대기 중
+                User user = userService.UserfindById(Long.parseLong(userId)).orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_FOUND));
+                users.add(user);
+                redisTemplate.opsForValue().set("userStatus:" + userId, "selected");
+            }
         }
         return users;
     }
 
     @Override
-    public void removeUserFromQueue(User user) {
-        redisTemplate.opsForZSet().remove("matchingQueue", user.getId().toString());
+    public void changeStatus(Long userId) {
+        redisTemplate.delete("userStatus:" + userId.toString());
     }
 
     @Override
-    // 유저가 이미 매칭된 상태인지 확인하는 메서드 추가
+    public void removeUserFromQueue(User user) {
+        redisTemplate.opsForZSet().remove("matchingQueue", user.getId().toString());
+        redisTemplate.delete("userStatus:" + user.getId().toString());
+    }
+
+    @Override
     public boolean isUserAlreadyMatched(User user) {
-        System.out.println(redisTemplate.opsForZSet().rank("matchingQueue",user.getId().toString()));
-        return redisTemplate.opsForZSet().rank("matchingQueue", user.getId().toString()) == null;
+        String status = redisTemplate.opsForValue().get("userStatus:" + user.getId().toString());
+        return "selected".equals(status);
     }
 }

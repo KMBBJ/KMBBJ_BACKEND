@@ -33,11 +33,13 @@ public class UserRoomServiceImpl implements UserRoomService{
      * @return userRoom
      */
     @Override
+    @Transactional(readOnly = true)
     public Optional<UserRoom> findByUserAndRoomAndIsPlayed(User user, Room room) {
         return userRoomRepository.findByUserAndRoomAndIsPlayed(user, room, true);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<UserRoom> findByUserAndRoom(User user, Room room) {
         return userRoomRepository.findByUserAndRoom(user, room);
     }
@@ -63,12 +65,14 @@ public class UserRoomServiceImpl implements UserRoomService{
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserRoom findCurrentRoom() {
         User user = findUserBySecurity.getCurrentUser();
         return userRoomRepository.findByUserAndIsPlayed(user, true).orElse(null);
     }
 
 
+    @Transactional(readOnly = true)
     public List<UserRoom> findUserRooms(Room room) {
         return userRoomRepository.findAllByRoomAndIsPlayed(room, true);
 
