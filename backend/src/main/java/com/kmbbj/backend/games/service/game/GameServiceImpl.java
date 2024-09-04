@@ -231,6 +231,25 @@ public class GameServiceImpl implements GameService {
         return room.getIsStarted() && gameRepository.findActiveGameByRoom(room) != null;
     }
 
+    @Override
+    public String getEncryptedGameIdForUser(Long userId) {
+        UserRoom userRoom = userRoomRepository.findByUserIdAndIsPlayed(userId, true)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_IN_ACTIVE_GAME));
+
+        Room room = userRoom.getRoom();
+
+        if (!room.getIsStarted()) {
+            throw new ApiException(ExceptionEnum.GAME_NOT_STARTED);
+        }
+
+        Game activeGame = gameRepository.findActiveGameByRoom(room);
+        if (activeGame == null) {
+            throw new ApiException(ExceptionEnum.GAME_NOT_FOUND);
+        }
+
+        return gameEncryptionUtil.encryptUUID(activeGame.getGameId());
+    }
+
 
 }
 

@@ -12,4 +12,6 @@ public interface GameService {
     boolean isUserAuthorizedForGame(String encryptedGameId);
 
     boolean isGameInProgress(Long roomId);
+
+    String getEncryptedGameIdForUser(Long userId);
 }

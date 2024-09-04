@@ -17,4 +17,6 @@ public interface UserRoomRepository extends JpaRepository<UserRoom, Long> {
     Optional<UserRoom> findByUserAndIsPlayed(User user, boolean isPlayed);
 
     List<UserRoom> findAllByRoomAndIsPlayed(Room room, boolean isPlayed);
+
+    Optional<UserRoom> findByUserIdAndIsPlayed(Long userId, boolean isPlayed);
 }
