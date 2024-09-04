@@ -49,4 +49,8 @@ public class Room {
 
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
     private List<UserRoom> userRooms;
+
+    public Long startSeedMoneyLong() {
+        return (long) startSeedMoney.getAmount();
+    }
 }
