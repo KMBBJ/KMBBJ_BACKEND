@@ -10,6 +10,7 @@ KMBBJ 팀의 백엔드 리포지토리입니다. 이 프로젝트는 [Spring Boo
 - 제품 정보 관리 및 검색 API
 - 주문 처리 및 결제 API
 - 관리자 대시보드 기능
+- 
 
 ## 주요 기술 스택
 
@@ -31,7 +32,22 @@ KMBBJ_BACKEND/
 ├── src/                 # 소스 코드 디렉토리
 │   ├── main/
 │   │   ├── java/        # Java 소스 파일
-│   │   └── resources/   # 설정 파일 및 리소스
+│ │ │ 	└── com/ 
+│ │ │ 		└── kmbbj/ 
+│ │ │ 			└── backend/ 
+│ │ │ 				├── admin/ //관리자 기능
+│ │ │ 				├── auth/ //사용자 인증, 회원가입, 사용자관리
+│ │ │ 				├── balance/ //사용자 총 잔액
+│ │ │ 				├── charts/  //코인, 코인 차트
+│ │ │ 				├── Transaction/ //거래 기능
+│ │ │ 				├── games/ //게임 기능
+│ │ │ 				├── global/ //전역으로 사용하는 설정
+│ │ │ 				├── matching/ //게임 방생성, 매칭
+│ │ │ 				└── notifications/  //알림
+│   │── resources/   # 설정 파일 및 리소스
+│   │ └── cql/ //cassandra cql 문
+│   │ └── properties/ //각종 환경 변수 및 DB 설정 파일 및 선행작업
+│   │ └── sql/ //sql 파일
 │   └── test/            # 테스트 코드
 ├── build/               # 빌드 아티팩트
 ├── Dockerfile           # Docker 이미지 빌드 설정 파일
