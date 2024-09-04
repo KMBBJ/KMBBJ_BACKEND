@@ -25,11 +25,11 @@ public class ExchangeDTOMapper {
                 .coinId(orderRequest.getCoinId())
                 .price(orderRequest.getPrice())
                 .timestamp(Instant.now())
+                .transactionId(transactionId)
                 .build();
 
         BuyOrder buyOrder = BuyOrder.builder()
                 .id(orderPrimaryKey)
-                .transactionId(transactionId)
                 .build();
         return buyOrder;
     }
@@ -45,11 +45,11 @@ public class ExchangeDTOMapper {
                 .coinId(orderRequest.getCoinId())
                 .price(orderRequest.getPrice())
                 .timestamp(Instant.now())
+                .transactionId(transactionId)
                 .build();
 
         return SellOrder.builder()
                 .id(orderPrimaryKey)
-                .transactionId(transactionId)
                 .build();
     }
 

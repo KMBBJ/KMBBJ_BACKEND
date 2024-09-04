@@ -125,7 +125,7 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
      * @return 업데이트된 트랜잭션 객체
      */
     private Transaction updateTransactionStatus(SellOrder sellOrder) {
-        Transaction transaction = transactionRepository.findById(sellOrder.getTransactionId())
+        Transaction transaction = transactionRepository.findById(sellOrder.getId().getTransactionId())
                 .orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_TRANSACTION));
 
         // 트랜잭션 상태와 체결 날짜를 업데이트, 상태 업데이트
@@ -141,7 +141,7 @@ public class ExecutionAllMatchingOrderImpl implements ExecutionAllMatchingOrder 
      * @return 업데이트된 트랜잭션 객체
      */
     private Transaction updateTransactionStatus(BuyOrder buyOrder) {
-        Transaction transaction = transactionRepository.findById(buyOrder.getTransactionId())
+        Transaction transaction = transactionRepository.findById(buyOrder.getId().getTransactionId())
                 .orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_TRANSACTION));
 
         transaction.setStatus(TransactionStatus.COMPLETED);

@@ -1,8 +1,7 @@
 CREATE TABLE buy_orders (
                             coin_id BIGINT,
                             price BIGINT,
-                            timestamp TIMESTAMP,
                             transaction_id BIGINT,
-                            quantity DECIMAL,
-                            PRIMARY KEY (coin_id, price, timestamp)
-) WITH CLUSTERING ORDER BY (price DESC, timestamp ASC);
+                            timestamp TIMESTAMP,
+                            PRIMARY KEY (coin_id, price, transaction_id, timestamp)
+) WITH CLUSTERING ORDER BY (price DESC, transaction_id ASC, timestamp ASC);
