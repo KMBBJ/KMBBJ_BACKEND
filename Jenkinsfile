@@ -46,6 +46,7 @@ pipeline {
                     withCredentials([string(credentialsId: 'EC2_IP', variable: 'EC2_IP')]) {
                         sshagent (credentials: ['ssh']) {
                             sh '''
+                                rsync -avz --delete backend/ ubuntu@$EC2_IP:/home/ubuntu/app/backend/
                                 ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP '
                                     cd /home/ubuntu/app/backend &&
                                     docker build -t my-spring-app . &&
