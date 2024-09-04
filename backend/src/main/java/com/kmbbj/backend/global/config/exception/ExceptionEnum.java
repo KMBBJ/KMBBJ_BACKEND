@@ -56,6 +56,7 @@ public enum ExceptionEnum {
     ALREADY_DELETED(HttpStatus.NOT_FOUND,"ALREADY_DELETED","삭제된 방입니다."),
     ALREADY_STARTED(HttpStatus.NOT_FOUND,"ALREADY_STARTED","시작된 방입니다."),
     NOT_ALLOW_QUIT(HttpStatus.BAD_REQUEST,"NOT_ALLOW_QUIT","시작 대기 중 퇴장이 불가능합니다."),
+    NOT_MANAGER(HttpStatus.FORBIDDEN,"NOT_MANAGER","방장만 게임시작을 할 수 있습니다."),
 
     // Game Exception
     GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "GAME_NOT_FOUND", "게임을 찾지 못했습니다."),
