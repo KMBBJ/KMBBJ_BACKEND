@@ -113,5 +113,29 @@ public class GameController {
         return new CustomResponse<>(HttpStatus.OK, "게임 결과 조회 성공", gameResults);
     }
 
+    @GetMapping("/{roomId}/in-progress")
+    @Operation(summary = "게임 진행 상태 확인", description = "방 ID를 통해 해당 방의 게임 진행 상태를 확인합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게임 진행 상태 확인 성공"),
+            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
+    })
+    public CustomResponse<Boolean> isGameInProgress(@PathVariable Long roomId) {
+        boolean isInProgress = gameService.isGameInProgress(roomId);
+        return new CustomResponse<>(HttpStatus.OK, "게임 진행 상태 확인 성공", isInProgress);
+    }
+
+    @GetMapping("/{userId}")
+    @Operation(summary = "사용자의 현재 게임 ID 조회", description = "사용자 ID를 통해 현재 참여 중인 게임의 암호화된 ID를 조회합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "암호화된 게임 ID 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "사용자가 활성화된 게임에 참여하고 있지 않음"),
+            @ApiResponse(responseCode = "400", description = "게임이 시작되지 않음"),
+            @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
+    })
+    public CustomResponse<String> getEncryptedGameIdForUser(@PathVariable Long userId) {
+        String encryptedGameId = gameService.getEncryptedGameIdForUser(userId);
+        return new CustomResponse<>(HttpStatus.OK, "암호화된 게임 ID 조회 성공", encryptedGameId);
+    }
+
 
 }

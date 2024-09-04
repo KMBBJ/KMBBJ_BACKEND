@@ -2,6 +2,7 @@ package com.kmbbj.backend.games.repository;
 
 import com.kmbbj.backend.games.entity.Game;
 import com.kmbbj.backend.games.enums.GameStatus;
+import com.kmbbj.backend.matching.entity.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +18,5 @@ public interface GameRepository extends JpaRepository<Game, UUID> {
     // 모든 게임 상태 조회
     List<Game> findByGameStatus(GameStatus gameStatus);
 
+    Game findActiveGameByRoom(Room room);
 }

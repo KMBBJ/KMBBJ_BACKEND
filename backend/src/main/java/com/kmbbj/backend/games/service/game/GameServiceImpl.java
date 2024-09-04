@@ -1,13 +1,8 @@
 package com.kmbbj.backend.games.service.game;
 
 
-import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.games.dto.CurrentRoundDTO;
-import com.kmbbj.backend.games.dto.GameStartDTO;
-import com.kmbbj.backend.games.dto.GameStatusDTO;
-import com.kmbbj.backend.games.dto.RoundResultDTO;
+import com.kmbbj.backend.games.dto.*;
 import com.kmbbj.backend.games.entity.Game;
-import com.kmbbj.backend.games.entity.GameBalance;
 import com.kmbbj.backend.games.entity.Round;
 import com.kmbbj.backend.games.enums.GameStatus;
 import com.kmbbj.backend.games.repository.GameRepository;
@@ -30,9 +25,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -52,6 +48,8 @@ public class GameServiceImpl implements GameService {
     private final GameBalanceService gameBalanceService;
     private final RoundResultService roundResultService;
     private final UserRoomRepository userRoomRepository;
+    private final Map<Long, String> roomGameIdMap = new ConcurrentHashMap<>();
+
 
 
 
@@ -71,46 +69,55 @@ public class GameServiceImpl implements GameService {
     @Override
     @Transactional
     public GameStartDTO startGame(Long roomId) {
-        Room room = roomService.findById(roomId); // 방 ID 조회함
+        String encryptedGameId = roomGameIdMap.computeIfAbsent(roomId, id -> createAndStartGame(id));
+        return createGameStartDTO(roomId, encryptedGameId);
+    }
 
-        List<UserRoom> userRooms = userRoomRepository.findAllByRoomAndIsPlayed(room ,true);
+    protected String createAndStartGame(Long roomId) {
+        Room room = roomService.findById(roomId);
+
+        // 이미 진행 중인 게임이 있는지 확인
+        Game game = gameRepository.findActiveGameByRoom(room);
+
+        if (game == null) {
+            // 새 게임 생성 & 저장
+            game = new Game();
+            game.setGameStatus(GameStatus.ACTIVE);
+            game.setRoom(room);
+            game = gameRepository.save(game);
+
+            // 방에 속한 플레이 중인 사용자들에게 게임 잔액 생성
+            gameBalanceService.createGameBalance(game);
+
+            // 첫 라운드 생성 & 저장
+            Round round = new Round();
+            round.setGame(game);
+            round.setRoundNumber(1);
+            int durationMinutes = getDurationMinutes();
+            round.setDurationMinutes(durationMinutes);
+            roundRepository.save(round);
+        }
+
+        // 게임 UUID 값을 암호화
+        return gameEncryptionUtil.encryptUUID(game.getGameId());
+    }
+
+    private GameStartDTO createGameStartDTO(Long roomId, String encryptedGameId) {
+        Room room = roomService.findById(roomId);
+        List<UserRoom> userRooms = userRoomRepository.findAllByRoomAndIsPlayed(room, true);
 
         List<String> userIds = userRooms.stream()
                 .map(userRoom -> userRoom.getUser().getId().toString())
                 .collect(Collectors.toList());
 
-        // 새 게임 생성 & 저장
-        Game game = new Game();
-        game.setGameStatus(GameStatus.ACTIVE); // 게임 상태를 설정
-        game.setRoom(room); // 방 <-> 게임 연결
-        game = gameRepository.save(game); // 데이터 베이스 저장
-
-
-        // 방 속한 플레이한 사용자들에게 게임 잔액 생성
-        List<GameBalance> gameBalances = gameBalanceService.createGameBalance(game);
-
-        // 첫 라운드 생성 & 저장
-        Round round = new Round();
-        round.setGame(game);
-        round.setRoundNumber(1); //  첫 라운드 시작
-        int durationMinutes = getDurationMinutes(); // 라운드의 지속 시간
-        round.setDurationMinutes(durationMinutes);
-        roundRepository.save(round);
-
-        // 게임 UUID 값을 암호화
-        String encryptedGameId = gameEncryptionUtil.encryptUUID(game.getGameId());
-
-        //
         GameStartDTO gameStartDTO = new GameStartDTO();
         gameStartDTO.setGameId(encryptedGameId);
         gameStartDTO.setUserId(userIds);
 
-        // 게임 상태 정보 DTO
-        GameStatusDTO status = new GameStatusDTO();
-        status.setResults(new ArrayList<>()); // 게임 시작 시 결과가 없음
-
         return gameStartDTO;
     }
+
+
 
 
     /** 게임 종료
@@ -211,7 +218,37 @@ public class GameServiceImpl implements GameService {
         return currentUserRoom.getRoom().getRoomId().equals(requestedGame.getRoom().getRoomId());
     }
 
+    @Override
+    public boolean isGameInProgress(Long roomId) {
+        Room room = roomService.findById(roomId);
 
+        // 방이 시작 상태인지 확인
+        if (!room.getIsStarted()) {
+            return false;
+        }
+
+        // 활성 상태의 게임이 있는지 확인
+        return room.getIsStarted() && gameRepository.findActiveGameByRoom(room) != null;
+    }
+
+    @Override
+    public String getEncryptedGameIdForUser(Long userId) {
+        UserRoom userRoom = userRoomRepository.findByUserIdAndIsPlayed(userId, true)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_IN_ACTIVE_GAME));
+
+        Room room = userRoom.getRoom();
+
+        if (!room.getIsStarted()) {
+            throw new ApiException(ExceptionEnum.GAME_NOT_STARTED);
+        }
+
+        Game activeGame = gameRepository.findActiveGameByRoom(room);
+        if (activeGame == null) {
+            throw new ApiException(ExceptionEnum.GAME_NOT_FOUND);
+        }
+
+        return gameEncryptionUtil.encryptUUID(activeGame.getGameId());
+    }
 
 
 }
