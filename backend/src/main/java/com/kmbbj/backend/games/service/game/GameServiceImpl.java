@@ -1,6 +1,8 @@
 package com.kmbbj.backend.games.service.game;
 
 
+import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.games.dto.*;
 import com.kmbbj.backend.games.entity.Game;
 import com.kmbbj.backend.games.entity.Round;
@@ -15,6 +17,7 @@ import com.kmbbj.backend.games.util.GameEncryptionUtil;
 import com.kmbbj.backend.games.util.GameProperties;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
+import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import com.kmbbj.backend.matching.entity.Room;
 import com.kmbbj.backend.matching.entity.UserRoom;
 import com.kmbbj.backend.matching.repository.RoomRepository;
@@ -40,6 +43,7 @@ public class GameServiceImpl implements GameService {
     private final RoomService roomService;
     private final RoomRepository roomRepository;
     private final UserRoomService userRoomService;
+    private final UserService userService;
     private final RoundRepository roundRepository;
     private final RoundService roundService;
     private final GameEncryptionUtil gameEncryptionUtil;
@@ -49,9 +53,7 @@ public class GameServiceImpl implements GameService {
     private final RoundResultService roundResultService;
     private final UserRoomRepository userRoomRepository;
     private final Map<Long, String> roomGameIdMap = new ConcurrentHashMap<>();
-
-
-
+    private final FindUserBySecurity findUserBySecurity;
 
 
     /**
@@ -233,24 +235,20 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public String getEncryptedGameIdForUser(Long userId) {
-        UserRoom userRoom = userRoomRepository.findByUserIdAndIsPlayed(userId, true)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_IN_ACTIVE_GAME));
+    public Long getUserParticipatingRoom() {
+
+        UserRoom userRoom = userRoomService.findUserRoomByUserAndIsPlayed()
+                .orElseThrow(() -> new ApiException(ExceptionEnum.NOT_IN_ROOM));
 
         Room room = userRoom.getRoom();
 
-        if (!room.getIsStarted()) {
-            throw new ApiException(ExceptionEnum.GAME_NOT_STARTED);
+        // 게임을 진행하고 있는 방에 없음
+        if ((room.getIsStarted() && room.getIsDeleted())) {
+            return 0L;
+        } else {
+            // 매칭 방에 있음
+            return room.getRoomId();
         }
-
-        Game activeGame = gameRepository.findActiveGameByRoom(room);
-        if (activeGame == null) {
-            throw new ApiException(ExceptionEnum.GAME_NOT_FOUND);
-        }
-
-        return gameEncryptionUtil.encryptUUID(activeGame.getGameId());
     }
-
-
 }
 

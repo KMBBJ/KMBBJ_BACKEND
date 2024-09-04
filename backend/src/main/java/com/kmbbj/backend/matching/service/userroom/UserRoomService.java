@@ -19,4 +19,6 @@ public interface UserRoomService {
     UserRoom findCurrentRoom();
 
     List<UserRoom> findUserRooms(Room room);
+
+    Optional<UserRoom> findUserRoomByUserAndIsPlayed();
 }

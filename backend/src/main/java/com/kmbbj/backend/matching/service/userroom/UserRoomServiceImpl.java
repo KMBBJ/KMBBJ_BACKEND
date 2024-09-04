@@ -77,4 +77,10 @@ public class UserRoomServiceImpl implements UserRoomService{
         return userRoomRepository.findAllByRoomAndIsPlayed(room, true);
 
     }
+
+    @Override
+    public Optional<UserRoom> findUserRoomByUserAndIsPlayed() {
+        User user = findUserBySecurity.getCurrentUser();
+        return userRoomRepository.findByUserAndIsPlayed(user, true);
+    }
 }

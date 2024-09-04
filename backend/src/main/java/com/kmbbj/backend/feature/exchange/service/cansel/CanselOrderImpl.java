@@ -43,7 +43,7 @@ public class CanselOrderImpl implements CanselOrder {
     @Transactional
     public void canselOrder(CanselRequest canselRequest) {
         // 거래 ID로 거래를 조회
-        Transaction transaction = transactionRepository.findById(canselRequest.getTransactoinId()).orElseThrow(
+        Transaction transaction = transactionRepository.findById(canselRequest.getTransactionId()).orElseThrow(
                 () -> new ApiException(ExceptionEnum.NOT_FOUND_TRANSACTION)
         );
 

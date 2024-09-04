@@ -8,6 +8,7 @@ import com.kmbbj.backend.feature.exchange.repository.cassandra.sell.SellOrderRep
 import com.kmbbj.backend.feature.exchange.repository.postgre.TransactionRepository;
 import com.kmbbj.backend.feature.exchange.util.ExchangeDTOMapper;
 import com.kmbbj.backend.games.entity.CoinBalance;
+import com.kmbbj.backend.games.entity.GameBalance;
 import com.kmbbj.backend.games.repository.CoinBalanceRepository;
 import com.kmbbj.backend.games.repository.GameBalanceRepository;
 import com.kmbbj.backend.games.repository.GameRepository;
@@ -49,9 +50,9 @@ public class SaveSellOrderImpl implements SaveSellOrder {
         //게임 있는지 확인
         //gameRepository.findById(orderRequest.getGameId()).orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
         // 게임 안 계좌 조회
-        Long gameBalanceId = gameBalanceRepository.findIdByUserId(orderRequest.getUserId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
+        GameBalance gameBalance = gameBalanceRepository.findByUserId(orderRequest.getUserId()).orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
         // 게임안 코인 조회
-        CoinBalance coinBalance = coinBalanceRepository.findCoinBalanceByGameBalanceIdAndCoinId(gameBalanceId, orderRequest.getCoinId()).orElseThrow(() -> new ApiException(ExceptionEnum.COIN_BALANCE_NOT_FOUND));
+        CoinBalance coinBalance = coinBalanceRepository.findCoinBalanceByGameBalanceIdAndCoinId(gameBalance.getGameBalancesId(), orderRequest.getCoinId()).orElseThrow(() -> new ApiException(ExceptionEnum.COIN_BALANCE_NOT_FOUND));
 
         //판매할수 있는 코인을 가지고 있는지 확인후 기록
         if (orderRequest.getAmount().compareTo(coinBalance.getQuantity()) <= 0) {
@@ -64,7 +65,7 @@ public class SaveSellOrderImpl implements SaveSellOrder {
         }
 
         //거래 로그 기록
-        Transaction transaction = exchangeDTOMapper.orderRequestToTransaction(orderRequest, gameBalanceId);
+        Transaction transaction = exchangeDTOMapper.orderRequestToTransaction(orderRequest, gameBalance.getGameBalancesId());
         transactionRepository.save(transaction);
 
         //카산드라에 등록

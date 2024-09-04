@@ -83,9 +83,7 @@ public class ChartServiceImpl implements ChartService {
         String symbolWithUSDT = coin.getSymbol() + "USDT";
         // 현재 시간을 밀리초 단위로 Unix 타임스탬프 형식으로 얻음
         long endTime = System.currentTimeMillis();
-
-        // startTime을 현재 시간에서 2시간 전으로 설정
-        long startTime = endTime - (10 * 60 * 60 * 1000); // 10시간을 밀리초로 변환하여 뺌
+        long startTime = getStartTime(interval, endTime);
 
         // Binance API를 통해 Kline 데이터를 가져옴
         Mono<String> klineData = binanceApiService.getKlines(symbolWithUSDT, interval, startTime, endTime, limit);
@@ -94,6 +92,21 @@ public class ChartServiceImpl implements ChartService {
                 .map(JsonElement::getAsJsonArray)
                 .doOnNext(klines -> saveKlineData(interval, klines, coin))
                 .subscribe();
+    }
+
+    private static long getStartTime(String interval, long endTime) {
+        int minutes = switch (interval) {
+            case "1분" -> 120; // 120분 전
+            case "3분" -> 3 * 120; // 360분 전 (6시간 전)
+            case "5분" -> 5 * 120; // 600분 전 (10시간 전)
+            case "30분" -> 30 * 120; // 3600분 전 (2.5일 전)
+            case "1일" -> 24 * 60 * 120; // 2880시간 전 (120일 전)
+            case "1주일" -> 7 * 24 * 60 * 120; // 20160시간 전 (약 1.4년 전)
+            default -> throw new IllegalArgumentException("잘못된 시간대입니다.");
+        };
+
+        // startTime을 현재 시간에서 2시간 전으로 설정
+        return endTime - ((long) minutes * 60 * 1000);
     }
 
     /**
