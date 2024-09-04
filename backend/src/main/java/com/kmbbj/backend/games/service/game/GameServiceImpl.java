@@ -148,11 +148,12 @@ public class GameServiceImpl implements GameService {
             List<RoundResultDTO> allRoundResults = roundResultService.getCompletedRoundResultsForGame(encryptedGameId);
             // 게임 결과 생성 메서드 호출
             gameResultService.createGameResults(encryptedGameId);
-
-
         }
-        Room room = game.getRoom(); // 게임과 연결 된 방을 가져옴
 
+        // 게임 결과 생성 후 게임 계좌는 삭제 처리
+        gameBalanceService.deleteGameBalances(game);
+
+        Room room = game.getRoom(); // 게임과 연결 된 방을 가져옴
         // 방 상태 업데이트
         room.setIsStarted(false);
         roomRepository.save(room);

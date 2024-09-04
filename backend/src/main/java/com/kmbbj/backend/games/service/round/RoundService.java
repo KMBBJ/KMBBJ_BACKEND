@@ -17,4 +17,6 @@ public interface RoundService {
     CurrentRoundDTO endCurrentAndStartNextRound(String encryptedGameId);
 
     List<List<RoundRankingSimpleDTO>> getRoundRankingsForGame(String encryptedGameId);
+
+    List<RoundRankingSimpleDTO> getCurrentRoundRankingsForGame(String encryptedGameId);
 }
