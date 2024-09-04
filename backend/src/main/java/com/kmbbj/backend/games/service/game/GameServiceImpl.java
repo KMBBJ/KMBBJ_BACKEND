@@ -1,13 +1,8 @@
 package com.kmbbj.backend.games.service.game;
 
 
-import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.games.dto.CurrentRoundDTO;
-import com.kmbbj.backend.games.dto.GameStartDTO;
-import com.kmbbj.backend.games.dto.GameStatusDTO;
-import com.kmbbj.backend.games.dto.RoundResultDTO;
+import com.kmbbj.backend.games.dto.*;
 import com.kmbbj.backend.games.entity.Game;
-import com.kmbbj.backend.games.entity.GameBalance;
 import com.kmbbj.backend.games.entity.Round;
 import com.kmbbj.backend.games.enums.GameStatus;
 import com.kmbbj.backend.games.repository.GameRepository;
@@ -30,7 +25,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -122,6 +116,8 @@ public class GameServiceImpl implements GameService {
 
         return gameStartDTO;
     }
+
+
 
 
     /** 게임 종료
@@ -222,7 +218,18 @@ public class GameServiceImpl implements GameService {
         return currentUserRoom.getRoom().getRoomId().equals(requestedGame.getRoom().getRoomId());
     }
 
+    @Override
+    public boolean isGameInProgress(Long roomId) {
+        Room room = roomService.findById(roomId);
 
+        // 방이 시작 상태인지 확인
+        if (!room.getIsStarted()) {
+            return false;
+        }
+
+        // 활성 상태의 게임이 있는지 확인
+        return room.getIsStarted() && gameRepository.findActiveGameByRoom(room) != null;
+    }
 
 
 }

@@ -113,5 +113,16 @@ public class GameController {
         return new CustomResponse<>(HttpStatus.OK, "게임 결과 조회 성공", gameResults);
     }
 
+    @GetMapping("/{roomId}/in-progress")
+    @Operation(summary = "게임 진행 상태 확인", description = "방 ID를 통해 해당 방의 게임 진행 상태를 확인합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "게임 진행 상태 확인 성공"),
+            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
+    })
+    public CustomResponse<Boolean> isGameInProgress(@PathVariable Long roomId) {
+        boolean isInProgress = gameService.isGameInProgress(roomId);
+        return new CustomResponse<>(HttpStatus.OK, "게임 진행 상태 확인 성공", isInProgress);
+    }
+
 
 }
