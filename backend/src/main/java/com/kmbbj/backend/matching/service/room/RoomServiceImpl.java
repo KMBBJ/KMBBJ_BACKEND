@@ -59,11 +59,11 @@ public class RoomServiceImpl implements RoomService{
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET);
         }
 
-        if (createRoomDTO.getDelay() <= 0) {
+        if (createRoomDTO.getDelay() < 1 || createRoomDTO.getDelay() > 60) {
             throw new ApiException(ExceptionEnum.NOT_ALLOW_DELAY);
         }
 
-        if (createRoomDTO.getEnd() <= 0) {
+        if (createRoomDTO.getEnd() < 1 || createRoomDTO.getEnd() > 15) {
             throw new ApiException(ExceptionEnum.NOT_ALLOW_END);
         }
         // 방 생성
@@ -119,6 +119,11 @@ public class RoomServiceImpl implements RoomService{
         if (editRoomDTO.getStartSeedMoney().getAmount() > balanceService.totalBalanceFindByUserId(min.getUser().getId()).get().getAsset() / 3) {
             throw new ApiException(ExceptionEnum.INSUFFICIENT_ASSET_USER);
         }
+
+        if (editRoomDTO.getEnd() > 15 || editRoomDTO.getEnd() < 1) {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_END);
+        }
+
 
         // 방장 여부 확인
         if (userRoom != null) {
@@ -223,19 +228,26 @@ public class RoomServiceImpl implements RoomService{
     @Transactional
     @Override
     // 게임 시작 전 delay 시간을 이메일로 알려주는 beforeStart 메서드 추가
-    public void beforeStart(Long roomId) {
+    public int beforeStart(Long roomId) {
         Room room = findById(roomId);
-        if (room.getIsStarted()) return;
-        userRoomService.findUserRooms(room).forEach(userRoom ->
-                everyEmailService.sendSimpleMessage(userRoom.getUser(),
-                        userRoom.getUser().getEmail(),
-                        String.format("%s 방 게임 시작 알림",userRoom.getRoom().getTitle()),
-                        String.format("%s 방 게임이 %d 시간 후에 시작합니다.",userRoom.getRoom().getTitle(),userRoom.getRoom().getDelay()),
-                        "START")
-        );
-        room.setIsStarted(true);
-        roomRepository.save(room);
-        scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
+        if (room.getUserCount() >= 4 && room.getUserCount() <= 10) {
+            if (room.getIsStarted()) return 0;
+            else {
+                userRoomService.findUserRooms(room).forEach(userRoom ->
+                        everyEmailService.sendSimpleMessage(userRoom.getUser(),
+                                userRoom.getUser().getEmail(),
+                                String.format("%s 방 게임 시작 알림", userRoom.getRoom().getTitle()),
+                                String.format("%s 방 게임이 %d 시간 후에 시작합니다.", userRoom.getRoom().getTitle(), userRoom.getRoom().getDelay()),
+                                "START")
+                );
+                room.setIsStarted(true);
+                roomRepository.save(room);
+                scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
+            }
+        }else {
+            throw new ApiException(ExceptionEnum.NOT_ALLOW_START);
+        }
+        return room.getDelay();
 
 
     }
@@ -244,6 +256,7 @@ public class RoomServiceImpl implements RoomService{
     public void scheduleStartGame(Long roomId, long delayMillis) {
         taskScheduler.schedule(() -> startGame(roomId)
                 , new Date(System.currentTimeMillis() + delayMillis));
+
     }
 
     /**
@@ -278,6 +291,11 @@ public class RoomServiceImpl implements RoomService{
         // 현재 유저 자산
         Long currentUserAsset = balanceService.totalBalanceFindByUserId(user.getId()).get().getAsset();
 
+        // 삭제 여부 판단
+        if (room.getIsDeleted()) {
+            throw new ApiException(ExceptionEnum.ALREADY_DELETED);
+        }
+
         // 방에 들어온 상태 확인
         if (room.getUserRooms().stream().anyMatch(userRoom -> userRoom.getUser().equals(user) && userRoom.getIsPlayed())) {
             return; // 이미 입장함
@@ -300,6 +318,9 @@ public class RoomServiceImpl implements RoomService{
                 .orElse(null);
 
         if (userRoom == null) {
+            if (room.getIsStarted()) {
+                throw new ApiException(ExceptionEnum.ALREADY_STARTED);
+            }
             userRoom = UserRoom.builder()
                     .user(user)
                     .room(room)
@@ -349,6 +370,9 @@ public class RoomServiceImpl implements RoomService{
         return EnterRoomDTO.builder()
                 .roomTitle(room.getTitle())
                 .averageAsset(room.getAverageAsset())
+                .delay(room.getDelay())
+                .end(room.getEnd())
+                .startSeedMoney(room.getStartSeedMoney())
                 .userCount(room.getUserCount())
                 .roomUser(roomUserList)
                 .build();
@@ -382,12 +406,19 @@ public class RoomServiceImpl implements RoomService{
         userRoomService.deleteUserFromRoom(roomId);
         Room room = findById(roomId);
 
+
         // 방을 나갔을때 아무도 없을경우 방 삭제 여부 true
         if (room.getUserCount() - 1 == 0) {
             room.setUserCount(0);
             room.setIsDeleted(true);
+            room.setAverageAsset(0L);
+        } else {
+            long l = ((room.getAverageAsset() * room.getUserCount()) - balanceService.totalBalanceFindByUserId(findUserBySecurity.getCurrentUser().getId()).get().getAsset())/(room.getUserCount()-1);
+            room.setAverageAsset(l);
+            room.setUserCount(room.getUserCount() - 1);
         }
-        room.setUserCount(room.getUserCount() - 1);
+
+
         userRoomService.save(userRoom);
         roomRepository.save(room);
     }

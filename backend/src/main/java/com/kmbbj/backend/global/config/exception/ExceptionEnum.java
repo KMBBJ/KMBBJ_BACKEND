@@ -50,8 +50,11 @@ public enum ExceptionEnum {
     INSUFFICIENT_ASSET(HttpStatus.FORBIDDEN,"INSUFFICIENT_ASSET","방 조건에 알맞는 자산이 부족합니다."),
     INSUFFICIENT_ASSET_USER(HttpStatus.CONFLICT,"INSUFFICIENT_ASSET_USER","방 조건에 맞지 않는 유저가 있습니다."),
     ANYONE_IN_ROOM(HttpStatus.NOT_FOUND,"ANYONE_IN_ROOM","해당 방에 아무도 없습니다."),
-    NOT_ALLOW_DELAY(HttpStatus.BAD_REQUEST,"NOT_ALLOW_DELAY","딜레이는 1이상 이여야합니다."),
-    NOT_ALLOW_END(HttpStatus.BAD_REQUEST,"NOT_ALLOW_END","라운드는 1이상 이여야합니다."),
+    NOT_ALLOW_DELAY(HttpStatus.BAD_REQUEST,"NOT_ALLOW_DELAY","딜레이는 1 ~ 60 사이 숫자를 입력하세요."),
+    NOT_ALLOW_END(HttpStatus.BAD_REQUEST,"NOT_ALLOW_END","라운드는 1 ~ 15 사이 숫자를 입력하세요."),
+    NOT_ALLOW_START(HttpStatus.BAD_REQUEST,"NOT_ALLOW_START","게임 시작은 4명 이상 있어야합니다."),
+    ALREADY_DELETED(HttpStatus.NOT_FOUND,"ALREADY_DELETED","삭제된 방입니다."),
+    ALREADY_STARTED(HttpStatus.NOT_FOUND,"ALREADY_STARTED","시작된 방입니다."),
 
     // Game Exception
     GAME_NOT_FOUND(HttpStatus.NOT_FOUND, "GAME_NOT_FOUND", "게임을 찾지 못했습니다."),

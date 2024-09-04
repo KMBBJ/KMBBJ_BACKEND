@@ -1,6 +1,7 @@
 package com.kmbbj.backend.matching.dto;
 
 import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.matching.entity.StartSeedMoney;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,6 +20,15 @@ public class EnterRoomDTO {
 
     // 현재 방 평균 자산
     private Long averageAsset;
+
+    // 현재 방 시드 머니
+    private StartSeedMoney startSeedMoney;
+
+    // 현재 방 딜레이
+    private Integer delay;
+
+    // 현재 방 라운드
+    private Integer end;
 
     // 현재 방에 있는 유저 정보
     private List<RoomUserListDTO> roomUser;

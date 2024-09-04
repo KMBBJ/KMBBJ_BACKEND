@@ -32,7 +32,7 @@ public interface RoomService {
 
     EnterRoomDTO getEnterRoomDto(Room room);
 
-    void beforeStart(Long roomId);
+    int beforeStart(Long roomId);
 
     Room findRoomById(Long roomId);
 }
