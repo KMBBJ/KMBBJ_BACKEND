@@ -269,7 +269,7 @@ public class RoomServiceImpl implements RoomService{
         Room room = findById(roomId);
         List<UserRoom> userRooms = userRoomService.findUserRooms(room);
         userRooms.forEach(userRoom -> sseService.sendGameStartNotification(userRoom.getUser().getId(),roomId));
-
+        room.setIsDeleted(true);
     }
 
     @Override
