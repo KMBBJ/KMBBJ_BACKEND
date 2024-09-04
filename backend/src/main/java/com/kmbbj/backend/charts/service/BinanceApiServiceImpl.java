@@ -136,6 +136,8 @@ public class BinanceApiServiceImpl implements BinanceApiService {
     public List<Coin24hDetail> parse24hrTickerData(List<Map<String, Object>> tickerDataList) {
         List<Coin24hDetail> coin24hDetails = new ArrayList<>();
 
+        double exchangeRate = 1300.0;
+
         for (Map<String, Object> tickerData : tickerDataList) {
             String symbol = (String) tickerData.get("symbol");
             String symbolWithoutUSDT = symbol.replace("USDT", "");
@@ -144,7 +146,7 @@ public class BinanceApiServiceImpl implements BinanceApiService {
             Coin coin = coinRepository.findBySymbol(symbolWithoutUSDT)
                     .orElseThrow(() -> new ApiException(ExceptionEnum.NOT_FOUND_SYMBOL));
 
-            double price = Double.parseDouble((String) tickerData.get("lastPrice"));
+            double price = Double.parseDouble((String) tickerData.get("lastPrice")) * exchangeRate;
             double volume = Double.parseDouble((String) tickerData.get("volume"));
 
             // 총 시가 계산
@@ -154,19 +156,19 @@ public class BinanceApiServiceImpl implements BinanceApiService {
             Coin24hDetail coin24hDetail = Coin24hDetail.builder()
                     .coin(coin)
                     .price(price)
-                    .bidPrice(Double.parseDouble((String) tickerData.get("bidPrice")))
+                    .bidPrice(Double.parseDouble((String) tickerData.get("bidPrice")) * exchangeRate)
                     .bidQty(Double.parseDouble((String) tickerData.get("bidQty")))
-                    .askPrice(Double.parseDouble((String) tickerData.get("askPrice")))
+                    .askPrice(Double.parseDouble((String) tickerData.get("askPrice")) * exchangeRate)
                     .askQty(Double.parseDouble((String) tickerData.get("askQty")))
-                    .priceChange(Double.parseDouble((String) tickerData.get("priceChange")))
+                    .priceChange(Double.parseDouble((String) tickerData.get("priceChange")) * exchangeRate)
                     .priceChangePercent(Double.parseDouble((String) tickerData.get("priceChangePercent")))
-                    .weightedAvgPrice(Double.parseDouble((String) tickerData.get("weightedAvgPrice")))
-                    .prevClosePrice(Double.parseDouble((String) tickerData.get("prevClosePrice")))
-                    .openPrice(Double.parseDouble((String) tickerData.get("openPrice")))
-                    .highPrice(Double.parseDouble((String) tickerData.get("highPrice")))
-                    .lowPrice(Double.parseDouble((String) tickerData.get("lowPrice")))
+                    .weightedAvgPrice(Double.parseDouble((String) tickerData.get("weightedAvgPrice")) * exchangeRate)
+                    .prevClosePrice(Double.parseDouble((String) tickerData.get("prevClosePrice")) * exchangeRate)
+                    .openPrice(Double.parseDouble((String) tickerData.get("openPrice")) * exchangeRate)
+                    .highPrice(Double.parseDouble((String) tickerData.get("highPrice")) * exchangeRate)
+                    .lowPrice(Double.parseDouble((String) tickerData.get("lowPrice")) * exchangeRate)
                     .volume(volume)
-                    .quoteVolume(Double.parseDouble((String) tickerData.get("quoteVolume")))
+                    .quoteVolume(Double.parseDouble((String) tickerData.get("quoteVolume")) * exchangeRate)
                     .tradeCount(((Number) tickerData.get("count")).longValue())
                     .openTime(((Number) tickerData.get("openTime")).longValue())
                     .closeTime(((Number) tickerData.get("closeTime")).longValue())
