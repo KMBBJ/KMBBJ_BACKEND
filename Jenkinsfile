@@ -46,21 +46,13 @@ pipeline {
                     withCredentials([string(credentialsId: 'EC2_IP', variable: 'EC2_IP')]) {
                         sshagent (credentials: ['ssh']) {
                             sh '''
-                                scp -o StrictHostKeyChecking=no backend/build/libs/*.jar ubuntu@$EC2_IP:/home/ubuntu/app/backend/my-spring-app.jar
-                            '''
+                                scp -o StrictHostKeyChecking=no -r backend/build/libs/* ubuntu@$EC2_IP:/home/ubuntu/app/backend/build/libs/
 
-                            // EC2 서버에 접속해서 컨테이너를 실행하도록 설정
-                            sh '''
                                 ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP '
-                                    # 도커 파일 위치로 이동
                                     cd /home/ubuntu/app/backend &&
-
-                                    # 기존 컨테이너 중지 및 제거
+                                    docker build -t my-spring-app . &&
                                     docker stop spring-app || true &&
                                     docker rm spring-app || true &&
-
-                                    # 새로운 JAR 파일을 기반으로 Docker 컨테이너 실행
-                                    docker build -t my-spring-app . &&
                                     docker run -d --name spring-app -p 8080:8080 my-spring-app
                                 '
                             '''
