@@ -117,7 +117,7 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         // 유저별 페이지 접근 허용
         http.authorizeHttpRequests(auth -> auth
                 .requestMatchers(allAllowPage).permitAll() // 모든 유저
@@ -129,11 +129,11 @@ public class SecurityConfig {
         // 세션 관리 Stateless 설정(서버가 클라이언트 상태 저장x)
         http.sessionManagement(auth -> auth.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // CORS 허용
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
-
         // CSRF 비활성화
         http.csrf(csrf -> csrf.disable());
+
+        // CORS 허용
+        http.cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer.configurationSource(corsConfigurationSource()));
 
         // 로그인 폼 비활성화
         http.formLogin(auth -> auth.disable());
@@ -166,8 +166,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowCredentials(true);
-        configuration.addAllowedOriginPattern("*");
+        configuration.addAllowedOrigin(reactServerUrl);
+        configuration.addAllowedOrigin(reactServerUrlNoPort);
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);
