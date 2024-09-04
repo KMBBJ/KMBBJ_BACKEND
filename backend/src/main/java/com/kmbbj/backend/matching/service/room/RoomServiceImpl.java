@@ -230,7 +230,7 @@ public class RoomServiceImpl implements RoomService{
     // 게임 시작 전 delay 시간을 이메일로 알려주는 beforeStart 메서드 추가
     public int beforeStart(Long roomId) {
         Room room = findById(roomId);
-        if (room.getUserCount() >= 4 && room.getUserCount() <= 10) {
+//        if (room.getUserCount() >= 4 && room.getUserCount() <= 10) {
             if (room.getIsStarted()) return 0;
             else {
 //                userRoomService.findUserRooms(room).forEach(userRoom ->
@@ -242,11 +242,11 @@ public class RoomServiceImpl implements RoomService{
 //                );
                 room.setIsStarted(true);
                 roomRepository.save(room);
-                scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
+                scheduleStartGame(roomId, room.getDelay() * 1000); // 분으로 바꾸기
             }
-        }else {
-            throw new ApiException(ExceptionEnum.NOT_ALLOW_START);
-        }
+//        }else {
+//            throw new ApiException(ExceptionEnum.NOT_ALLOW_START);
+//        }
         return room.getDelay();
 
 
