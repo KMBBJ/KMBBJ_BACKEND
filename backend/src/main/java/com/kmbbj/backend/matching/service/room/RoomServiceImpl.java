@@ -233,13 +233,13 @@ public class RoomServiceImpl implements RoomService{
         if (room.getUserCount() >= 4 && room.getUserCount() <= 10) {
             if (room.getIsStarted()) return 0;
             else {
-                userRoomService.findUserRooms(room).forEach(userRoom ->
-                        everyEmailService.sendSimpleMessage(userRoom.getUser(),
-                                userRoom.getUser().getEmail(),
-                                String.format("%s 방 게임 시작 알림", userRoom.getRoom().getTitle()),
-                                String.format("%s 방 게임이 %d 시간 후에 시작합니다.", userRoom.getRoom().getTitle(), userRoom.getRoom().getDelay()),
-                                "START")
-                );
+//                userRoomService.findUserRooms(room).forEach(userRoom ->
+//                        everyEmailService.sendSimpleMessage(userRoom.getUser(),
+//                                userRoom.getUser().getEmail(),
+//                                String.format("%s 방 게임 시작 알림", userRoom.getRoom().getTitle()),
+//                                String.format("%s 방 게임이 %d 시간 후에 시작합니다.", userRoom.getRoom().getTitle(), userRoom.getRoom().getDelay()),
+//                                "START")
+//                );
                 room.setIsStarted(true);
                 roomRepository.save(room);
                 scheduleStartGame(roomId, room.getDelay() * 60 * 1000);
