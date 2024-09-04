@@ -19,8 +19,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 /**
  * Spring Security 설정 클래스
@@ -103,6 +103,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
+        // CORS 허용
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+
+        // CSRF 비활성화
+        http.csrf(csrf -> csrf.disable());
         return http.build();
     }
 
@@ -156,37 +161,14 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS 설정을 위한 Bean
-     *
-     * @return CORS 필터
-     */
-    @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
-        config.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
-        config.addAllowedOrigin(reactServerUrlNoPort);
-        config.addAllowedHeader("*"); // 모든 헤더 허용
-        config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
-        config.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
-        source.registerCorsConfiguration("/**", config);
-        return new CorsFilter(source);
-    }
-
-    /**
      * CORS 설정을 위한 메서드
      *
      * @return CORS 설정 소스
      */
-    private UrlBasedCorsConfigurationSource corsConfigurationSource() {
+    private CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
-        configuration.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
-        configuration.addAllowedOrigin(reactServerUrlNoPort);
         configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
