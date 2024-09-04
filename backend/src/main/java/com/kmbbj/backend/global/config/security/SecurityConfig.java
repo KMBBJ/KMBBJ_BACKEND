@@ -103,9 +103,6 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        // CORS 허용
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
-
         // CSRF 비활성화
         http.csrf(csrf -> csrf.disable());
         return http.build();
@@ -133,7 +130,7 @@ public class SecurityConfig {
         http.sessionManagement(auth -> auth.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // CORS 허용
-//        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         // CSRF 비활성화
         http.csrf(csrf -> csrf.disable());
@@ -165,15 +162,17 @@ public class SecurityConfig {
      *
      * @return CORS 설정 소스
      */
-    private CorsConfigurationSource corsConfigurationSource() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin(reactServerUrl); // 리액트 서버 주소를 허용
-        configuration.addAllowedOrigin(reactServerUrlNoPort); // 포트 없는 주소도 허용 (필요한 경우)
-        configuration.addAllowedHeader("*"); // 모든 헤더 허용
-        configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
-        configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
+
         configuration.setAllowCredentials(true);
+        configuration.addAllowedOriginPattern("*");
+        configuration.addAllowedHeader("*");
+        configuration.addAllowedMethod("*");
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
