@@ -168,11 +168,12 @@ public class SecurityConfig {
     private CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowCredentials(true);
-        configuration.addAllowedOrigin("/**");
+        configuration.addAllowedOrigin(reactServerUrl); // 리액트 서버 주소를 허용
+        configuration.addAllowedOrigin(reactServerUrlNoPort); // 포트 없는 주소도 허용 (필요한 경우)
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
+        configuration.setAllowCredentials(true);
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
