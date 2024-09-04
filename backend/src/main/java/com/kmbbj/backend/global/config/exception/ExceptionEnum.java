@@ -65,6 +65,8 @@ public enum ExceptionEnum {
     INVALID_ROUND_NUMBER(HttpStatus.BAD_REQUEST, "INVALID_ROUND_NUMBER", "유효하지 않은 라운드 번호입니다."),
     RANKING_NOT_FOUND(HttpStatus.NOT_FOUND, "RANKING_NOT_FOUND", "순위 정보를 찾지 못했습니다."),
     GAME_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "GAME_ALREADY_ENDED", "게임이 이미 종료되었습니다."),
+    USER_NOT_IN_ACTIVE_GAME(HttpStatus.NOT_FOUND, "USER_NOT_IN_ACTIVE_GAME", "사용자가 현재 활성화된 게임에 참여하고 있지 않습니다."),
+    GAME_NOT_STARTED(HttpStatus.BAD_REQUEST, "GAME_NOT_STARTED", "게임이 아직 시작되지 않았습니다."),
 
 //    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 
