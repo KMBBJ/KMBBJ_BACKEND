@@ -13,5 +13,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CanselRequest {
     @Schema(description = "게임 Id")
-    private Long transactoinId;
+    private Long transactionId;
 }

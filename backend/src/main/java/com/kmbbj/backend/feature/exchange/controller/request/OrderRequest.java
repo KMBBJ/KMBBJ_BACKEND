@@ -2,10 +2,7 @@ package com.kmbbj.backend.feature.exchange.controller.request;
 
 import com.kmbbj.backend.feature.exchange.entity.TransactionType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -13,6 +10,7 @@ import java.util.UUID;
 @Schema(description = "주문 요청시 사용하면됩니다.")
 @Getter
 @Builder
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderRequest {
@@ -27,6 +25,9 @@ public class OrderRequest {
 
     @Schema(description = "게임 Id")
     private UUID gameId;
+
+    @Schema(description = "암호화 게임Id")
+    private String privateGameId;
 
     @Schema(description = "코인 Id")
     private Long coinId;

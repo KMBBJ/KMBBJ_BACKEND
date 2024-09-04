@@ -39,6 +39,7 @@ public class Transaction {
     private LocalDateTime createDate; // 생성일시, 거래가 생성된 시간
 
     @Setter
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private TransactionStatus status = TransactionStatus.PENDING; // 체결이 됐는지 알려줌
 
