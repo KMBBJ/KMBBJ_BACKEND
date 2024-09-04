@@ -133,7 +133,7 @@ public class SecurityConfig {
         http.sessionManagement(auth -> auth.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         // CORS 허용
-        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+//        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         // CSRF 비활성화
         http.csrf(csrf -> csrf.disable());
