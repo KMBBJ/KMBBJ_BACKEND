@@ -46,7 +46,6 @@ public class GameBalanceServiceImpl implements GameBalanceService {
         // 방의 시작 시드머니 가져옴
         Long seedMoney = Long.valueOf((String.valueOf(game.getRoom().getStartSeedMoney().getAmount())));
 
-
         // 실제로 게임을 플레이한 사용자 리스트 가져오기
         List<User> participants = game.getRoom().getUserRooms().stream()
                 .filter(UserRoom::getIsPlayed) // 실제로 플레이한 사용자 필터링
@@ -63,12 +62,13 @@ public class GameBalanceServiceImpl implements GameBalanceService {
             gameBalance.setUser(user);  // 사용자 정보 설정
             gameBalance.setSeed(seedMoney); // 시작 자본 설정
 
-            // GameBalance 객체를 데이터베이스 저장
-            gameBalance = gameBalanceRepository.save(gameBalance);
-
             // 생성된 GameBalance 리스트에 추가
             gameBalances.add(gameBalance);
         }
+
+        // GameBalance 객체를 데이터베이스 저장
+        gameBalanceRepository.saveAll(gameBalances);
+
         return gameBalances;
     }
 
@@ -85,7 +85,7 @@ public class GameBalanceServiceImpl implements GameBalanceService {
                 .orElseThrow(() -> new ApiException(ExceptionEnum.BALANCE_NOT_FOUND));
 
         // 조회된 초기 자본 가져오고
-        Long initialBalance = gameBalance.getSeed();
+        Long initialBalance = Long.valueOf(String.valueOf(gameBalance.getGame().getRoom().getStartSeedMoney().getAmount()));
 
         // 해당 TransactionsResponse 의 ID 가져와서 모든 거래 내역 조회
         List<TransactionsResponse> transactions = transactionRepository.findAllByBalancesIdWithCoinSymbol(gameBalance.getGameBalancesId());
@@ -111,6 +111,20 @@ public class GameBalanceServiceImpl implements GameBalanceService {
         gameBalanceDTO.setPrice(lastPrice); // 마지막 거래의 가격 설정
 
         return gameBalanceDTO;
+    }
+
+    /**
+     * 게임 종료 시 호출, 시드 전부 삭제
+     *
+     * @param game 삭제할 game balance 의 game 정보
+     * @return 삭제된 GameBalance 목록
+     */
+    @Override
+    @Transactional
+    public List<GameBalance> deleteGameBalances(Game game) {
+        List<GameBalance> gameBalanceList = gameBalanceRepository.findByGame(game);
+        gameBalanceRepository.deleteAllById(gameBalanceList.stream().map(GameBalance::getGameBalancesId).toList());
+        return gameBalanceList;
     }
 
     private Long calculateCurrentBalance(Long initialBalance, List<TransactionsResponse> transactions) {

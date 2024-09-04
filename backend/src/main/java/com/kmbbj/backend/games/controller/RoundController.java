@@ -1,7 +1,5 @@
 package com.kmbbj.backend.games.controller;
 
-
-
 import com.kmbbj.backend.games.dto.CurrentRoundDTO;
 import com.kmbbj.backend.games.dto.RoundRankingSimpleDTO;
 import com.kmbbj.backend.games.dto.RoundResultDTO;
@@ -43,6 +41,22 @@ public class RoundController {
     public ResponseEntity<CustomResponse<List<List<RoundRankingSimpleDTO>>>> getRoundRankings(@PathVariable String encryptedGameId) {
         List<List<RoundRankingSimpleDTO>> rankings = roundService.getRoundRankingsForGame(encryptedGameId);
         return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "라운드 순위 조회 성공", rankings));
+    }
+
+    /** 게임 현재까지의 라운드 랭킹 조회(합산)
+     *
+     * @param encryptedGameId 암호화된 게임 ID
+     * @return 현재까지의 라운드 랭킹 조회(합산)
+     */
+    @GetMapping("/{encryptedGameId}/current-rankings")
+    @Operation(summary = "게임 현재 순위 조회(합산)", description = "암호화된 게임 ID를 통해 해당 게임의 현재 순위를 조회")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "현재 순위 조회 성공"),
+            @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
+    })
+    public ResponseEntity<CustomResponse<List<RoundRankingSimpleDTO>>> getCurrentRoundRankings(@PathVariable String encryptedGameId) {
+        List<RoundRankingSimpleDTO> rankings = roundService.getCurrentRoundRankingsForGame(encryptedGameId);
+        return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "현재 순위 조회 성공", rankings));
     }
 
     /**

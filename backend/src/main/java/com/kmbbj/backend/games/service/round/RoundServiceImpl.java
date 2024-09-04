@@ -19,10 +19,7 @@ import com.kmbbj.backend.matching.entity.Room;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -191,7 +188,7 @@ public class RoundServiceImpl implements RoundService {
 
         // 새로운 라운드 정보를 반환합니다.
         CurrentRoundDTO currentRoundDTO = new CurrentRoundDTO();
-        currentRoundDTO.setRoundNumber(currentRound.getRoundNumber());
+        currentRoundDTO.setRoundNumber(currentRound.getRoundNumber() + 1);
         currentRoundDTO.setTotalRounds(game.getRoom().getEnd());
         currentRoundDTO.setDurationMinutes(currentRound.getDurationMinutes());
         currentRoundDTO.setGameStatus(game.getGameStatus().toString());
@@ -324,6 +321,63 @@ public class RoundServiceImpl implements RoundService {
         }
 
         return allRoundRankings;
+    }
+
+    @Override
+    public List<RoundRankingSimpleDTO> getCurrentRoundRankingsForGame(String encryptedGameId) {
+        // 암호화된 ID를 이용해 게임 객체 조회
+        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
+
+        // 게임에 속한 모든 라운드 조회
+        List<Round> rounds = roundRepository.findByGameOrderByRoundNumberAsc(game);
+        Map<Long, RoundRankingSimpleDTO> roundRankingMap = new HashMap<>();
+
+
+        // 각 라운드에 대한 순위를 DTO로 변환하여 저장
+        for (Round round : rounds) {
+            List<RoundRanking> roundRankings = roundRankingRepository.findByRoundOrderByRankAsc(round);
+
+            // RoundRanking을 RoundRankingSimpleDTO로 변환
+            for (RoundRanking ranking : roundRankings) {
+                RoundRankingSimpleDTO previousRoundRanking = roundRankingMap.get(ranking.getUser().getId());
+                if (previousRoundRanking == null) {
+                    roundRankingMap.put(ranking.getUser().getId(),
+                            new RoundRankingSimpleDTO(
+                                    ranking.getUser().getNickname(), // 닉네임
+                                    0,                              // 순위
+                                    ranking.getProfit(),            // 이익
+                                    ranking.getLoss()               // 손익
+                            ));
+                } else {
+                    Long totalProfit = Long.parseLong(ranking.getProfit());
+                    Long totalLoss = Long.parseLong(ranking.getLoss());
+
+                    Long currentProfit = Long.parseLong(previousRoundRanking.getProfit());
+                    Long currentLoss = Long.parseLong(previousRoundRanking.getLoss());
+
+                    previousRoundRanking.setProfit(String.valueOf(totalProfit + currentProfit));
+                    previousRoundRanking.setLoss(String.valueOf(totalLoss + currentLoss));
+
+                    roundRankingMap.put(ranking.getUser().getId(), previousRoundRanking);
+                }
+                RoundRankingSimpleDTO dto = new RoundRankingSimpleDTO(
+                        ranking.getUser().getNickname(), // 닉네임
+                        ranking.getRank(),              // 순위
+                        ranking.getProfit(),            // 이익
+                        ranking.getLoss()               // 손익
+                );
+            }
+        }
+
+        List<RoundRankingSimpleDTO> currentRoundRanking = roundRankingMap.values().stream().toList();
+        currentRoundRanking.sort((a, b) -> Long.compare(
+                Long.parseLong(b.getProfit()) - Long.parseLong(b.getLoss()),
+                Long.parseLong(a.getProfit()) - Long.parseLong(a.getLoss())
+        ));
+
+        return currentRoundRanking;
     }
 
 
