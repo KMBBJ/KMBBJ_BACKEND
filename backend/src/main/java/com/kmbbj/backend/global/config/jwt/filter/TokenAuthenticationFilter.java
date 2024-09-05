@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,6 +43,9 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenizer jwtTokenizer;
     private final TokenService tokenService;
     private final UserRepository userRepository;
+
+    @Value("${REACT_SERVER_URL}")
+    private String reactServerUrl;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -136,6 +140,11 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         accessTokenCookie.setPath("/");      // 모든 경로에서 유효
         accessTokenCookie.setMaxAge((int) jwtTokenizer.getAccessTokenExpire()); // 액세스 토큰 만료 시간 설정
         response.addCookie(accessTokenCookie);
+
+        // 토큰 CROS 키기
+        response.setHeader("Access-Control-Allow-Origin", reactServerUrl);
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
 
         // 새로운 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", newRefreshToken);
