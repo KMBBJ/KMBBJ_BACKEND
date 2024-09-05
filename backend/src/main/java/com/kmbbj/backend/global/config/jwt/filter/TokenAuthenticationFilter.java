@@ -16,12 +16,10 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,9 +41,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenizer jwtTokenizer;
     private final TokenService tokenService;
     private final UserRepository userRepository;
-
-    @Value("${REACT_SERVER_URL}")
-    private String reactServerUrl;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -95,15 +90,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
      * @return JWT 토큰
      */
     private String getToken(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("Access-Token".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
+        return request.getHeader("Access-Token");
     }
 
     /**
@@ -135,13 +122,8 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         // 새로운 리프레시 토큰을 데이터베이스에 저장
         tokenService.saveOrRefresh(new redisToken(userId, newRefreshToken, tokenService.calculateTimeout()));
 
-        // 새로운 액세스 토큰을 쿠키에 추가
-        Cookie accessTokenCookie = new Cookie("Access-Token", newAccessToken);
-        accessTokenCookie.setPath("/");      // 모든 경로에서 유효
-        accessTokenCookie.setMaxAge((int) jwtTokenizer.getAccessTokenExpire()); // 액세스 토큰 만료 시간 설정
-        response.addCookie(accessTokenCookie);
-
         // 새로운 리프레시 토큰을 응답 헤더에 추가
+        response.setHeader("Access-Token", newAccessToken);
         response.setHeader("Refresh-Token", newRefreshToken);
     }
 }

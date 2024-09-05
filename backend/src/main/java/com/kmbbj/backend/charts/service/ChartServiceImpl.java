@@ -96,12 +96,12 @@ public class ChartServiceImpl implements ChartService {
 
     private static long getStartTime(String interval, long endTime) {
         int minutes = switch (interval) {
-            case "1분" -> 120; // 120분 전
-            case "3분" -> 3 * 120; // 360분 전 (6시간 전)
-            case "5분" -> 5 * 120; // 600분 전 (10시간 전)
-            case "30분" -> 30 * 120; // 3600분 전 (2.5일 전)
-            case "1일" -> 24 * 60 * 120; // 2880시간 전 (120일 전)
-            case "1주일" -> 7 * 24 * 60 * 120; // 20160시간 전 (약 1.4년 전)
+            case "1m" -> 120; // 120분 전
+            case "3m" -> 3 * 120; // 360분 전 (6시간 전)
+            case "5m" -> 5 * 120; // 600분 전 (10시간 전)
+            case "30m" -> 30 * 120; // 3600분 전 (2.5일 전)
+            case "1d" -> 24 * 60 * 120; // 2880시간 전 (120일 전)
+            case "1w" -> 7 * 24 * 60 * 120; // 20160시간 전 (약 1.4년 전)
             default -> throw new IllegalArgumentException("잘못된 시간대입니다.");
         };
 

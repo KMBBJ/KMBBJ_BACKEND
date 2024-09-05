@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -54,7 +53,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "사용자 찾을 수 없음"),
             @ApiResponse(responseCode = "401", description = "비밀번호 불일치")
     })
-    public CustomResponse<String> login(@RequestBody @Valid UserLoginRequest userLoginRequest, BindingResult bindingResult, HttpServletResponse response) {
+    public CustomResponse<Long> login(@RequestBody @Valid UserLoginRequest userLoginRequest, BindingResult bindingResult, HttpServletResponse response) {
         // 필드 에러 확인
         if (bindingResult.hasErrors()) {
             throw new ApiException(ExceptionEnum.NOT_ALLOW_FILED);
@@ -73,16 +72,11 @@ public class UserController {
         // 리프레시 토큰 저장
         tokenService.saveOrRefresh(new redisToken(user.getId(), refreshToken, tokenService.calculateTimeout()));
 
-        // 액세스 토큰을 쿠키에 추가
-        Cookie accessTokenCookie = new Cookie("Access-Token", accessToken);
-        accessTokenCookie.setPath("/");      // 모든 경로에서 유효
-        accessTokenCookie.setMaxAge((int) jwtTokenizer.getAccessTokenExpire()); // 액세스 토큰 만료 시간 설정
-        response.addCookie(accessTokenCookie);
-
         // 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", refreshToken);
+        response.setHeader("Access-Token", accessToken);
 
-        return new CustomResponse<>(HttpStatus.OK, "로그인 성공", accessToken);
+        return new CustomResponse<>(HttpStatus.OK, "로그인 성공", user.getId());
     }
 
     /**
@@ -101,14 +95,6 @@ public class UserController {
     })
     public CustomResponse<String> logout(HttpServletRequest request, HttpServletResponse response) {
         Long userId = findUserBySecurity.getCurrentUser().getId();
-
-        // 클라이언트 쿠키에서 "Access-Token" 쿠키 제거
-        Cookie accessTokenCookie = new Cookie("Access-Token", null);
-        accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(true);
-        accessTokenCookie.setPath("/");
-        accessTokenCookie.setMaxAge(0); // 쿠키 만료
-        response.addCookie(accessTokenCookie);
 
         tokenService.invalidateRefreshToken(userId);
 
