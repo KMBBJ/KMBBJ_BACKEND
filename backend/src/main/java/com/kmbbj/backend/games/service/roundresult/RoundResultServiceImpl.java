@@ -60,17 +60,55 @@ public class RoundResultServiceImpl implements RoundResultService {
 
         List<Transaction> transactions = transactionRepository.findByGameId(gameId);
 
-        Map<Long, BigDecimal> coinBuyQuantityMap = new HashMap<>();
-        Map<Long, BigDecimal> coinProfitMap = new HashMap<>();
-        Map<Long, BigDecimal> coinLossMap = new HashMap<>();
+        Map coinBuyQuantityMap = new HashMap<>();
+        Map coinProfitMap = new HashMap<>();
+        Map coinLossMap = new HashMap<>();
 
         for (Transaction transaction : transactions) {
             processTransaction(transaction, coinBuyQuantityMap, coinProfitMap, coinLossMap);
         }
 
-        setTopBuyCoin(resultDTO, coinBuyQuantityMap);
-        setTopProfitCoin(resultDTO, coinProfitMap);
-        setTopLossCoin(resultDTO, coinLossMap);
+        if (coinBuyQuantityMap.isEmpty()) {
+            resultDTO.setTopBuyCoin("-");
+            resultDTO.setTopBuyPercent("-");
+        } else {
+            Long topBuyCoinId = findTopCoinByQuantity(coinBuyQuantityMap);
+
+            String topBuyCoinName = coinRepository.findById(topBuyCoinId)
+                    .map(Coin::getCoinName)
+                    .orElseThrow(() -> new ApiException(ExceptionEnum.COIN_NOT_FOUND));
+
+            resultDTO.setTopBuyCoin(topBuyCoinName);
+            resultDTO.setTopBuyPercent(calculatePercentWithSymbol(coinBuyQuantityMap, topBuyCoinId));
+        }
+
+        if (coinProfitMap.isEmpty()) {
+            resultDTO.setTopProfitCoin("-");
+            resultDTO.setTopProfitPercent("-");
+        } else {
+            Long topProfitCoinId = findTopCoinByProfit(coinProfitMap);
+
+            String topProfitCoinName = coinRepository.findById(topProfitCoinId)
+                    .map(Coin::getCoinName)
+                    .orElseThrow(() -> new ApiException(ExceptionEnum.COIN_NOT_FOUND));
+
+            resultDTO.setTopProfitCoin(topProfitCoinName);
+            resultDTO.setTopProfitPercent(calculatePercentWithSymbol(coinProfitMap, topProfitCoinId));
+        }
+
+        if (coinLossMap.isEmpty()) {
+            resultDTO.setTopLossCoin("-");
+            resultDTO.setTopLossPercent("-");
+        } else {
+            Long topLossCoinId = findTopCoinByLoss(coinLossMap);
+
+            String topLossCoinName = coinRepository.findById(topLossCoinId)
+                    .map(Coin::getCoinName)
+                    .orElseThrow(() -> new ApiException(ExceptionEnum.COIN_NOT_FOUND));
+
+            resultDTO.setTopLossCoin(topLossCoinName);
+            resultDTO.setTopLossPercent(calculatePercentWithSymbol(coinLossMap, topLossCoinId));
+        }
 
         return resultDTO;
     }
