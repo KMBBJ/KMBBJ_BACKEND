@@ -184,7 +184,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin(reactServerUrl);
         configuration.addAllowedOrigin(reactServerUrlNoPort);
-        configuration.addAllowedHeader("http://coin.kmbbj.kro.kr");
+        configuration.addAllowedOrigin("http://coin.kmbbj.kro.kr");
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
