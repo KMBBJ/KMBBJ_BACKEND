@@ -82,7 +82,7 @@ public class UserController {
         // 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", refreshToken);
 
-        return new CustomResponse<>(HttpStatus.OK, "로그인 성공", "로그인 되었습니다.");
+        return new CustomResponse<>(HttpStatus.OK, "로그인 성공", accessToken);
     }
 
     /**

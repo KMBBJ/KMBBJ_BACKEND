@@ -184,6 +184,7 @@ public class SecurityConfig {
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
+        configuration.setAllowCredentials(true); // 쿠키를 전송 허용
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
