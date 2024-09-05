@@ -150,7 +150,7 @@ public class RoundServiceImpl implements RoundService {
     @Transactional
     public CurrentRoundDTO startNewRound(Game game) {
         Round currentRound = getCurrentRound(game); // 현재 라운드 정보 가져옴
-        int newRoundNumber = currentRound.getRoundNumber() + 1; // 라운드 + 1 추가
+        int newRoundNumber = currentRound.getRoundNumber();// 라운드 + 1 추가
 
         // 새로운 라운드 객체 생성 및 설정
         Round newRound = new Round();
@@ -174,23 +174,49 @@ public class RoundServiceImpl implements RoundService {
     @Override
     @Transactional
     public CurrentRoundDTO endCurrentAndStartNextRound(String encryptedGameId) {
-        boolean isGameEnded = manageRounds(encryptedGameId);
-
-        if (isGameEnded) {
-            throw new ApiException(ExceptionEnum.GAME_ALREADY_ENDED); // 게임이 이미 종료된 경우 예외 발생
+        if (encryptedGameId == null || encryptedGameId.isEmpty()) {
+            throw new ApiException(ExceptionEnum.INVALID_GAME_ID);
         }
-
         // 게임 객체를 가져옵니다.
         Game game = getGameByEncryptedId(encryptedGameId);
-
         // 현재 라운드 정보를 가져옵니다.
         Round currentRound = getCurrentRound(game);
 
-        // 새로운 라운드 정보를 반환합니다.
+        Room room = game.getRoom();
+
+        boolean isLastRound = currentRound.getRoundNumber() >= room.getEnd();
+
+        if (isLastRound) {
+            endGame(game, encryptedGameId);
+            throw new ApiException(ExceptionEnum.GAME_ALREADY_ENDED);
+        } else {
+            processRoundResult(currentRound); // 현재 라운드 결과처리
+            RoundResultDTO roundResultDTO = roundResultService.calculateRoundResult(game.getGameId(), currentRound.getRoundId());
+
+            roundResultService.saveRoundResult(roundResultDTO);
+
+            if (isMiddleRound(currentRound)) {
+                calculateMidGameRanking(game);
+            }
+
+            int newRoundNumber = currentRound.getRoundNumber() + 1;
+            // 새로운 라운드 객체 생성 및 설정
+            Round newRound = new Round();
+            newRound.setGame(game);
+            newRound.setRoundNumber(newRoundNumber);
+            newRound.setDurationMinutes(getDurationMinutes());
+
+            roundRepository.save(newRound);
+            currentRound = newRound;
+        }
+
+        // 새로운 라운드 정보 반환
+
         CurrentRoundDTO currentRoundDTO = new CurrentRoundDTO();
-        currentRoundDTO.setRoundNumber(currentRound.getRoundNumber() + 1);
+
+        currentRoundDTO.setRoundNumber(currentRoundDTO.getRoundNumber());
         currentRoundDTO.setTotalRounds(game.getRoom().getEnd());
-        currentRoundDTO.setDurationMinutes(currentRound.getDurationMinutes());
+        currentRoundDTO.setDurationMinutes(currentRoundDTO.getDurationMinutes());
         currentRoundDTO.setGameStatus(game.getGameStatus().toString());
 
         return currentRoundDTO;
