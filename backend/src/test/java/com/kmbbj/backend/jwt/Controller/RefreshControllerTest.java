@@ -9,7 +9,6 @@ import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,7 +79,6 @@ class RefreshControllerTest {
      */
     @Test
     void refreshTokensValidRefreshToken() {
-        when(request.getHeader("Authorization")).thenReturn("Bearer validToken");
         when(jwtTokenizer.parseRefreshToken(anyString())).thenReturn(claims);
         when(claims.get("userId", Long.class)).thenReturn(1L);
         when(claims.get("email", String.class)).thenReturn("test@example.com");
@@ -91,12 +89,10 @@ class RefreshControllerTest {
         when(jwtTokenizer.createRefreshToken(anyLong(), anyString(), anyString(), any(Authority.class))).thenReturn("newRefreshToken");
         when(tokenService.calculateTimeout()).thenReturn(LocalDateTime.now().plusHours(1));
 
-        CustomResponse<String> customResponse = refreshController.refreshTokens(request, response);
+        CustomResponse<Long> customResponse = refreshController.refreshTokens(request, response);
 
         assertEquals(HttpStatus.OK, customResponse.getStatus());
-        assertEquals("새로운 토큰 발급 완료", customResponse.getData());
         assertEquals("새로운 토큰 발급 완료", customResponse.getMessage());
-        verify(response).addCookie(any(Cookie.class));
         verify(response).setHeader("Refresh-Token", "newRefreshToken");
         verify(tokenService).saveOrRefresh(any(redisToken.class));
     }

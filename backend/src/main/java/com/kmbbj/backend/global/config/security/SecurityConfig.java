@@ -54,7 +54,8 @@ public class SecurityConfig {
             "/auth/join", // 회원가입 페이지
             "/coin/**",
             "/chart/**",
-            "/api/sse/subscribe/**"
+            "/api/sse/subscribe/**",
+            "/profile",
     };
 
     // 관리자 유저 허용 페이지
@@ -166,6 +167,7 @@ public class SecurityConfig {
         config.addAllowedHeader("*"); // 모든 헤더 허용
         config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         config.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
+        config.addExposedHeader("Access-Token");
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
@@ -184,7 +186,7 @@ public class SecurityConfig {
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
-        configuration.setAllowCredentials(true); // 쿠키를 전송 허용
+        configuration.addExposedHeader("Access-Token");
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }

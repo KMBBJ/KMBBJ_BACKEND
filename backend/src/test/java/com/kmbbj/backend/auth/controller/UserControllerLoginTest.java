@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.time.LocalDateTime;
@@ -76,11 +75,10 @@ class UserControllerLoginTest {
         when(jwtTokenizer.createRefreshToken(user.getId(), user.getEmail(), user.getNickname(), user.getAuthority())).thenReturn("refreshToken");
         when(tokenService.calculateTimeout()).thenReturn(LocalDateTime.now().plusHours(1));
 
-        CustomResponse<String> customResponse = userController.login(userLoginRequest, bindingResult, response);
+        CustomResponse<Long> customResponse = userController.login(userLoginRequest, bindingResult, response);
 
         assertEquals(HttpStatus.OK, customResponse.getStatus());
         assertEquals("로그인 성공", customResponse.getMessage());
-        verify(response).addCookie(any(Cookie.class));
         verify(response).setHeader("Refresh-Token", "refreshToken");
         verify(tokenService).saveOrRefresh(any(redisToken.class));
     }
