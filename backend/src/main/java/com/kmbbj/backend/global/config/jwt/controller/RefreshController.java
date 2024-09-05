@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +45,7 @@ public class RefreshController {
             @ApiResponse(responseCode = "401", description = "리프레시 토큰이 없음", content = @Content(schema = @Schema(implementation = CustomResponse.class))),
             @ApiResponse(responseCode = "403", description = "유효하지 않은 리프레시 토큰", content = @Content(schema = @Schema(implementation = CustomResponse.class)))
     })
-    public CustomResponse<String> refreshTokens(
+    public CustomResponse<Long> refreshTokens(
             HttpServletRequest request,
             HttpServletResponse response) {
         String refreshToken = getRefreshTokenFromRequest(request);
@@ -66,16 +65,11 @@ public class RefreshController {
         // 새로운 리프레시 토큰을 데이터베이스에 저장
         tokenService.saveOrRefresh(new redisToken(userId, newRefreshToken, tokenService.calculateTimeout()));
 
-        // 새로운 액세스 토큰을 쿠키에 추가
-        Cookie accessTokenCookie = new Cookie("Access-Token", newAccessToken);
-        accessTokenCookie.setPath("/");      // 모든 경로에서 유효
-        accessTokenCookie.setMaxAge((int) jwtTokenizer.getAccessTokenExpire()); // 액세스 토큰 만료 시간 설정
-        response.addCookie(accessTokenCookie);
-
         // 새로운 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", newRefreshToken);
+        response.setHeader("Access-Token", newAccessToken);
 
-        return new CustomResponse<>(HttpStatus.OK, "새로운 토큰 발급 완료", "새로운 토큰 발급 완료");
+        return new CustomResponse<>(HttpStatus.OK, "새로운 토큰 발급 완료", userId);
     }
 
     /**
@@ -85,9 +79,10 @@ public class RefreshController {
      * @return 추출된 리프레시 토큰, 없을 경우 null
      */
     private String getRefreshTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        // 헤더에서 "Refresh-Token" 값을 가져옴
+        String refreshToken = request.getHeader("Refresh-Token");
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            return refreshToken;
         }
         return null;
     }
