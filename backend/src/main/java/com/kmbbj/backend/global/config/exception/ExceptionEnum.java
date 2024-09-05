@@ -69,6 +69,9 @@ public enum ExceptionEnum {
     GAME_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "GAME_ALREADY_ENDED", "게임이 이미 종료되었습니다."),
     USER_NOT_IN_ACTIVE_GAME(HttpStatus.NOT_FOUND, "USER_NOT_IN_ACTIVE_GAME", "사용자가 현재 활성화된 게임에 참여하고 있지 않습니다."),
     GAME_NOT_STARTED(HttpStatus.BAD_REQUEST, "GAME_NOT_STARTED", "게임이 아직 시작되지 않았습니다."),
+    INVALID_GAME_ID(HttpStatus.BAD_REQUEST, "유효하지 않은 게임 ID입니다."),
+    INVALID_ENCRYPTED_ID(HttpStatus.BAD_REQUEST, "잘못된 형식의 암호화된 ID입니다."),
+    DECRYPTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "ID 복호화에 실패했습니다."),
 
 //    ALREADY_IN_CURRENT_ROOM(HttpStatus.),
 

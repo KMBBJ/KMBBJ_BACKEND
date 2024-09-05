@@ -1,5 +1,7 @@
 package com.kmbbj.backend.games.util;
 
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -70,8 +72,10 @@ public class GameEncryptionUtil {
 
             byte[] decryptedValue = cipher.doFinal(cipherText);
             return UUID.fromString(new String(decryptedValue, StandardCharsets.UTF_8));
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new ApiException(ExceptionEnum.INVALID_ENCRYPTED_ID);
         } catch (Exception e) {
-            throw new RuntimeException("게임 ID 복호화에 실패했습니다.", e);
+            throw new ApiException(ExceptionEnum.DECRYPTION_FAILED);
         }
     }
 }
