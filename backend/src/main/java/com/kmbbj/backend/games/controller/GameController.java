@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/games")
@@ -46,7 +47,7 @@ public class GameController {
 
     /** 게임 ID 가져와서 게임의 현재 상태 조회
      *
-     * @param encryptedGameId 게임의 상태 조회
+     * @param gameId 게임의 상태 조회
      * @return 게임 상태를 담은 DTO 객체
      */
     @GetMapping("/status/{encryptedGameId}")
@@ -55,28 +56,28 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "게임 상태 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<GameStatusDTO> getGameStatus(@PathVariable String encryptedGameId) {
-        gameService.isUserAuthorizedForGame(encryptedGameId);
-        GameStatusDTO status = gameService.getGameStatus(encryptedGameId);
+    public CustomResponse<GameStatusDTO> getGameStatus(@PathVariable UUID gameId) {
+        gameService.isUserAuthorizedForGame(gameId);
+        GameStatusDTO status = gameService.getGameStatus(gameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 상태 조회 성공", status);
     }
 
 
     /** 게임 ID를 받아서 게임 종료
      *
-     * @param encryptedGameId 종료할 게임
+     * @param gameId 종료할 게임
      * @param authentication 인증 정보
      * @return 게임 종료 성공 여부
      */
-    @PostMapping("/end/{encryptedGameId}")
+    @PostMapping("/end/{gameId}")
     @Operation(summary = "게임 종료", description = "암호화된 게임 ID를 받아 현재 게임 상태 조회")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게임 종료 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<String> endGame(@PathVariable String encryptedGameId, Authentication authentication) {
-        gameService.isUserAuthorizedForGame(encryptedGameId);
-        gameService.endGame(encryptedGameId);
+    public CustomResponse<String> endGame(@PathVariable UUID gameId, Authentication authentication) {
+        gameService.isUserAuthorizedForGame(gameId);
+        gameService.endGame(gameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", null);
     }
 
@@ -98,18 +99,18 @@ public class GameController {
 
     /** 특정 게임의 결과 조회
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId 암호화된 게임 ID
      * @return 게임 결과
      */
-    @GetMapping("/{encryptedGameId}/results")
+    @GetMapping("/{gameId}/results")
     @Operation(summary = "게임 결과 조회", description = "암호화된 게임 ID를 통해 해당 게임의 결과를 조회합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게임 결과 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<List<GameResultDTO>> getGameResults(@PathVariable String encryptedGameId) {
-        gameService.isUserAuthorizedForGame(encryptedGameId);
-        List<GameResultDTO> gameResults = gameResultService.getGameResults(encryptedGameId);
+    public CustomResponse<List<GameResultDTO>> getGameResults(@PathVariable UUID gameId) {
+        gameService.isUserAuthorizedForGame(gameId);
+        List<GameResultDTO> gameResults = gameResultService.getGameResults(gameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 결과 조회 성공", gameResults);
     }
 
@@ -142,9 +143,9 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "게임이 시작되지 않음"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<String> getEncryptedGameIdForUser(@PathVariable Long userId) {
-        String encryptedGameId = gameService.getEncryptedGameIdForUser(userId);
-        return new CustomResponse<>(HttpStatus.OK, "암호화된 게임 ID 조회 성공", encryptedGameId);
+    public CustomResponse<UUID> getEncryptedGameIdForUser(@PathVariable Long userId) {
+        UUID gameIdForUser = gameService.getGameIdForUser(userId);
+        return new CustomResponse<>(HttpStatus.OK, "암호화된 게임 ID 조회 성공", gameIdForUser);
     }
 
 }

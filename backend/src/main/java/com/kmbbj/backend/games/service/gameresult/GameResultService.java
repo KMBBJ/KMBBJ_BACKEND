@@ -4,9 +4,10 @@ import com.kmbbj.backend.games.dto.GameResultDTO;
 import com.kmbbj.backend.games.entity.GameResult;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface GameResultService {
-    List<GameResult> createGameResults(String encryptedGameId);
+    List<GameResult> createGameResults(UUID encryptedGameId);
 
-    List<GameResultDTO> getGameResults(String encryptedGameId);
+    List<GameResultDTO> getGameResults(UUID encryptedGameId);
 }

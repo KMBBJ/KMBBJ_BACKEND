@@ -6,17 +6,17 @@ import com.kmbbj.backend.games.entity.Game;
 import jakarta.transaction.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface RoundService {
 
-    boolean manageRounds(String encryptedGameId);
+    boolean manageRounds(UUID encryptedGameId);
 
     CurrentRoundDTO startNewRound(Game game);
 
-    @Transactional
-    CurrentRoundDTO endCurrentAndStartNextRound(String encryptedGameId);
+    CurrentRoundDTO endCurrentAndStartNextRound(UUID gameId);
 
-    List<List<RoundRankingSimpleDTO>> getRoundRankingsForGame(String encryptedGameId);
+    List<List<RoundRankingSimpleDTO>> getRoundRankingsForGame(UUID gameId);
 
-    List<RoundRankingSimpleDTO> getCurrentRoundRankingsForGame(String encryptedGameId);
+    List<RoundRankingSimpleDTO> getCurrentRoundRankingsForGame(UUID gameId);
 }

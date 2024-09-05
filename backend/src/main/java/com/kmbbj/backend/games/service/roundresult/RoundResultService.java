@@ -10,5 +10,5 @@ public interface RoundResultService {
 
     void saveRoundResult(RoundResultDTO roundResultDTO);
 
-    List<RoundResultDTO> getCompletedRoundResultsForGame(String encryptedGameId);
+    List<RoundResultDTO> getCompletedRoundResultsForGame(UUID encryptedGameId);
 }

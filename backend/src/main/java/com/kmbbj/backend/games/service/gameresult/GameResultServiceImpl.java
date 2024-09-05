@@ -43,14 +43,12 @@ public class GameResultServiceImpl implements GameResultService{
 
     /** 게임 종료 시 모든 참여자의 게임 결과를 생성
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId 암호화된 게임 ID
      * @return 생성된 GameResult 객체 리스트
      */
     @Override
     @Transactional
-    public List<GameResult> createGameResults(String encryptedGameId) {
-        // 암호화된 ID -> 게임 ID를 복호화
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public List<GameResult> createGameResults(UUID gameId) {
         // 게임 정보 조회 없으면 예외 발생
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
@@ -118,10 +116,7 @@ public class GameResultServiceImpl implements GameResultService{
         return gameResultRepository.save(gameResult);
     }
 
-    public List<GameResultDTO> getGameResults(String encryptedGameId) {
-        // 암호화된 게임 ID를 복호화
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
-
+    public List<GameResultDTO> getGameResults(UUID gameId) {
         // 게임 결과 조회
         List<GameResult> gameResults = gameResultRepository.findByGame_GameId(gameId);
 
@@ -172,7 +167,6 @@ public class GameResultServiceImpl implements GameResultService{
         // 변경된 자산 정보 저장
         totalBalancesRepository.save(totalBalance);
     }
-
 
 
     /** 순위에 따른 고정 보상 계산

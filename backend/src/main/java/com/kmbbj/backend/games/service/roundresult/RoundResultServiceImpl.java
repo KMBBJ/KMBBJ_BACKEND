@@ -140,13 +140,15 @@ public class RoundResultServiceImpl implements RoundResultService {
     /**
      * 암호화된 게임 ID에 해당하는 완료된 모든 라운드의 결과를 반환
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId  게임 ID
      * @return 완료된 라운드 결과 DTO 리스트
      */
     @Override
     @Transactional
-    public List<RoundResultDTO> getCompletedRoundResultsForGame(String encryptedGameId) {
-        Game game = getGameByEncryptedId(encryptedGameId);
+    public List<RoundResultDTO> getCompletedRoundResultsForGame(UUID gameId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
+
         List<Round> allRounds = roundRepository.findByGameOrderByRoundNumberAsc(game);
 
         return allRounds.stream()
@@ -309,10 +311,5 @@ public class RoundResultServiceImpl implements RoundResultService {
                 .orElseThrow(() -> new ApiException(ExceptionEnum.COIN_NOT_FOUND));
     }
 
-    // 암호화된 게임 ID 게임 객체 조회
-    private Game getGameByEncryptedId(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
-        return gameRepository.findById(gameId)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
-    }
+
 }

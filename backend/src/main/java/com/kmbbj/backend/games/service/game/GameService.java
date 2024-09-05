@@ -2,18 +2,22 @@ package com.kmbbj.backend.games.service.game;
 
 import com.kmbbj.backend.games.dto.GameStartDTO;
 import com.kmbbj.backend.games.dto.GameStatusDTO;
+import jakarta.transaction.Transactional;
+
+import java.util.UUID;
 
 public interface GameService {
     GameStartDTO startGame(Long roomId);
-    void endGame(String encryptedGameId);
 
-    GameStatusDTO getGameStatus(String encryptedGameId);
+    void endGame(UUID gameId);
 
-    boolean isUserAuthorizedForGame(String encryptedGameId);
+    GameStatusDTO getGameStatus(UUID gameId);
+
+    boolean isUserAuthorizedForGame(UUID gameId);
 
     boolean isGameInProgress(Long roomId);
 
     Long getUserParticipatingRoom();
 
-    String getEncryptedGameIdForUser(Long userId);
+    UUID getGameIdForUser(Long userId);
 }

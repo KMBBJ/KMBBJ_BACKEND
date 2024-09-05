@@ -1,7 +1,6 @@
 package com.kmbbj.backend.games.service.game;
 
 
-import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.auth.service.UserService;
 import com.kmbbj.backend.games.dto.*;
 import com.kmbbj.backend.games.entity.Game;
@@ -52,7 +51,7 @@ public class GameServiceImpl implements GameService {
     private final GameBalanceService gameBalanceService;
     private final RoundResultService roundResultService;
     private final UserRoomRepository userRoomRepository;
-    private final Map<Long, String> roomGameIdMap = new ConcurrentHashMap<>();
+    private final Map<Long, UUID> roomGameIdMap = new ConcurrentHashMap<>();
     private final FindUserBySecurity findUserBySecurity;
 
 
@@ -71,11 +70,11 @@ public class GameServiceImpl implements GameService {
     @Override
     @Transactional
     public GameStartDTO startGame(Long roomId) {
-        String encryptedGameId = roomGameIdMap.computeIfAbsent(roomId, id -> createAndStartGame(id));
-        return createGameStartDTO(roomId, encryptedGameId);
+        UUID gameId = roomGameIdMap.computeIfAbsent(roomId, id -> createAndStartGame(id));
+        return createGameStartDTO(roomId, gameId);
     }
 
-    protected String createAndStartGame(Long roomId) {
+    protected UUID createAndStartGame(Long roomId) {
         Room room = roomService.findById(roomId);
 
         // 이미 진행 중인 게임이 있는지 확인
@@ -100,20 +99,20 @@ public class GameServiceImpl implements GameService {
             roundRepository.save(round);
         }
 
-        // 게임 UUID 값을 암호화
-        return gameEncryptionUtil.encryptUUID(game.getGameId());
+        // 게임 UUID 전달
+        return game.getGameId();
     }
 
-    private GameStartDTO createGameStartDTO(Long roomId, String encryptedGameId) {
+    private GameStartDTO createGameStartDTO(Long roomId, UUID gameId) {
         Room room = roomService.findById(roomId);
         List<UserRoom> userRooms = userRoomRepository.findAllByRoomAndIsPlayed(room, true);
 
-        List<String> userIds = userRooms.stream()
-                .map(userRoom -> userRoom.getUser().getId().toString())
+        List<Long> userIds = userRooms.stream()
+                .map(userRoom -> userRoom.getUser().getId())
                 .collect(Collectors.toList());
 
         GameStartDTO gameStartDTO = new GameStartDTO();
-        gameStartDTO.setGameId(encryptedGameId);
+        gameStartDTO.setGameId(gameId);
         gameStartDTO.setUserId(userIds);
 
         return gameStartDTO;
@@ -129,27 +128,24 @@ public class GameServiceImpl implements GameService {
      * 게임 상태 COMPLETED 로 변경
      *
      *
-     * @param encryptedGameId 암호화 게임 ID
+     * @param gameId 게임 ID
      */
     @Override
     @Transactional
-    public void endGame(String encryptedGameId) {
-        // 암호화된 게임 ID 복호화
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
-
+    public void endGame(UUID gameId) {
         // 게임 존재 확인 여부
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
-        boolean isGameEnded = roundService.manageRounds(encryptedGameId);
+        boolean isGameEnded = roundService.manageRounds(gameId);
         if (isGameEnded) {
             game.setGameStatus(GameStatus.COMPLETED); // 게임 완료
             gameRepository.save(game); // 데이터 베이스 저장
 
             // 모든 라운드 결과 가져오기
-            List<RoundResultDTO> allRoundResults = roundResultService.getCompletedRoundResultsForGame(encryptedGameId);
+            List<RoundResultDTO> allRoundResults = roundResultService.getCompletedRoundResultsForGame(gameId);
             // 게임 결과 생성 메서드 호출
-            gameResultService.createGameResults(encryptedGameId);
+            gameResultService.createGameResults(gameId);
         }
 
         // 게임 결과 생성 후 게임 계좌는 삭제 처리
@@ -167,12 +163,11 @@ public class GameServiceImpl implements GameService {
      *  게임 객체 조회
      *  게임 상태 정보를 담은 DTO 객체 생성하여 반환
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId 암호화된 게임 ID
      * @return 게임 상태 정보를 게임 상태 DTO
      */
     @Override
-    public GameStatusDTO getGameStatus(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public GameStatusDTO getGameStatus(UUID gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
@@ -180,7 +175,7 @@ public class GameServiceImpl implements GameService {
                 .orElseThrow(() -> new ApiException(ExceptionEnum.ROUND_NOT_FOUND));
 
         int durationMinutes = getDurationMinutes();
-        List<RoundResultDTO> roundResults = roundResultService.getCompletedRoundResultsForGame(encryptedGameId);
+        List<RoundResultDTO> roundResults = roundResultService.getCompletedRoundResultsForGame(gameId);
 
         GameStatusDTO statusDTO = new GameStatusDTO();
         statusDTO.setStatus(game.getGameStatus());
@@ -198,20 +193,18 @@ public class GameServiceImpl implements GameService {
 
     /** 사용자 해당 게임에 접근할 수 있는 권한
      *
-     * @param encryptedGameId 게임 암호화된 ID
+     * @param gameId 게임 암호화된 ID
      * @return 사용자 해당 접근
      * @throws ApiException 공통 예외처리
      */
     @Override
-    public boolean isUserAuthorizedForGame(String encryptedGameId) {
+    public boolean isUserAuthorizedForGame(UUID gameId) {
         UserRoom currentUserRoom = userRoomService.findCurrentRoom();
 
         // 사용자가 방에 참여하지 않으면 예외 발생
         if (currentUserRoom == null || !currentUserRoom.getIsPlayed()) {
             throw new ApiException(ExceptionEnum.FORBIDDEN);
         }
-
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
 
         // 게임을 찾을 수 없으면 예외 발생
         Game requestedGame = gameRepository.findById(gameId)
@@ -252,7 +245,7 @@ public class GameServiceImpl implements GameService {
     }
 
     @Override
-    public String getEncryptedGameIdForUser(Long userId) {
+    public UUID getGameIdForUser(Long userId) {
         UserRoom userRoom = userRoomRepository.findByUserIdAndIsPlayed(userId, true)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.USER_NOT_IN_ACTIVE_GAME));
 
@@ -267,7 +260,7 @@ public class GameServiceImpl implements GameService {
             throw new ApiException(ExceptionEnum.GAME_NOT_FOUND);
         }
 
-        return gameEncryptionUtil.encryptUUID(activeGame.getGameId());
+        return activeGame.getGameId();
     }
 }
 

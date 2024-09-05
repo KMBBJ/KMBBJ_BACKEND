@@ -30,8 +30,6 @@ public class GameBalanceServiceImpl implements GameBalanceService {
 
     // 게임 계좌 레퍼지토리
     private final GameBalanceRepository gameBalanceRepository;
-    private final CoinBalanceRepository coinBalanceRepository;
-    private final GameEncryptionUtil gameEncryptionUtil;
     private final TransactionRepository transactionRepository;
 
     /**

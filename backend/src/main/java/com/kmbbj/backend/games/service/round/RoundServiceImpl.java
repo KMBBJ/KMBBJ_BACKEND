@@ -42,18 +42,20 @@ public class RoundServiceImpl implements RoundService {
      * 게임이 종료 하면 결과 처리
      * 게임 계속 진행 중이면 현재 라운드 처리하고 다음 라운드 진행
      *
-     * @param encryptedGameId 암호화된 ID
+     * @param gameId 암호화된 ID
      * @return 게임 종료 되면 True 아니면 False
      */
     @Override
     @Transactional
-    public boolean manageRounds(String encryptedGameId) {
-        Game game = getGameByEncryptedId(encryptedGameId);
+    public boolean manageRounds(UUID gameId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
+
         Round currentRound = getCurrentRound(game);
         Room room = game.getRoom();
 
         if (currentRound.getRoundNumber() >= room.getEnd()) {
-            endGame(game, encryptedGameId);
+            endGame(game, gameId);
             return true; // 게임 종료
         } else {
             processCurrentRoundAndStartNext(game, currentRound);
@@ -173,8 +175,7 @@ public class RoundServiceImpl implements RoundService {
     }
     @Override
     @Transactional
-    public CurrentRoundDTO endCurrentAndStartNextRound(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public CurrentRoundDTO endCurrentAndStartNextRound(UUID gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
         Round currentRound = roundRepository.findFirstByGameOrderByRoundNumberDesc(game)
@@ -188,7 +189,7 @@ public class RoundServiceImpl implements RoundService {
             gameRepository.save(game);
 
             // 게임 결과 생성
-            gameResultService.createGameResults(encryptedGameId);
+            gameResultService.createGameResults(gameId);
             throw new ApiException(ExceptionEnum.GAME_ALREADY_ENDED); // 게임이 이미 종료된 경우 예외 발생
         } else {
             processRoundResult(currentRound); // 현재 라운드 결과 처리
@@ -258,28 +259,17 @@ public class RoundServiceImpl implements RoundService {
     /** 게임 종료
      *
      * @param game 종료할 게임 객체
-     * @param encryptedGameId 암호화된 ID
+     * @param gameId 암호화된 ID
      */
-    private void endGame(Game game, String encryptedGameId) {
+    private void endGame(Game game, UUID gameId) {
         game.setGameStatus(GameStatus.COMPLETED); // 게임 상태 COMPLETED
         gameRepository.save(game);
 
         // 게임 결과 생성
-        gameResultService.createGameResults(encryptedGameId);
+        gameResultService.createGameResults(gameId);
     }
 
-    /**
-     * 암호화된 게임 ID로 게임 객체를 조회하는 메서드.
-     *
-     * @param encryptedGameId 암호화된 게임 ID
-     * @return 조회된 Game 객체
-     * @throws ApiException 게임을 찾을 수 없는 경우
-     */
-    private Game getGameByEncryptedId(String encryptedGameId) {
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
-        return gameRepository.findById(gameId)
-                .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
-    }
+
     /**
      * 게임의 현재 라운드를 조회하는 메서드.
      *
@@ -350,9 +340,7 @@ public class RoundServiceImpl implements RoundService {
 
 
     @Override
-    public List<List<RoundRankingSimpleDTO>> getRoundRankingsForGame(String encryptedGameId) {
-        // 암호화된 ID를 이용해 게임 객체 조회
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public List<List<RoundRankingSimpleDTO>> getRoundRankingsForGame(UUID gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 
@@ -383,9 +371,7 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
-    public List<RoundRankingSimpleDTO> getCurrentRoundRankingsForGame(String encryptedGameId) {
-        // 암호화된 ID를 이용해 게임 객체 조회
-        UUID gameId = gameEncryptionUtil.decryptToUUID(encryptedGameId);
+    public List<RoundRankingSimpleDTO> getCurrentRoundRankingsForGame(UUID gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ApiException(ExceptionEnum.GAME_NOT_FOUND));
 

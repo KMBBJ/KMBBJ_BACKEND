@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/rounds")
@@ -29,67 +30,67 @@ public class RoundController {
 
     /** 게임 라운드별 순위를 조회
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId 암호화된 게임 ID
      * @return 각 라운드별 순위 리스트
      */
-    @GetMapping("/{encryptedGameId}/rankings")
+    @GetMapping("/{gameId}/rankings")
     @Operation(summary = "게임 라운드별 순위 조회", description = "암호화된 게임 ID를 통해 해당 게임의 모든 라운드별 순위를 조회")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "라운드 순위 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<List<List<RoundRankingSimpleDTO>>>> getRoundRankings(@PathVariable String encryptedGameId) {
-        List<List<RoundRankingSimpleDTO>> rankings = roundService.getRoundRankingsForGame(encryptedGameId);
+    public ResponseEntity<CustomResponse<List<List<RoundRankingSimpleDTO>>>> getRoundRankings(@PathVariable UUID gameId) {
+        List<List<RoundRankingSimpleDTO>> rankings = roundService.getRoundRankingsForGame(gameId);
         return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "라운드 순위 조회 성공", rankings));
     }
 
     /** 게임 현재까지의 라운드 랭킹 조회(합산)
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId 암호화된 게임 ID
      * @return 현재까지의 라운드 랭킹 조회(합산)
      */
-    @GetMapping("/{encryptedGameId}/current-rankings")
+    @GetMapping("/{gameId}/current-rankings")
     @Operation(summary = "게임 현재 순위 조회(합산)", description = "암호화된 게임 ID를 통해 해당 게임의 현재 순위를 조회")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "현재 순위 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<List<RoundRankingSimpleDTO>>> getCurrentRoundRankings(@PathVariable String encryptedGameId) {
-        List<RoundRankingSimpleDTO> rankings = roundService.getCurrentRoundRankingsForGame(encryptedGameId);
+    public ResponseEntity<CustomResponse<List<RoundRankingSimpleDTO>>> getCurrentRoundRankings(@PathVariable UUID gameId) {
+        List<RoundRankingSimpleDTO> rankings = roundService.getCurrentRoundRankingsForGame(gameId);
         return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "현재 순위 조회 성공", rankings));
     }
 
     /**
      * 게임의 모든 라운드 결과 조회
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId 암호화된 게임 ID
      * @return 조회된 라운드 결과 DTO 리스트
      */
-    @GetMapping("/{encryptedGameId}/round-results")
+    @GetMapping("/{gameId}/round-results")
     @Operation(summary = "라운드 결과 조회", description = "게임 ID를 받아 모든 라운드 결과를 조회함")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "라운드 결과 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<List<RoundResultDTO>>> getRoundResults(@PathVariable String encryptedGameId) {
-        List<RoundResultDTO> results = roundResultService.getCompletedRoundResultsForGame(encryptedGameId);
+    public ResponseEntity<CustomResponse<List<RoundResultDTO>>> getRoundResults(@PathVariable UUID gameId) {
+        List<RoundResultDTO> results = roundResultService.getCompletedRoundResultsForGame(gameId);
         return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "라운드 결과 조회 성공", results));
     }
 
     /**
      * 현재 라운드를 종료하고 다음 라운드를 시작
      *
-     * @param encryptedGameId 암호화된 게임 ID
+     * @param gameId 암호화된 게임 ID
      * @return 새로운 라운드 정보
      */
-    @PostMapping("/{encryptedGameId}/end-newRound")
+    @PostMapping("/{gameId}/end-newRound")
     @Operation(summary = "라운드 종료 및 새로운 라운드 시작", description = "현재 라운드를 종료하고 새로운 라운드를 시작함")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "새로운 라운드 시작 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public ResponseEntity<CustomResponse<CurrentRoundDTO>> endCurrentRoundAndStartNew(@PathVariable String encryptedGameId) {
-        CurrentRoundDTO currentRoundDTO = roundService.endCurrentAndStartNextRound(encryptedGameId);
+    public ResponseEntity<CustomResponse<CurrentRoundDTO>> endCurrentRoundAndStartNew(@PathVariable UUID gameId) {
+        CurrentRoundDTO currentRoundDTO = roundService.endCurrentAndStartNextRound(gameId);
         return ResponseEntity.ok(new CustomResponse<>(HttpStatus.OK, "새로운 라운드 시작 성공", currentRoundDTO));
     }
 

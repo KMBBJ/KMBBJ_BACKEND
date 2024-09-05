@@ -4,9 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.UUID;
 
 @Setter@Getter
 public class GameStartDTO {
-    private String gameId; // 게임 ID
-    private List<String> UserId; // 사용자 ID
+    private UUID gameId; // 게임 ID
+    private List<Long> UserId; // 사용자 ID
 }
