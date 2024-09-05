@@ -21,6 +21,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
@@ -37,6 +38,9 @@ public class UserController {
     private final JwtTokenizer jwtTokenizer;
     private final TokenService tokenService;
     private final FindUserBySecurity findUserBySecurity;
+
+    @Value("${REACT_SERVER_URL}")
+    private String reactServerUrl;
 
     /**
      * 사용자를 로그인하고 JWT 토큰을 생성하여 반환
@@ -81,6 +85,10 @@ public class UserController {
 
         // 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", refreshToken);
+        // 토큰 CROS 키기
+        response.setHeader("Access-Control-Allow-Origin", reactServerUrl);
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
 
         return new CustomResponse<>(HttpStatus.OK, "로그인 성공", accessToken);
     }
