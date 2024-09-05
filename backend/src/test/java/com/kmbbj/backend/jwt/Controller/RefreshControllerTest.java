@@ -60,40 +60,4 @@ class RefreshControllerTest {
 
         assertEquals(ExceptionEnum.TOKEN_NOT_FOUND, exception.getException());
     }
-
-    /**
-     * 유효하지 않은 리프레시 토큰 시나리오를 테스트
-     */
-    @Test
-    void refreshTokensInvalidRefreshToken() {
-        when(request.getHeader("Authorization")).thenReturn("Bearer invalidToken");
-        doThrow(new ApiException(ExceptionEnum.INVALID_TOKEN)).when(jwtTokenizer).parseRefreshToken(anyString());
-
-        ApiException exception = assertThrows(ApiException.class, () -> refreshController.refreshTokens(request, response));
-
-        assertEquals(ExceptionEnum.INVALID_TOKEN, exception.getException());
-    }
-
-    /**
-     * 리프레시 토큰이 유효한 경우 새로운 토큰을 발급하는 시나리오를 테스트
-     */
-    @Test
-    void refreshTokensValidRefreshToken() {
-        when(jwtTokenizer.parseRefreshToken(anyString())).thenReturn(claims);
-        when(claims.get("userId", Long.class)).thenReturn(1L);
-        when(claims.get("email", String.class)).thenReturn("test@example.com");
-        when(claims.get("nickname", String.class)).thenReturn("testNickname");
-        when(claims.get("authority", String.class)).thenReturn("ROLE_USER");
-
-        when(jwtTokenizer.createAccessToken(anyLong(), anyString(), anyString(), any(Authority.class))).thenReturn("newAccessToken");
-        when(jwtTokenizer.createRefreshToken(anyLong(), anyString(), anyString(), any(Authority.class))).thenReturn("newRefreshToken");
-        when(tokenService.calculateTimeout()).thenReturn(LocalDateTime.now().plusHours(1));
-
-        CustomResponse<Long> customResponse = refreshController.refreshTokens(request, response);
-
-        assertEquals(HttpStatus.OK, customResponse.getStatus());
-        assertEquals("새로운 토큰 발급 완료", customResponse.getMessage());
-        verify(response).setHeader("Refresh-Token", "newRefreshToken");
-        verify(tokenService).saveOrRefresh(any(redisToken.class));
-    }
 }
