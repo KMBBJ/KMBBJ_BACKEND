@@ -164,6 +164,7 @@ public class SecurityConfig {
         config.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
         config.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
         config.addAllowedOrigin(reactServerUrlNoPort);
+        config.addAllowedHeader("http://coin.kmbbj.kro.kr");
         config.addAllowedHeader("*"); // 모든 헤더 허용
         config.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         config.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
@@ -183,6 +184,7 @@ public class SecurityConfig {
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin(reactServerUrl);
         configuration.addAllowedOrigin(reactServerUrlNoPort);
+        configuration.addAllowedHeader("http://coin.kmbbj.kro.kr");
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
