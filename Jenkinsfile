@@ -46,6 +46,12 @@ pipeline {
                     withCredentials([string(credentialsId: 'EC2_IP', variable: 'EC2_IP')]) {
                         sshagent (credentials: ['ssh']) {
                             sh '''
+                                # EC2 서버에서 기존 파일 정리
+                                ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP 'rm -rf /home/ubuntu/app/backend/build/libs/*'
+
+                                # 로컬에서 EC2로 빌드된 파일을 전송
+                                scp -o StrictHostKeyChecking=no -r backend/build/libs/* ubuntu@$EC2_IP:/home/ubuntu/app/backend/build/libs/
+
                                 ssh -o StrictHostKeyChecking=no ubuntu@$EC2_IP '
                                     cd /home/ubuntu/app/backend &&
                                     docker build -t my-spring-app . &&

@@ -155,11 +155,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * CORS 설정을 위한 Bean
-     *
-     * @return CORS 필터
-     */
     @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -184,13 +179,12 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowCredentials(true);
-        configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 도메인 설정
-        configuration.addAllowedOrigin(reactServerUrl); // 외부 프론트 주소 허용 설정
+        configuration.addAllowedOrigin(reactServerUrl);
         configuration.addAllowedOrigin(reactServerUrlNoPort);
-        configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*"); // 모든 헤더 허용
         configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
         configuration.addExposedHeader("Refresh-Token"); // 노출할 헤더 추가
+        configuration.setAllowCredentials(true); // 쿠키를 전송 허용
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
