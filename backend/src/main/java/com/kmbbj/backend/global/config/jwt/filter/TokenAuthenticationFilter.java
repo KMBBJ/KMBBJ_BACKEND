@@ -141,11 +141,6 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
         accessTokenCookie.setMaxAge((int) jwtTokenizer.getAccessTokenExpire()); // 액세스 토큰 만료 시간 설정
         response.addCookie(accessTokenCookie);
 
-        // 토큰 CROS 키기
-        response.setHeader("Access-Control-Allow-Origin", reactServerUrl);
-        response.setHeader("Access-Control-Allow-Credentials", "true");
-        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-
         // 새로운 리프레시 토큰을 응답 헤더에 추가
         response.setHeader("Refresh-Token", newRefreshToken);
     }
