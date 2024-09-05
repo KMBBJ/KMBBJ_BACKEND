@@ -29,7 +29,7 @@ public class SseController {
      * @param adminAlarm 알람 관련
      * @return 알림 추가 결과
      */
-    @PostMapping("/admin/add")
+    @PostMapping("/add")
     @Operation(summary = "알림 추가", description = "새로운 알림을 추가합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "알림 추가 성공"),
@@ -42,6 +42,7 @@ public class SseController {
         Long id = adminService.getAuthenticatedUser().getId();// 로그인된 사용자 정보 가져오기
 
         AdminAlarm savedAlarm = adminService.saveAlarm(id, adminAlarm);// 알람 저장
+
 
         AdminDTO adminDTO = new AdminDTO();
         adminDTO.setTitle(adminAlarm.getTitle()); // AdminAlarm에서 제목 추출
