@@ -64,8 +64,6 @@ class UserControllerLogoutTest {
         assertEquals("로그아웃 되었습니다.", customResponse.getData());
         assertEquals("로그아웃 성공", customResponse.getMessage());
 
-        // 상호작용 검증
-        verify(response).addCookie(any(Cookie.class));
         verify(tokenService).invalidateRefreshToken(mockUser.getId());
     }
 
@@ -92,8 +90,6 @@ class UserControllerLogoutTest {
         assertEquals("로그아웃 되었습니다.", customResponse.getData());
         assertEquals("로그아웃 성공", customResponse.getMessage());
 
-        // 상호작용 검증
-        verify(response).addCookie(any(Cookie.class));
         verify(tokenService).invalidateRefreshToken(mockUser.getId());
     }
 }

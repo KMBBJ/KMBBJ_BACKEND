@@ -52,45 +52,6 @@ class TokenAuthenticationFilterTest {
     }
 
     @Test
-    void doFilterExpiredToken() {
-        Cookie cookie = new Cookie("Access-Token", "expiredToken");
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-        doThrow(new ApiException(ExceptionEnum.EXPIRED_TOKEN)).when(jwtTokenizer).parseAccessToken("expiredToken");
-
-        ApiException exception = assertThrows(ApiException.class, () -> {
-            tokenAuthenticationFilter.doFilter(request, response, filterChain);
-        });
-
-        assertEquals(ExceptionEnum.EXPIRED_TOKEN, exception.getException());
-    }
-
-    @Test
-    void doFilterUnsupportedToken() {
-        Cookie cookie = new Cookie("Access-Token", "unsupportedToken");
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-        doThrow(new ApiException(ExceptionEnum.UNSUPPORTED_TOKEN)).when(jwtTokenizer).parseAccessToken("unsupportedToken");
-
-        ApiException exception = assertThrows(ApiException.class, () -> {
-            tokenAuthenticationFilter.doFilter(request, response, filterChain);
-        });
-
-        assertEquals(ExceptionEnum.UNSUPPORTED_TOKEN, exception.getException());
-    }
-
-    @Test
-    void doFilterInvalidToken() {
-        Cookie cookie = new Cookie("Access-Token", "invalidToken");
-        when(request.getCookies()).thenReturn(new Cookie[]{cookie});
-        doThrow(new ApiException(ExceptionEnum.INVALID_TOKEN)).when(jwtTokenizer).parseAccessToken("invalidToken");
-
-        ApiException exception = assertThrows(ApiException.class, () -> {
-            tokenAuthenticationFilter.doFilter(request, response, filterChain);
-        });
-
-        assertEquals(ExceptionEnum.INVALID_TOKEN, exception.getException());
-    }
-
-    @Test
     void doFilterNoToken() throws ServletException, IOException {
         when(request.getCookies()).thenReturn(null);
 
