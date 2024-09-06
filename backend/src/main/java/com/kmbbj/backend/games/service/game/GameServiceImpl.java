@@ -235,8 +235,8 @@ public class GameServiceImpl implements GameService {
 
         Room room = userRoom.getRoom();
 
-        // 게임을 진행하고 있는 방에 없음
-        if ((room.getIsStarted() && room.getIsDeleted())) {
+        // 게임을 진행하고 있는 방에 있음
+        if (room.getIsStarted()) {
             return 0L;
         } else {
             // 매칭 방에 있음
