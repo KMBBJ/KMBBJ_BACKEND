@@ -1,9 +1,12 @@
 package com.kmbbj.backend.games.controller;
 
+import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.games.dto.*;
 import com.kmbbj.backend.games.service.game.GameService;
 import com.kmbbj.backend.games.service.gamebalance.GameBalanceService;
 import com.kmbbj.backend.games.service.gameresult.GameResultService;
+import com.kmbbj.backend.global.config.exception.ApiException;
+import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -30,7 +33,6 @@ public class GameController {
     /** 방 ID 가져와서 게임 시작
      *
      * @param roomId 게임을 시작할 방 ID
-     * @param authentication 인증 정보
      * @return 게임 시작 성공 여부
      */
     @PostMapping("/start/{roomId}")
@@ -40,7 +42,7 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
     })
-    public CustomResponse<GameStartDTO> startGame(@PathVariable Long roomId, Authentication authentication) {
+    public CustomResponse<GameStartDTO> startGame(@PathVariable Long roomId) {
         GameStartDTO gameStart = gameService.startGame(roomId);
         return new CustomResponse<>(HttpStatus.OK, "게임 시작 성공", gameStart);
     }
@@ -56,7 +58,9 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "게임 상태 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<GameStatusDTO> getGameStatus(@PathVariable UUID gameId) {
+    public CustomResponse getGameStatus(@PathVariable UUID gameId, Long userId,Authentication authentication) {
+        User currentUser = (User) authentication.getPrincipal();
+        if(userId.longValue() != currentUser.getId().longValue()) throw new ApiException(ExceptionEnum.FORBIDDEN);
         gameService.isUserAuthorizedForGame(gameId);
         GameStatusDTO status = gameService.getGameStatus(gameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 상태 조회 성공", status);
@@ -75,7 +79,9 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "게임 종료 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<String> endGame(@PathVariable UUID gameId, Authentication authentication) {
+    public CustomResponse<String> endGame(@PathVariable UUID gameId,Long userId,Authentication authentication) {
+        User currentUser = (User) authentication.getPrincipal();
+        if(userId.longValue() != currentUser.getId().longValue()) throw new ApiException(ExceptionEnum.FORBIDDEN);
         gameService.isUserAuthorizedForGame(gameId);
         gameService.endGame(gameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 종료 성공", null);
@@ -92,7 +98,9 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "게임 잔액 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임 잔액을 찾을 수 없음")
     })
-    public CustomResponse<GameBalanceDTO> getGameBalance(@PathVariable Long userId) {
+    public CustomResponse<GameBalanceDTO> getGameBalance(@PathVariable Long userId, Authentication authentication) {
+        User currentUser = (User) authentication.getPrincipal();
+        if(userId.longValue() != currentUser.getId().longValue()) throw new ApiException(ExceptionEnum.FORBIDDEN);
         GameBalanceDTO gameBalanceDTO = gameBalanceService.getGameBalance(userId);
         return new CustomResponse<>(HttpStatus.OK, "게임 잔액 조회 성공", gameBalanceDTO);
     }
@@ -108,7 +116,9 @@ public class GameController {
             @ApiResponse(responseCode = "200", description = "게임 결과 조회 성공"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<List<GameResultDTO>> getGameResults(@PathVariable UUID gameId) {
+    public CustomResponse<List<GameResultDTO>> getGameResults(@PathVariable UUID gameId, Long userId, Authentication authentication) {
+        User currentUser = (User) authentication.getPrincipal();
+        if(userId.longValue() != currentUser.getId().longValue()) throw new ApiException(ExceptionEnum.FORBIDDEN);
         gameService.isUserAuthorizedForGame(gameId);
         List<GameResultDTO> gameResults = gameResultService.getGameResults(gameId);
         return new CustomResponse<>(HttpStatus.OK, "게임 결과 조회 성공", gameResults);
@@ -143,7 +153,9 @@ public class GameController {
             @ApiResponse(responseCode = "400", description = "게임이 시작되지 않음"),
             @ApiResponse(responseCode = "404", description = "게임을 찾을 수 없음")
     })
-    public CustomResponse<UUID> getEncryptedGameIdForUser(@PathVariable Long userId) {
+    public CustomResponse<UUID> getEncryptedGameIdForUser(@PathVariable Long userId, Authentication authentication) {
+        User currentUser = (User) authentication.getPrincipal();
+        if(userId.longValue() != currentUser.getId().longValue()) throw new ApiException(ExceptionEnum.FORBIDDEN);
         UUID gameIdForUser = gameService.getGameIdForUser(userId);
         return new CustomResponse<>(HttpStatus.OK, "암호화된 게임 ID 조회 성공", gameIdForUser);
     }
