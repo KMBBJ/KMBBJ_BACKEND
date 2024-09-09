@@ -69,7 +69,7 @@ KMBBJ_BACKEND/
 ├── Jenkinsfile          # Jenkins 파이프라인 설정 파일
 └── README.md            # 리포지토리 개요 (현재 파일)
 ```
-![시스템 아키텍처](https://github.com/user-attachments/assets/d84be2b4-a545-4c36-b989-dd44d8f50515)
+![제목 없는 다이어그램 drawio (1)](https://github.com/user-attachments/assets/1b7885d5-950d-4242-b807-7998c6d636b8)
 
 ## wiki
 https://github.com/KMBBJ/KMBBJ_BACKEND/wiki
