@@ -22,7 +22,4 @@ public class OrderPrimaryKey implements Serializable {
     //postgre랑 연동할 아이디.
     @PrimaryKeyColumn(name = "transaction_id", ordinal = 2, type = PrimaryKeyType.CLUSTERED)
     private Long transactionId;
-
-    @PrimaryKeyColumn(name = "timestamp", ordinal = 3, type = PrimaryKeyType.CLUSTERED)
-    private Instant timestamp;
 }

@@ -24,7 +24,6 @@ public class ExchangeDTOMapper {
         OrderPrimaryKey orderPrimaryKey = OrderPrimaryKey.builder()
                 .coinId(orderRequest.getCoinId())
                 .price(orderRequest.getPrice())
-                .timestamp(Instant.now())
                 .transactionId(transactionId)
                 .build();
 
@@ -44,7 +43,6 @@ public class ExchangeDTOMapper {
         OrderPrimaryKey orderPrimaryKey = OrderPrimaryKey.builder()
                 .coinId(orderRequest.getCoinId())
                 .price(orderRequest.getPrice())
-                .timestamp(Instant.now())
                 .transactionId(transactionId)
                 .build();
 
