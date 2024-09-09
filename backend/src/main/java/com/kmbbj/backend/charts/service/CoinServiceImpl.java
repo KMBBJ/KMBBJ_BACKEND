@@ -29,7 +29,7 @@ public class CoinServiceImpl implements CoinService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-//    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 60000)
     public void updateCoinDataEvent() {
         // 코인 데이터를 업데이트
         binanceApiService.updateCoinData();

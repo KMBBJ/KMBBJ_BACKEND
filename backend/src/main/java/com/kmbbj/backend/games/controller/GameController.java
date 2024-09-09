@@ -50,7 +50,7 @@ public class GameController {
      * @param gameId 게임의 상태 조회
      * @return 게임 상태를 담은 DTO 객체
      */
-    @GetMapping("/status/{encryptedGameId}")
+    @GetMapping("/status/{gameId}")
     @Operation(summary = "게임 상태 조회", description = "암호화된 게임 ID를 받아 현재 게임 상태 조회")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "게임 상태 조회 성공"),
