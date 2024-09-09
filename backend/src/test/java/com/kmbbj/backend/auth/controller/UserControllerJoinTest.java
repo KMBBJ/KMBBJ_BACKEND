@@ -1,7 +1,8 @@
 package com.kmbbj.backend.auth.controller;
 
-import com.kmbbj.backend.auth.controller.request.UserJoinRequest;
-import com.kmbbj.backend.auth.service.UserService;
+import com.kmbbj.backend.feature.auth.controller.UserController;
+import com.kmbbj.backend.feature.auth.controller.request.UserJoinRequest;
+import com.kmbbj.backend.feature.auth.service.UserService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;

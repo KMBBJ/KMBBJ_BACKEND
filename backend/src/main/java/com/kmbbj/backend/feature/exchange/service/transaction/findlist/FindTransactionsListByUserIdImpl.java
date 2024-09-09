@@ -1,11 +1,11 @@
 package com.kmbbj.backend.feature.exchange.service.transaction.findlist;
 
-import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.feature.auth.repository.UserRepository;
 import com.kmbbj.backend.feature.exchange.controller.request.TransactionsRequest;
 import com.kmbbj.backend.feature.exchange.controller.response.TransactionsResponse;
 import com.kmbbj.backend.feature.exchange.repository.postgre.TransactionRepository;
-import com.kmbbj.backend.games.entity.GameBalance;
-import com.kmbbj.backend.games.repository.GameBalanceRepository;
+import com.kmbbj.backend.feature.games.entity.GameBalance;
+import com.kmbbj.backend.feature.games.repository.GameBalanceRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;

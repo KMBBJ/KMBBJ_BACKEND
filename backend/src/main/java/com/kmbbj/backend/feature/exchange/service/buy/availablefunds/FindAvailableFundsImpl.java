@@ -2,8 +2,8 @@ package com.kmbbj.backend.feature.exchange.service.buy.availablefunds;
 
 import com.kmbbj.backend.feature.exchange.controller.request.AvailableBuyFundsRequest;
 import com.kmbbj.backend.feature.exchange.controller.response.AvailableBuyFundsResponse;
-import com.kmbbj.backend.games.entity.GameBalance;
-import com.kmbbj.backend.games.repository.GameBalanceRepository;
+import com.kmbbj.backend.feature.games.entity.GameBalance;
+import com.kmbbj.backend.feature.games.repository.GameBalanceRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;

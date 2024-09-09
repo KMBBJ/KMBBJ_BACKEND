@@ -1,8 +1,8 @@
 package com.kmbbj.backend.auth.service;
 
-import com.kmbbj.backend.auth.service.email.EmailServiceImpl;
-import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.feature.auth.service.email.EmailServiceImpl;
+import com.kmbbj.backend.feature.auth.entity.User;
+import com.kmbbj.backend.feature.auth.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

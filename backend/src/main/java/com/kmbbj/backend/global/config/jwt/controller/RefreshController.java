@@ -1,6 +1,6 @@
 package com.kmbbj.backend.global.config.jwt.controller;
 
-import com.kmbbj.backend.auth.entity.Authority;
+import com.kmbbj.backend.feature.auth.entity.Authority;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.entity.redisToken;

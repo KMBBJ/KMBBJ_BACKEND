@@ -1,10 +1,11 @@
 package com.kmbbj.backend.auth.controller;
 
-import com.kmbbj.backend.auth.entity.Authority;
+import com.kmbbj.backend.feature.auth.controller.UserController;
+import com.kmbbj.backend.feature.auth.entity.Authority;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
-import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.feature.auth.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -12,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

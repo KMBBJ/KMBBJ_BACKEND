@@ -2,10 +2,10 @@ package com.kmbbj.backend.feature.exchange.service.sell.availablecoinds;
 
 import com.kmbbj.backend.feature.exchange.controller.request.AvailableSellCoinsRequest;
 import com.kmbbj.backend.feature.exchange.controller.response.AvailableSellCoinsResponse;
-import com.kmbbj.backend.games.entity.CoinBalance;
-import com.kmbbj.backend.games.entity.GameBalance;
-import com.kmbbj.backend.games.repository.CoinBalanceRepository;
-import com.kmbbj.backend.games.repository.GameBalanceRepository;
+import com.kmbbj.backend.feature.games.entity.CoinBalance;
+import com.kmbbj.backend.feature.games.entity.GameBalance;
+import com.kmbbj.backend.feature.games.repository.CoinBalanceRepository;
+import com.kmbbj.backend.feature.games.repository.GameBalanceRepository;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import lombok.RequiredArgsConstructor;

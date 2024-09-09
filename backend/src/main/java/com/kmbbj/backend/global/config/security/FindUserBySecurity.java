@@ -1,7 +1,7 @@
 package com.kmbbj.backend.global.config.security;
 
-import com.kmbbj.backend.auth.entity.User;
-import com.kmbbj.backend.auth.service.UserService;
+import com.kmbbj.backend.feature.auth.entity.User;
+import com.kmbbj.backend.feature.auth.service.UserService;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.infrastructure.CustomUserDetails;

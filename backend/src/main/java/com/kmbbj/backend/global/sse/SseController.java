@@ -1,7 +1,7 @@
 package com.kmbbj.backend.global.sse;
 
-import com.kmbbj.backend.admin.entity.AdminAlarm;
-import com.kmbbj.backend.admin.service.AdminService;
+import com.kmbbj.backend.feature.admin.entity.AdminAlarm;
+import com.kmbbj.backend.feature.admin.service.AdminService;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

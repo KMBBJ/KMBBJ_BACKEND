@@ -1,8 +1,9 @@
 package com.kmbbj.backend.auth.controller;
 
-import com.kmbbj.backend.auth.controller.request.UserLoginRequest;
-import com.kmbbj.backend.auth.service.UserService;
-import com.kmbbj.backend.auth.entity.User;
+import com.kmbbj.backend.feature.auth.controller.UserController;
+import com.kmbbj.backend.feature.auth.controller.request.UserLoginRequest;
+import com.kmbbj.backend.feature.auth.service.UserService;
+import com.kmbbj.backend.feature.auth.entity.User;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.entity.redisToken;

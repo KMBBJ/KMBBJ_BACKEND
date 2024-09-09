@@ -1,13 +1,10 @@
 package com.kmbbj.backend.jwt.Controller;
 
-import com.kmbbj.backend.auth.entity.Authority;
 import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.controller.RefreshController;
-import com.kmbbj.backend.global.config.jwt.entity.redisToken;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
-import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,9 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-
-import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;

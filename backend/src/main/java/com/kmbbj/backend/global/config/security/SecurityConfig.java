@@ -1,9 +1,9 @@
 package com.kmbbj.backend.global.config.security;
 
-import com.kmbbj.backend.admin.repository.TokenBlacklistRepository;
-import com.kmbbj.backend.admin.service.BlackListUserService;
-import com.kmbbj.backend.admin.token.filter.BlacklistFilter;
-import com.kmbbj.backend.auth.repository.UserRepository;
+import com.kmbbj.backend.feature.admin.repository.TokenBlacklistRepository;
+import com.kmbbj.backend.feature.admin.service.BlackListUserService;
+import com.kmbbj.backend.feature.admin.token.filter.BlacklistFilter;
+import com.kmbbj.backend.feature.auth.repository.UserRepository;
 import com.kmbbj.backend.global.config.jwt.filter.TokenAuthenticationFilter;
 import com.kmbbj.backend.global.config.jwt.service.TokenService;
 import com.kmbbj.backend.global.config.jwt.util.JwtTokenizer;
