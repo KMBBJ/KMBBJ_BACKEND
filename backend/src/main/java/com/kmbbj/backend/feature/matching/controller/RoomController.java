@@ -4,10 +4,13 @@ package com.kmbbj.backend.feature.matching.controller;
 import com.kmbbj.backend.feature.auth.entity.User;
 import com.kmbbj.backend.feature.matching.dto.*;
 import com.kmbbj.backend.global.config.reponse.CustomResponse;
+import com.kmbbj.backend.global.config.reponse.ErrorResponse;
 import com.kmbbj.backend.global.config.security.FindUserBySecurity;
 import com.kmbbj.backend.feature.matching.entity.Room;
 import com.kmbbj.backend.feature.matching.service.room.RoomService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,11 +37,11 @@ public class RoomController {
     @PostMapping("/create")
     @Operation(summary = "방 생성", description = "매칭할 수 있는 방을 생성")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "방 생성 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
-            @ApiResponse(responseCode = "404", description = "유저를 찾지 못했습니다."),
-            @ApiResponse(responseCode = "404", description = "자산을 찾지 못했습니다."),
-            @ApiResponse(responseCode = "409", description = "이미 다른 방에 입장해 있습니다.")
+            @ApiResponse(responseCode = "200", description = "방 생성 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "유저를 찾지 못했습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "자산을 찾지 못했습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "이미 다른 방에 입장해 있습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public CustomResponse<Room> createRoom(@RequestBody CreateRoomDTO createRoomDTO) {
         User user = findUserBySecurity.getCurrentUser();
@@ -50,11 +53,11 @@ public class RoomController {
     @PostMapping("/edit/{roomId}")
     @Operation(summary = "방 수정", description = "이미 만들어진 방을 방장이 수정")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "방 수정 성공"),
-            @ApiResponse(responseCode = "404", description = "해당 방에 아무도 없습니다."),
-            @ApiResponse(responseCode = "403", description = "권한이 없습니다."),
-            @ApiResponse(responseCode = "409", description = "방 조건에 맞지 않는 유저가 있습니다."),
-            @ApiResponse(responseCode = "404", description = "해당 방 입장기록이 없습니다.")
+            @ApiResponse(responseCode = "200", description = "방 수정 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "해당 방에 아무도 없습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "권한이 없습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "방 조건에 맞지 않는 유저가 있습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "해당 방 입장기록이 없습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
 
     })
     public CustomResponse<Void> editRoom(@PathVariable(name = "roomId") Long roomId,@RequestBody EditRoomDTO editRoomDTO) {
@@ -72,10 +75,10 @@ public class RoomController {
     @DeleteMapping("/delete/{roomId}")
     @Operation(summary = "방 삭제", description = "사용자가 없거나 게임이 끝난 방을 삭제")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "방 삭제 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
-            @ApiResponse(responseCode = "403", description = "접근 권한이 없습니다."),
-            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없습니다.")
+            @ApiResponse(responseCode = "200", description = "방 삭제 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "접근 권한이 없습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public CustomResponse<Room> deleteRoom(@PathVariable Long roomId) {
         roomService.deleteRoom(roomId);
@@ -91,9 +94,9 @@ public class RoomController {
     @PostMapping("/searching")
     @Operation(summary = "방 검색", description = "방 제목으로 검색")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "검색 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
-            @ApiResponse(responseCode = "404", description = "검색 결과가 없습니다.")
+            @ApiResponse(responseCode = "200", description = "검색 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "검색 결과가 없습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public CustomResponse<Page<RoomListDTO>> searchRooms(@RequestBody SearchingRoomDTO searchingRoomDTO) {
         Page<RoomListDTO> rooms = roomService.searchRoomsByTitle(searchingRoomDTO);
@@ -108,8 +111,8 @@ public class RoomController {
     @PostMapping("/list")
     @Operation(summary = "방 목록", description = "방 목록 불러오기")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "방 목록 불러오기 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.")
+            @ApiResponse(responseCode = "200", description = "방 목록 불러오기 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public CustomResponse<Page<RoomListDTO>> matchingRoomList(@RequestBody SortConditionDTO sortConditionDTO) {
         // 여기에 들어가는 SortedRoomDTO 는 모두 초깃값
@@ -125,8 +128,8 @@ public class RoomController {
     @PostMapping("/sorted")
     @Operation(summary = "방 목록 정렬", description = "사용자 지정 요소로 정렬된 방 목록")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "{field}, {direction} 기준으로 정렬 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
+            @ApiResponse(responseCode = "200", description = "{field}, {direction} 기준으로 정렬 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
     public CustomResponse<Page<RoomListDTO>> sortedRooms(@RequestBody SortConditionDTO sortConditionDTO) {
         // 여기 들어가는 SortedRoomDTO 는 isDeleted,isStarted 제외 모두 사용자 지정
@@ -142,9 +145,10 @@ public class RoomController {
     @PostMapping("/quit/{roomId}")
     @Operation(summary = "방 나가기", description = "현재 있는 방에서 퇴장")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "{roomId}번 방 퇴장 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
-            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
+            @ApiResponse(responseCode = "200", description = "{roomId}번 방 퇴장 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "시작 대기 중 퇴장이 불가능합니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public CustomResponse<Void> quitRoom(@PathVariable Long roomId) {
         roomService.quitRoom(roomId);
@@ -159,12 +163,12 @@ public class RoomController {
     @PostMapping("/enter/{roomId}")
     @Operation(summary = "방 입장", description = "사용자가 선택한 방에 입장")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "{roomId}번 방 입장 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
-            @ApiResponse(responseCode = "403", description = "방 조건에 알맞는 자산이 부족합니다."),
-            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없습니다."),
-            @ApiResponse(responseCode = "409", description = "이미 다른 방에 들어가있습니다."),
-            @ApiResponse(responseCode = "409", description = "방이 가득 찼습니다.")
+            @ApiResponse(responseCode = "200", description = "{roomId}번 방 입장 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "방 조건에 알맞는 자산이 부족합니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "이미 다른 방에 들어가있습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "409", description = "방이 가득 찼습니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public CustomResponse<EnterRoomDTO> enterRoom(@PathVariable Long roomId) {
         User currentUser = findUserBySecurity.getCurrentUser();
@@ -174,7 +178,7 @@ public class RoomController {
         return new CustomResponse<>(HttpStatus.OK, String.format("%d번 방 입장 성공",roomId), enterRoomDto);
     }
 
-    /** TODO
+    /**
      * 게임 시작 전 방 상태를 게임 중으로 바꿈
      * @param roomId    현재 방 번호
      * @return CustomResponse (HttpStatus.OK,String.format("%d번방 게임 시작",roomId),null)
@@ -182,9 +186,9 @@ public class RoomController {
     @PostMapping("/start/{roomId}")
     @Operation(summary = "게임 시작", description = "딜레이 시간이 지난 방 게임 시작")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "{roomId}번 방 게임 시작 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다."),
-            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음")
+            @ApiResponse(responseCode = "200", description = "{roomId}번 방 게임 시작 성공", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청입니다.", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "방을 찾을 수 없음", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public CustomResponse<Integer> startGame(@PathVariable Long roomId) {
         int delay = roomService.beforeStart(roomId);
