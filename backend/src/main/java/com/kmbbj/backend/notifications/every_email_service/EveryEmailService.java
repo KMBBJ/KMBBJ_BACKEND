@@ -4,10 +4,13 @@ package com.kmbbj.backend.notifications.every_email_service;
 import com.kmbbj.backend.auth.entity.User;
 import com.kmbbj.backend.notifications.entity.EmailAlarm;
 import com.kmbbj.backend.notifications.repository.EmailAlarmRepository;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -51,4 +54,29 @@ public class EveryEmailService {
         // 이메일 전송
         mailSender.send(message);
     }
+
+    public void sendHtmlMessage(User user, String to, String subject, String htmlContent, String type) throws MessagingException {
+
+        // email_alarms 테이블에 저장
+        EmailAlarm emailAlarm = new EmailAlarm();
+        emailAlarm.setUser(user);
+        emailAlarm.setSubject(subject);
+        emailAlarm.setMessage(htmlContent); // HTML 콘텐츠 저장
+        emailAlarm.setTradeOrder(EmailAlarm.TradeOrder.valueOf(type));
+        emailAlarm.setCreateDateAlarms(new Timestamp(System.currentTimeMillis()));
+        emailAlarmRepository.save(emailAlarm);
+
+        // MimeMessage 객체 생성 및 설정
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(mailUsername);
+        helper.setTo(to); // 수신자 설정
+        helper.setSubject(subject); // 제목 설정
+        helper.setText(htmlContent, true); // HTML 형식 본문 설정
+
+        // 이메일 전송
+        mailSender.send(message);
+    }
+
 }

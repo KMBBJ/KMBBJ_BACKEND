@@ -1,8 +1,11 @@
 package com.kmbbj.backend.notifications.loginemail;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 
@@ -27,6 +30,20 @@ public class LoginEmailService {
         message.setTo(to); // 수신자 설정
         message.setSubject(subject); // 제목 설정
         message.setText(text); // 본문 설정
+        // 이메일 전송
+        mailSender.send(message);
+    }
+
+    public void sendHtmlMessage2(String to, String subject, String htmlContent) throws MessagingException {
+        // MimeMessage 객체 생성
+        MimeMessage message = mailSender.createMimeMessage();
+
+        // MimeMessageHelper 객체를 사용해 이메일 설정
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        helper.setTo(to); // 수신자 설정
+        helper.setSubject(subject); // 제목 설정
+        helper.setText(htmlContent, true); // HTML 형식 본문 설정, true로 설정하면 HTML 포맷
+
         // 이메일 전송
         mailSender.send(message);
     }

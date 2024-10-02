@@ -15,6 +15,7 @@ import com.kmbbj.backend.global.config.reponse.CustomResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -181,7 +182,7 @@ public class AdminController {
     })
     public CustomResponse<String> suspendUser(
             @PathVariable Long id,
-            @RequestBody ExampleRequestDTO requestBody) {
+            @RequestBody ExampleRequestDTO requestBody) throws MessagingException {
 
             LocalDateTime endDate = requestBody.getEndDate();
 
@@ -217,7 +218,7 @@ public class AdminController {
             @ApiResponse(responseCode = "404", description = "유저를 찾을 수 없음"),
             @ApiResponse(responseCode = "500", description = "서버 오류 발생")
     })
-    public CustomResponse<String> unsuspendUser(@PathVariable Long id) {
+    public CustomResponse<String> unsuspendUser(@PathVariable Long id) throws MessagingException {
 
 
         Optional<User> user = userRepository.findById(id); // 아이디를 사용하여 사용자 조회
@@ -270,7 +271,7 @@ public class AdminController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),
             @ApiResponse(responseCode = "409", description = "이미 존재하는 관리자")
     })
-    public CustomResponse<String> join(@RequestBody @Valid UserJoinRequest userJoinRequest, BindingResult bindingResult) {
+    public CustomResponse<String> join(@RequestBody @Valid UserJoinRequest userJoinRequest, BindingResult bindingResult) throws MessagingException {
         // 필드 에러 확인
         if (bindingResult.hasErrors()) {
             throw new ApiException(ExceptionEnum.NOT_ALLOW_FILED);

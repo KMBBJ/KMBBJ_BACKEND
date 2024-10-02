@@ -10,6 +10,7 @@ import com.kmbbj.backend.global.config.exception.ApiException;
 import com.kmbbj.backend.global.config.exception.ExceptionEnum;
 import com.kmbbj.backend.global.config.jwt.infrastructure.CustomUserDetails;
 import com.kmbbj.backend.notifications.loginemail.LoginEmailService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +21,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -177,18 +179,33 @@ public class AdminService {
      */
     @Transactional
     @Async
-    public void sendSuspensionEmail(User user) {
+    public void sendSuspensionEmail(User user) throws MessagingException {
         if (user == null) { // User 가 없을 경우
             throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
         }
 
         // 이메일 관련 정보 설정
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일"); // DateTimeFormatter를 사용해 날짜 형식을 변경
+        String formattedDate = user.getSuspensionEndDate().format(formatter);
+
+        String htmlContent =
+                "<div style='width: 100%; display: flex; justify-content: center;'>" +
+                        "  <div style='border: 1px solid #ddd; padding: 20px; max-width: 600px; " +
+                        "              border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>" +
+                        "    <h1 style='text-align: center; color: #333;'>계정 제제 안내</h1>" +
+                        "    <p style='text-align: center; font-size: 16px; color: #555;'>" +
+                        "      계정이 관리자에 의해 <b>" + formattedDate + "</b>까지 정지되었습니다.<br>" +
+                        "      정의된 계정에서 게임 이용은 불가하며,<br>" +
+                        "      관련 문의나 이의 제기는 고객센터로 문의 바랍니다." +
+                        "    </p>" +
+                        "  </div>" +
+                        "</div>";
+
         String recipientEmail = user.getEmail();
         String emailSubject = "계정 제제 안내";
-        String emailText = "계정이 관리자에 의해 " + user.getSuspensionEndDate() + "까지 정지되었습니다.";
 
         // 이메일 보내기
-        emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
+        emailService.sendHtmlMessage2(recipientEmail, emailSubject, htmlContent);
     }
 
 
@@ -199,18 +216,32 @@ public class AdminService {
      */
     @Transactional
     @Async
-    public void sendAccountUnblockingEmail(User user) {
+    public void sendAccountUnblockingEmail(User user) throws MessagingException {
         if (user == null) { // User 가 없을 경우
             throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
         }
 
         // 이메일 관련 정보 설정
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일"); // DateTimeFormatter를 사용해 날짜 형식을 변경
+
+        String htmlContent =
+                "<div style='width: 100%; display: flex; justify-content: center;'>" +
+                        "  <div style='border: 1px solid #ddd; padding: 20px; max-width: 600px; " +
+                        "              border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>" +
+                        "    <h1 style='text-align: center; color: #333;'>계정 차단 해제 안내</h1>" +
+                        "    <p style='text-align: center; font-size: 16px; color: #555;'>" +
+                        "      계정이 관리자에 의해 계정이 차단 해제되었습니다.<br>" +
+                        "      정의된 계정에서 게임 이용이 가능하며,<br>" +
+                        "      관련 문의나 이의 제기는 고객센터로 문의 바랍니다." +
+                        "    </p>" +
+                        "  </div>" +
+                        "</div>";
+
         String recipientEmail = user.getEmail();
-        String emailSubject = "계정 차단 해제";
-        String emailText = "계정이 관리자에 의해 계정이 차단 해제되었습니다.";
+        String emailSubject = "계정 차단 해제 안내";
 
         // 이메일 보내기
-        emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
+        emailService.sendHtmlMessage2(recipientEmail, emailSubject, htmlContent);
     }
 
 
@@ -239,21 +270,34 @@ public class AdminService {
      */
     @Transactional
     @Async
-    public void joinAdmin(User user, String password) {
+    public void joinAdmin(User user, String password) throws MessagingException {
         if (user == null) { // User 가 없을 경우
             throw new ApiException(ExceptionEnum.USER_NOT_FOUND);
         }
 
         // 이메일 관련 정보 설정
         String recipientEmail = user.getEmail();
-        String emailSubject = "관리자 계정 생성 완료";
-        String emailText = "관리자 전용 계정이 생성되었습니다\n" +
-                "이메일 : " + recipientEmail + "\n" +
-                "비밀번호 : " + password;
 
+
+        String htmlContent =
+                "<div style='width: 100%; display: flex; justify-content: center;'>" +
+                        "  <div style='border: 1px solid #ddd; padding: 20px; max-width: 600px; " +
+                        "              border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>" +
+                        "    <h1 style='text-align: center; color: #333;'>관리자 계정 생성 완료</h1>" +
+                        "    <p style='text-align: center; font-size: 16px; color: #555;'>" +
+                        "      관리자 전용 계정이 생성되었습니다.<br>" +
+                        "      정의된 계정에서 관리자의 권한으로 사이트 이용이 가능하며,<br>" +
+                        "      관련 문의나 이의 제기는 고객센터로 문의 바랍니다." +
+                        "      이메일 : " + recipientEmail + "\n" +
+                        "      비밀번호 : " + password +
+                        "    </p>" +
+                        "  </div>" +
+                        "</div>";
+
+        String emailSubject = "계정 차단 해제 안내";
 
         // 이메일 보내기
-        emailService.sendSimpleMessage(recipientEmail, emailSubject, emailText);
+        emailService.sendHtmlMessage2(recipientEmail, emailSubject, htmlContent);
     }
 
 
